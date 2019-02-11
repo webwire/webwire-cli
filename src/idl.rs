@@ -7,6 +7,12 @@ pub struct Field {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct Type {
+    pub name: String,
+    pub fields: Vec<Field>,
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Service {
     pub name: String,
     pub fields: Vec<Field>,
@@ -34,11 +40,7 @@ named!(parse_field_separator<CompleteStr, ()>, do_parse!(
     ()
 ));
 
-named!(parse_service<CompleteStr, Service>, do_parse!(
-        tag!("service") >>
-        take_while1!(char::is_whitespace) >>
-        name: parse_identifier >>
-        // FIXME parse fields
+named!(parse_fields<CompleteStr, Vec<Field>>, do_parse!(
         take_while!(char::is_whitespace) >>
         char!('{') >>
         take_while!(char::is_whitespace) >>
@@ -47,8 +49,27 @@ named!(parse_service<CompleteStr, Service>, do_parse!(
         opt!(char!(',')) >> // trailing comma
         take_while!(char::is_whitespace) >>
         char!('}') >>
+        (fields)
+));
+
+named!(parse_type<CompleteStr, Type>, do_parse!(
+        tag!("type") >>
+        take_while1!(char::is_whitespace) >>
+        name: parse_identifier >>
+        take_while!(char::is_whitespace) >>
+        fields: parse_fields >>
+        (Type { name: name.to_string(), fields: fields })
+));
+
+named!(parse_service<CompleteStr, Service>, do_parse!(
+        tag!("service") >>
+        take_while1!(char::is_whitespace) >>
+        name: parse_identifier >>
+        take_while!(char::is_whitespace) >>
+        fields: parse_fields >>
         (Service { name: name.to_string(), fields: fields })
 ));
+
 
 #[test]
 fn test_parse_identifier() {
@@ -56,26 +77,6 @@ fn test_parse_identifier() {
         parse_identifier(CompleteStr("test")),
         Ok((CompleteStr(""), "test".to_string()))
     );
-}
-
-
-#[test]
-fn test_parse_service() {
-    let contents = [
-        "service Pinger{}",
-        "service Pinger {}",
-        "service Pinger{ }",
-        "service Pinger { }",
-    ];
-    for content in contents.iter() {
-        assert_eq!(
-            parse_service(CompleteStr(content)),
-            Ok((CompleteStr(""), Service {
-                name: CompleteStr("Pinger").to_string(),
-                fields: vec![],
-            }))
-        );
-    }
 }
 
 #[test]
@@ -97,16 +98,73 @@ fn test_parse_field() {
 }
 
 #[test]
+fn test_parse_type() {
+    let contents = [
+        "type Pinger{}",
+        "type Pinger {}",
+        "type Pinger{ }",
+        "type Pinger { }",
+    ];
+    for content in contents.iter() {
+        assert_eq!(
+            parse_type(CompleteStr(content)),
+            Ok((CompleteStr(""), Type {
+                name: CompleteStr("Pinger").to_string(),
+                fields: vec![],
+            }))
+        );
+    }
+}
+
+#[test]
+fn test_parse_type_with_fields() {
+    let contents = [
+        // no whitespace
+        "type Person {name:String,age:Integer}",
+        // whitespace after colon
+        "type Person {name: String,age: Integer}",
+        // whitespace after comma
+        "type Person {name:String, age:Integer}",
+        // whitespace before comma
+        "type Person {name: String ,age:Integer}",
+        // whitespace between braces
+        "type Person { name:String,age:Integer }",
+        // trailing comma
+        "type Person {name:String,age:Integer,}",
+        // trailing comma space after
+        "type Person {name:String,age:Integer, }",
+        // trailing comma space before
+        "type Person {name:String,age:Integer ,}",
+        // all combined
+        "type Person { name: String , age: Integer , }",
+    ];
+    for content in contents.iter() {
+        assert_eq!(
+            parse_type(CompleteStr(content)),
+            Ok((CompleteStr(""), Type {
+                name: "Person".to_string(),
+                fields: vec![
+                    Field { name: "name".to_string(), type_: "String".to_string() },
+                    Field { name: "age".to_string(), type_: "Integer".to_string() },
+                ],
+            }))
+        )
+    }
+}
+
+#[test]
 fn test_parse_service_with_fields() {
     let contents = [
         // no whitespace
+        "service Pinger {request:Ping,response:Pong}",
+        // whitespace after colon
         "service Pinger {request: Ping,response: Pong}",
-        // trailing whitespace after comma
-        "service Pinger {request: Ping, response: Pong}",
-        // leading whitespace before comma
-        "service Pinger {request: Ping ,response: Pong}",
+        // whitespace after comma
+        "service Pinger {request:Ping, response:Pong}",
+        // whitespace before comma
+        "service Pinger {request:Ping ,response:Pong}",
         // whitespace between braces
-        "service Pinger { request: Ping,response: Pong }",
+        "service Pinger { request:Ping,response:Pong }",
         // trailing comma
         "service Pinger {request:Ping,response:Pong,}",
         // trailing comma space after
