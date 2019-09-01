@@ -4,6 +4,7 @@ use nom::types::CompleteStr;
 pub struct Field {
     pub name: String,
     pub type_: String,
+    pub optional: bool
 }
 
 #[derive(Debug, PartialEq)]
@@ -27,10 +28,12 @@ named!(parse_identifier<CompleteStr, String>, do_parse!(
 named!(parse_field<CompleteStr, Field>, do_parse!(
     name: parse_identifier >>
     take_while!(char::is_whitespace) >>
+    optional: opt!(char!('?')) >>
+    take_while!(char::is_whitespace) >>
     char!(':') >>
     take_while!(char::is_whitespace) >>
     type_: parse_identifier >>
-    (Field { name: name.to_string(), type_: type_.to_string() })
+    (Field { name: name.to_string(), type_: type_.to_string(), optional: optional != None })
 ));
 
 named!(parse_field_separator<CompleteStr, ()>, do_parse!(
@@ -92,6 +95,27 @@ fn test_parse_field() {
             Ok((CompleteStr(""), Field {
                 name: "foo".to_string(),
                 type_: "FooType".to_string(),
+                optional: false
+            }))
+        );
+    }
+}
+
+#[test]
+fn test_parse_optional_field() {
+    let contents = [
+        "foo?:FooType",
+        "foo? :FooType",
+        "foo ?:FooType",
+        "foo ? :FooType",
+    ];
+    for content in contents.iter() {
+        assert_eq!(
+            parse_field(CompleteStr(content)),
+            Ok((CompleteStr(""), Field {
+                name: "foo".to_string(),
+                type_: "FooType".to_string(),
+                optional: true
             }))
         );
     }
@@ -144,8 +168,8 @@ fn test_parse_type_with_fields() {
             Ok((CompleteStr(""), Type {
                 name: "Person".to_string(),
                 fields: vec![
-                    Field { name: "name".to_string(), type_: "String".to_string() },
-                    Field { name: "age".to_string(), type_: "Integer".to_string() },
+                    Field { name: "name".to_string(), type_: "String".to_string(), optional: false },
+                    Field { name: "age".to_string(), type_: "Integer".to_string(), optional: false },
                 ],
             }))
         )
@@ -180,8 +204,8 @@ fn test_parse_service_with_fields() {
             Ok((CompleteStr(""), Service {
                 name: "Pinger".to_string(),
                 fields: vec![
-                    Field { name: "request".to_string(), type_: "Ping".to_string() },
-                    Field { name: "response".to_string(), type_: "Pong".to_string() },
+                    Field { name: "request".to_string(), type_: "Ping".to_string(), optional: false },
+                    Field { name: "response".to_string(), type_: "Pong".to_string(), optional: false },
                 ],
             }))
         )
