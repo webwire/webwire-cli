@@ -141,6 +141,17 @@ fn test_parse_type() {
 }
 
 #[test]
+fn test_parse_invalid_type() {
+    assert_eq!(
+        parse_type(CompleteStr("type 123fail{}")),
+        Ok((CompleteStr(""), Type {
+            name: "foo".to_string(),
+            fields: vec![],
+        }))
+    )
+}
+
+#[test]
 fn test_parse_type_with_fields() {
     let contents = [
         // no whitespace
