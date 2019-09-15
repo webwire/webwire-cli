@@ -10,7 +10,10 @@ use nom::{
         opt,
     },
     error::ErrorKind,
-    multi::separated_list
+    multi::{
+        many0,
+        separated_list
+    }
 };
 
 #[derive(Debug, PartialEq)]
@@ -116,6 +119,52 @@ fn parse_type(input: &str) -> IResult<&str, Struct> {
     }))
 }
 
+fn parse_type_documentpart(input: &str) -> IResult<&str, DocumentPart> {
+    let (input, fieldset) = parse_type(input)?;
+    return Ok((input, DocumentPart::Struct(fieldset)))
+}
+
+
+fn parse_fieldset_field(input: &str) -> IResult<&str, FieldsetField> {
+    let (input, name) = parse_identifier(input)?;
+    let (input, _) = take_while(char::is_whitespace)(input)?;
+    let (input, optional) = opt(tag("?"))(input)?;
+    let (input, _) = take_while(char::is_whitespace)(input)?;
+    let (input, type_) = parse_identifier(input)?;
+    Ok((input, FieldsetField {
+        name: name.to_string(),
+        optional: optional != None
+    }))
+}
+
+fn parse_fieldset_fields(input: &str) -> IResult<&str, Vec<FieldsetField>> {
+    let (input, _) = tag("{")(input)?;
+    let (input, _) = take_while(char::is_whitespace)(input)?;
+    let (input, fields) = separated_list(parse_field_separator, parse_fieldset_field)(input)?;
+    let (input, _) = take_while(char::is_whitespace)(input)?;
+    let (input, _) = opt(tag(","))(input)?; // trailing comma
+    let (input, _) = take_while(char::is_whitespace)(input)?;
+    let (input, _) = tag("}")(input)?;
+    Ok((input, fields))
+}
+
+fn parse_fieldset(input: &str) -> IResult<&str, Fieldset> {
+    let (input, _) = tag("fieldset")(input)?;
+    let (input, _) = take_while1(char::is_whitespace)(input)?;
+    let (input, name) = parse_identifier(input)?;
+    let (input, _) = take_while(char::is_whitespace)(input)?;
+    let (input, fields) = parse_fieldset_fields(input)?;
+    Ok((input, Fieldset {
+        name: name.to_string(),
+        fields: fields
+    }))
+}
+
+fn parse_fieldset_documentpart(input: &str) -> IResult<&str, DocumentPart> {
+    let (input, fieldset) = parse_fieldset(input)?;
+    return Ok((input, DocumentPart::Fieldset(fieldset)))
+}
+
 fn parse_service(input: &str) -> IResult<&str, Service> {
     let (input, _) = tag("service")(input)?;
     let (input, _) = take_while1(char::is_whitespace)(input)?;
@@ -128,28 +177,27 @@ fn parse_service(input: &str) -> IResult<&str, Service> {
     }))
 }
 
-/* FIXME
-pub fn parse_document_part(input: &str) -> IResult<&str, DocumentPart> {
+fn parse_service_documentpart(input: &str) -> IResult<&str, DocumentPart> {
+    let (input, service) = parse_service(input)?;
+    return Ok((input, DocumentPart::Service(service)))
+}
+
+fn parse_document_part(input: &str) -> IResult<&str, DocumentPart> {
     let (input, part) = alt((
-        parse_struct,
-        parse_fieldset,
-    ))(input);
+        parse_type_documentpart,
+        parse_fieldset_documentpart,
+        parse_service_documentpart,
+        // TODO add support for functions
+    ))(input)?;
     Ok((input, part))
 }
 
 pub fn parse_document(input: &str) -> IResult<&str, Document> {
-    let (input, values) = many0(
-        alt(
-            parse_struct,
-            // TODO parse function
-            // TODO parse
-            parse_service,
-        )
-    )
-    (Document {
-    })
+    let (input, parts) = many0(parse_document_part)(input)?;
+    Ok((input, Document {
+        parts: parts
+    }))
 }
-*/
 
 #[test]
 fn test_parse_identifier() {
