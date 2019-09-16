@@ -209,7 +209,7 @@ fn parse_fields(input: &str) -> IResult<&str, Vec<Field>> {
     context(
         "fields",
         preceded(
-            char('{'),
+            preceded(ws, char('{')),
             cut(terminated(
                 separated_list(parse_field_separator, parse_field),
                 preceded(trailing_comma, preceded(ws, char('}')))
@@ -219,15 +219,19 @@ fn parse_fields(input: &str) -> IResult<&str, Vec<Field>> {
 }
 
 fn parse_struct(input: &str) -> IResult<&str, Struct> {
-    let (input, _) = tag("struct")(input)?;
-    let (input, _) = take_while1(char::is_whitespace)(input)?;
-    let (input, name) = parse_identifier(input)?;
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    let (input, fields) = parse_fields(input)?;
-    Ok((input, Struct {
-        name: name.to_string(),
-        fields: fields
-    }))
+    map(
+        pair(
+            preceded(
+                tag("struct"),
+                parse_identifier
+            ),
+            parse_fields
+        ),
+        |t| Struct {
+            name: t.0.to_string(),
+            fields: t.1
+        }
+    )(input)
 }
 
 fn parse_struct_documentpart(input: &str) -> IResult<&str, DocumentPart> {
@@ -247,31 +251,34 @@ fn parse_fieldset_field(input: &str) -> IResult<&str, FieldsetField> {
 }
 
 fn parse_fieldset_fields(input: &str) -> IResult<&str, Vec<FieldsetField>> {
-    let (input, _) = tag("{")(input)?;
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    let (input, fields) = separated_list(parse_field_separator, parse_fieldset_field)(input)?;
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    let (input, _) = opt(tag(","))(input)?; // trailing comma
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    let (input, _) = tag("}")(input)?;
-    Ok((input, fields))
+    preceded(
+        preceded(ws, char('{')),
+        cut(terminated(
+            separated_list(parse_field_separator, parse_fieldset_field),
+            preceded(trailing_comma, preceded(ws, char('}')))
+        ))
+    )(input)
 }
 
 fn parse_fieldset(input: &str) -> IResult<&str, Fieldset> {
-    let (input, _) = tag("fieldset")(input)?;
-    let (input, _) = take_while1(char::is_whitespace)(input)?;
-    let (input, name) = parse_identifier(input)?;
-    let (input, _) = take_while1(char::is_whitespace)(input)?;
-    let (input, _) = tag("for")(input)?;
-    let (input, _) = take_while1(char::is_whitespace)(input)?;
-    let (input, struct_name) = parse_identifier(input)?;
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    let (input, fields) = parse_fieldset_fields(input)?;
-    Ok((input, Fieldset {
-        name: name.to_string(),
-        struct_name: struct_name.to_string(),
-        fields: fields
-    }))
+    map(
+        preceded(
+            terminated(tag("fieldset"), ws1),
+            cut(pair(
+                separated_pair(
+                    parse_identifier,
+                    preceded(ws, tag("for")),
+                    preceded(ws1, parse_identifier),
+                ),
+                parse_fieldset_fields
+            ))
+        ),
+        |((name, struct_name), fields)| Fieldset {
+            name: name.to_string(),
+            struct_name: struct_name.to_string(),
+            fields: fields
+        }
+    )(input)
 }
 
 fn parse_fieldset_documentpart(input: &str) -> IResult<&str, DocumentPart> {
@@ -280,15 +287,19 @@ fn parse_fieldset_documentpart(input: &str) -> IResult<&str, DocumentPart> {
 }
 
 fn parse_service(input: &str) -> IResult<&str, Service> {
-    let (input, _) = tag("service")(input)?;
-    let (input, _) = take_while1(char::is_whitespace)(input)?;
-    let (input, name) = parse_identifier(input)?;
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    let (input, fields) = parse_fields(input)?;
-    Ok((input, Service {
-        name: name.to_string(),
-        fields: fields
-    }))
+    map(
+        preceded(
+            terminated(tag("service"), ws1),
+            cut(pair(
+                parse_identifier,
+                parse_fields,
+            ))
+        ),
+        |(name, fields)| Service {
+            name: name,
+            fields: fields
+        }
+    )(input)
 }
 
 fn parse_service_documentpart(input: &str) -> IResult<&str, DocumentPart> {
