@@ -12,7 +12,19 @@ use nom::{
 const WHITSPACE: &str = " \t\r\n";
 
 #[derive(Debug, PartialEq)]
-pub struct Field {
+pub struct Enum {
+    pub name: String,
+    pub values: Vec<String>
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Struct {
+    pub name: String,
+    pub fields: Vec<StructField>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct StructField {
     pub name: String,
     pub type_: Type,
     pub optional: bool
@@ -20,15 +32,9 @@ pub struct Field {
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
-    Scalar(String),
+    Named(String),
     Array(String),
     Map(String, String),
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Struct {
-    pub name: String,
-    pub fields: Vec<Field>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -54,12 +60,13 @@ pub struct Function {
 #[derive(Debug, PartialEq)]
 pub struct Service {
     pub name: String,
-    // FIXME
-    pub fields: Vec<Field>,
+    // FIXME replace by in/out/err
+    pub fields: Vec<StructField>,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum DocumentPart {
+    Enum(Enum),
     Struct(Struct),
     Fieldset(Fieldset),
     Function(Function),
@@ -96,7 +103,7 @@ fn parse_identifier(input: &str) -> IResult<&str, String> {
     )(input)
 }
 
-fn parse_field(input: &str) -> IResult<&str, Field> {
+fn parse_field(input: &str) -> IResult<&str, StructField> {
     map(
         separated_pair(
             pair(
@@ -106,18 +113,11 @@ fn parse_field(input: &str) -> IResult<&str, Field> {
             preceded(ws, char(':')),
             parse_type
         ),
-        |((name, optional), type_)| Field {
+        |((name, optional), type_)| StructField {
             name: name,
             optional: optional != None,
             type_: type_
         }
-    )(input)
-}
-
-fn parse_type_simple(input: &str) -> IResult<&str, Type> {
-    map(
-        parse_identifier,
-        Type::Scalar
     )(input)
 }
 
@@ -158,7 +158,7 @@ fn parse_type_map(input: &str) -> IResult<&str, Type> {
 
 fn parse_type(input: &str) -> IResult<&str, Type> {
     alt((
-        parse_type_simple,
+        map(parse_identifier, Type::Named),
         parse_type_array,
         parse_type_map,
     ))(input)
@@ -201,11 +201,40 @@ fn test_parse_type_map() {
     }
 }
 
+fn parse_enum(input: &str) -> IResult<&str, Enum> {
+    map(
+        pair(
+            preceded(
+                tag("enum"),
+                parse_identifier
+            ),
+            parse_enum_values
+        ),
+        |t| Enum {
+            name: t.0.to_string(),
+            values: t.1
+        }
+    )(input)
+}
+
+fn parse_enum_values(input: &str) -> IResult<&str, Vec<String>> {
+    context(
+        "enum_values",
+        preceded(
+            preceded(ws, char('{')),
+            cut(terminated(
+                separated_list(parse_field_separator, parse_identifier),
+                preceded(trailing_comma, preceded(ws, char('}')))
+            ))
+        )
+    )(input)
+}
+
 fn parse_field_separator(input: &str) -> IResult<&str, char> {
     preceded(ws, char(','))(input)
 }
 
-fn parse_fields(input: &str) -> IResult<&str, Vec<Field>> {
+fn parse_struct_fields(input: &str) -> IResult<&str, Vec<StructField>> {
     context(
         "fields",
         preceded(
@@ -225,7 +254,7 @@ fn parse_struct(input: &str) -> IResult<&str, Struct> {
                 tag("struct"),
                 parse_identifier
             ),
-            parse_fields
+            parse_struct_fields
         ),
         |t| Struct {
             name: t.0.to_string(),
@@ -234,20 +263,17 @@ fn parse_struct(input: &str) -> IResult<&str, Struct> {
     )(input)
 }
 
-fn parse_struct_documentpart(input: &str) -> IResult<&str, DocumentPart> {
-    let (input, fieldset) = parse_struct(input)?;
-    return Ok((input, DocumentPart::Struct(fieldset)))
-}
-
-
 fn parse_fieldset_field(input: &str) -> IResult<&str, FieldsetField> {
-    let (input, name) = parse_identifier(input)?;
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    let (input, optional) = opt(tag("?"))(input)?;
-    Ok((input, FieldsetField {
-        name: name.to_string(),
-        optional: optional != None
-    }))
+    map(
+        pair(
+            parse_identifier,
+            opt(char('?'))
+        ),
+        |(name, optional)| FieldsetField {
+            name: name.to_string(),
+            optional: optional != None
+        }
+    )(input)
 }
 
 fn parse_fieldset_fields(input: &str) -> IResult<&str, Vec<FieldsetField>> {
@@ -281,18 +307,13 @@ fn parse_fieldset(input: &str) -> IResult<&str, Fieldset> {
     )(input)
 }
 
-fn parse_fieldset_documentpart(input: &str) -> IResult<&str, DocumentPart> {
-    let (input, fieldset) = parse_fieldset(input)?;
-    return Ok((input, DocumentPart::Fieldset(fieldset)))
-}
-
 fn parse_service(input: &str) -> IResult<&str, Service> {
     map(
         preceded(
             terminated(tag("service"), ws1),
             cut(pair(
                 parse_identifier,
-                parse_fields,
+                parse_struct_fields,
             ))
         ),
         |(name, fields)| Service {
@@ -302,25 +323,21 @@ fn parse_service(input: &str) -> IResult<&str, Service> {
     )(input)
 }
 
-fn parse_service_documentpart(input: &str) -> IResult<&str, DocumentPart> {
-    let (input, service) = parse_service(input)?;
-    return Ok((input, DocumentPart::Service(service)))
-}
-
 fn parse_document_part(input: &str) -> IResult<&str, DocumentPart> {
-    let (input, part) = alt((
-        parse_struct_documentpart,
-        parse_fieldset_documentpart,
-        parse_service_documentpart,
+    alt((
+        map(parse_enum, DocumentPart::Enum),
+        map(parse_struct, DocumentPart::Struct),
+        map(parse_fieldset, DocumentPart::Fieldset),
+        map(parse_service, DocumentPart::Service),
         // TODO add support for functions
-    ))(input)?;
-    Ok((input, part))
+    ))(input)
 }
 
 pub fn parse_document(input: &str) -> IResult<&str, Document> {
     let (input, _) = take_while(char::is_whitespace)(input)?;
     let (input, parts) = separated_list(take_while1(char::is_whitespace), parse_document_part)(input)?;
     let (input, _) = take_while(char::is_whitespace)(input)?;
+    // FIXME fail if there is remaining input
     Ok((input, Document {
         parts: parts
     }))
@@ -360,9 +377,9 @@ fn test_parse_field() {
     for content in contents.iter() {
         assert_eq!(
             parse_field(content),
-            Ok(("", Field {
+            Ok(("", StructField {
                 name: "foo".to_string(),
-                type_: Type::Scalar("FooType".to_string()),
+                type_: Type::Named("FooType".to_string()),
                 optional: false
             }))
         );
@@ -380,9 +397,9 @@ fn test_parse_field_optional() {
     for content in contents.iter() {
         assert_eq!(
             parse_field(content),
-            Ok(("", Field {
+            Ok(("", StructField {
                 name: "foo".to_string(),
-                type_: Type::Scalar("FooType".to_string()),
+                type_: Type::Named("FooType".to_string()),
                 optional: true
             }))
         );
@@ -400,7 +417,7 @@ fn test_parse_fields_0() {
     ];
     for content in contents.iter() {
         assert_eq!(
-            parse_fields(content),
+            parse_struct_fields(content),
             Ok(("", vec![]))
         );
     }
@@ -417,10 +434,10 @@ fn test_parse_fields_1() {
     ];
     for content in contents.iter() {
         assert_eq!(
-            parse_fields(content),
-            Ok(("", vec![Field {
+            parse_struct_fields(content),
+            Ok(("", vec![StructField {
                 name: "foo".to_owned(),
-                type_: Type::Scalar("Foo".to_owned()),
+                type_: Type::Named("Foo".to_owned()),
                 optional: false
             }]))
         );
@@ -438,16 +455,16 @@ fn test_parse_fields_2() {
     ];
     for content in contents.iter() {
         assert_eq!(
-            parse_fields(content),
+            parse_struct_fields(content),
             Ok(("", vec![
-                Field {
+                StructField {
                     name: "foo".to_owned(),
-                    type_: Type::Scalar("Foo".to_owned()),
+                    type_: Type::Named("Foo".to_owned()),
                     optional: false
                 },
-                Field {
+                StructField {
                     name: "bar".to_owned(),
-                    type_: Type::Scalar("Bar".to_owned()),
+                    type_: Type::Named("Bar".to_owned()),
                     optional: false
                 }
             ]))
@@ -510,8 +527,8 @@ fn test_parse_struct_with_fields() {
             Ok(("", Struct {
                 name: "Person".to_string(),
                 fields: vec![
-                    Field { name: "name".to_string(), type_: Type::Scalar("String".to_string()), optional: false },
-                    Field { name: "age".to_string(), type_: Type::Scalar("Integer".to_string()), optional: false },
+                    StructField { name: "name".to_string(), type_: Type::Named("String".to_string()), optional: false },
+                    StructField { name: "age".to_string(), type_: Type::Named("Integer".to_string()), optional: false },
                 ],
             }))
         )
@@ -621,8 +638,8 @@ fn test_parse_service_with_fields() {
             Ok(("", Service {
                 name: "Pinger".to_string(),
                 fields: vec![
-                    Field { name: "request".to_string(), type_: Type::Scalar("Ping".to_string()), optional: false },
-                    Field { name: "response".to_string(), type_: Type::Scalar("Pong".to_string()), optional: false },
+                    StructField { name: "request".to_string(), type_: Type::Named("Ping".to_string()), optional: false },
+                    StructField { name: "response".to_string(), type_: Type::Named("Pong".to_string()), optional: false },
                 ],
             }))
         )
@@ -651,21 +668,21 @@ fn test_parse_document() {
                 DocumentPart::Struct(Struct {
                     name: "Person".to_string(),
                     fields: vec![
-                        Field { name: "name".to_string(), type_: Type::Scalar("String".to_string()), optional: false },
-                        Field { name: "age".to_string(), type_: Type::Scalar("Integer".to_string()), optional: false },
+                        StructField { name: "name".to_string(), type_: Type::Named("String".to_string()), optional: false },
+                        StructField { name: "age".to_string(), type_: Type::Named("Integer".to_string()), optional: false },
                     ],
                 }),
                 DocumentPart::Struct(Struct {
                     name: "Group".to_string(),
                     fields: vec![
-                        Field { name: "name".to_string(), type_: Type::Scalar("String".to_string()), optional: false },
+                        StructField { name: "name".to_string(), type_: Type::Named("String".to_string()), optional: false },
                     ],
                 }),
                 DocumentPart::Service(Service {
                     name: "Pinger".to_string(),
                     fields: vec![
-                        Field { name: "request".to_string(), type_: Type::Scalar("Ping".to_string()), optional: false },
-                        Field { name: "response".to_string(), type_: Type::Scalar("Pong".to_string()), optional: false },
+                        StructField { name: "request".to_string(), type_: Type::Named("Ping".to_string()), optional: false },
+                        StructField { name: "response".to_string(), type_: Type::Named("Pong".to_string()), optional: false },
                     ],
                 }),
             ]
