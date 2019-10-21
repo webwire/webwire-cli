@@ -8,4 +8,4 @@ mod r#struct;
 mod r#type;
 mod value;
 
-pub use document::parse_document;
+pub use document::{Document, parse_document};
