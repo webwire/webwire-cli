@@ -55,11 +55,13 @@ fn parse_type_map(input: &str) -> IResult<&str, Type> {
 }
 
 pub fn parse_type(input: &str) -> IResult<&str, Type> {
-    alt((
-        map(parse_identifier, Type::Named),
-        parse_type_array,
-        parse_type_map,
-    ))(input)
+    preceded(ws,
+        alt((
+            map(parse_identifier, Type::Named),
+            parse_type_array,
+            parse_type_map,
+        ))
+    )(input)
 }
 
 #[test]

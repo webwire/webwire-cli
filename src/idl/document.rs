@@ -48,11 +48,13 @@ pub fn parse_document(input: &str) -> IResult<&str, Document> {
 
 #[test]
 fn test_parse_document() {
-    use crate::idl::r#struct::Field as StructField;
+    use crate::idl::field_option::FieldOption;
+    use crate::idl::r#struct::Field;
     use crate::idl::r#type::Type;
+    use crate::idl::value::Value;
     let content = "
         struct Person {
-            name: String,
+            name: String (length=1..50),
             age: Integer
         }
         struct Group {
@@ -70,14 +72,34 @@ fn test_parse_document() {
                 DocumentPart::Struct(Struct {
                     name: "Person".to_string(),
                     fields: vec![
-                        StructField { name: "name".to_string(), type_: Type::Named("String".to_string()), optional: false },
-                        StructField { name: "age".to_string(), type_: Type::Named("Integer".to_string()), optional: false },
+                        Field {
+                            name: "name".to_string(),
+                            type_: Type::Named("String".to_string()),
+                            optional: false,
+                            options: vec![
+                                FieldOption {
+                                    name: "length".to_string(),
+                                    value: Value::Range(Some(1), Some(50))
+                                }
+                            ],
+                        },
+                        Field {
+                            name: "age".to_string(),
+                            type_: Type::Named("Integer".to_string()),
+                            optional: false,
+                            options: vec![],
+                        },
                     ],
                 }),
                 DocumentPart::Struct(Struct {
                     name: "Group".to_string(),
                     fields: vec![
-                        StructField { name: "name".to_string(), type_: Type::Named("String".to_string()), optional: false },
+                        Field {
+                            name: "name".to_string(),
+                            type_: Type::Named("String".to_string()),
+                            optional: false,
+                            options: vec![],
+                        },
                     ],
                 }),
                 DocumentPart::Service(Service {

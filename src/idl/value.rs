@@ -1,15 +1,12 @@
 use std::str::FromStr;
-use std::num::ParseIntError;
 
 use nom::{
     IResult,
     branch::alt,
-    bytes::complete::{escaped, tag},
-    character::complete::{char, alphanumeric1, one_of, digit1},
+    bytes::complete::{escaped_transform, is_not, is_a, tag},
+    character::complete::{char, digit1, one_of},
     combinator::{cut, map, map_res, opt},
     error::context,
-    multi::separated_list,
-    number::complete::double,
     sequence::{pair, preceded, separated_pair, terminated}
 };
 
@@ -20,7 +17,7 @@ pub enum Value {
     Boolean(bool),
     Integer(i64),
     Float(f64),
-    Range(i64, i64),
+    Range(Option<i64>, Option<i64>),
     String(String),
     Identifier(String),
 }
@@ -32,13 +29,21 @@ pub fn parse_boolean(input: &str) -> IResult<&str, bool> {
     ))(input)
 }
 
-fn parse_string(input: &str) -> IResult<&str, String> {
+pub fn parse_string(input: &str) -> IResult<&str, String> {
     context("string",
         preceded(
             char('\"'),
             cut(terminated(
                 map(
-                    escaped(alphanumeric1, '\\', one_of("\"n\\")),
+                    escaped_transform(
+                        is_not("\\\"\n"),
+                        '\\',
+                        alt((
+                            map(tag("\\"), |_| "\\"),
+                            map(tag("\""), |_| "\""),
+                            map(tag("n"), |_| "\n"),
+                        ))
+                    ),
                     String::from
                 ),
                 char('\"')
@@ -47,16 +52,47 @@ fn parse_string(input: &str) -> IResult<&str, String> {
     )(input)
 }
 
-pub fn parse_integer(input: &str) -> IResult<&str, i64> {
+#[test]
+fn test_parse_value_string() {
+    assert_eq!(parse_value("\"hello\""), Ok(("", Value::String("hello".to_string()))));
+    assert_eq!(parse_value("\"hello world\""), Ok(("", Value::String("hello world".to_string()))));
+    assert_eq!(parse_value("\"hello\\nworld\""), Ok(("", Value::String("hello\nworld".to_string()))));
+    assert_eq!(parse_value("\"hello \\\"world\\\"\""), Ok(("", Value::String("hello \"world\"".to_string()))));
+    assert_eq!(parse_value("\"backspace\\\\\""), Ok(("", Value::String("backspace\\".to_string()))));
+}
+
+pub fn parse_integer_dec(input: &str) -> IResult<&str, i64> {
     map_res(
         pair(
-            opt(tag("-")),
+            opt(one_of("+-")),
             digit1,
         ),
         |(sign, number)| {
-            i64::from_str(format!("{}{}", sign.unwrap_or(""), number).as_str())
+            i64::from_str_radix(format!("{}{}", sign.unwrap_or('+'), number).as_str(), 10)
         }
     )(input)
+}
+
+pub fn parse_integer_hex(input: &str) -> IResult<&str, i64> {
+    map_res(
+        pair(
+            opt(one_of("+-")),
+            preceded(
+                alt((tag("0x"), tag("0X"))),
+                is_a("1234567890ABCDEFabcdef"),
+            )
+        ),
+        |(sign, number)| {
+            i64::from_str_radix(format!("{}{}", sign.unwrap_or('+'), number).as_str(), 16)
+        }
+    )(input)
+}
+
+pub fn parse_integer(input: &str) -> IResult<&str, i64> {
+    alt((
+        parse_integer_hex,
+        parse_integer_dec,
+    ))(input)
 }
 
 pub fn parse_float(input: &str) -> IResult<&str, f64> {
@@ -74,12 +110,12 @@ pub fn parse_float(input: &str) -> IResult<&str, f64> {
     )(input)
 }
 
-pub fn parse_range(input: &str) -> IResult<&str, (i64, i64)> {
+pub fn parse_range(input: &str) -> IResult<&str, (Option<i64>, Option<i64>)> {
     context("range",
         separated_pair(
-            parse_integer,
+            opt(parse_integer),
             tag(".."),
-            parse_integer
+            opt(parse_integer)
         )
     )(input)
 }
@@ -107,6 +143,8 @@ fn test_parse_value_integer() {
     assert_eq!(parse_value("-42"), Ok(("", Value::Integer(-42))));
     assert_eq!(parse_value("9223372036854775807"), Ok(("", Value::Integer(9223372036854775807))));
     assert_eq!(parse_value("-9223372036854775808"), Ok(("", Value::Integer(-9223372036854775808))));
+    assert_eq!(parse_value("0xFF"), Ok(("", Value::Integer(0xFF))));
+    assert_eq!(parse_value("-0xFF"), Ok(("", Value::Integer(-0xFF))));
 }
 
 #[test]
@@ -128,14 +166,17 @@ fn test_parse_value_float() {
     assert_eq!(parse_value("13.37"), Ok(("", Value::Float(13.37f64))));
 }
 
+/*
 #[test]
 fn test_parse_value_string() {
     assert_eq!(parse_value("\"hello\""), Ok(("", Value::String("hello".to_string()))));
+    assert_eq!(parse_value("\"hello world\""), Ok(("", Value::String("hello world".to_string()))));
 }
+*/
 
 #[test]
 fn test_parse_value_range() {
-    assert_eq!(parse_value("0..1337"), Ok(("", Value::Range(0, 1337))));
+    assert_eq!(parse_value("0..1337"), Ok(("", Value::Range(Some(0), Some(1337)))));
     // TODO add support for hexadecimal numbers
     //assert_eq!(parse_value("0..0xFF"), Ok(("", Value::Range(0, 0xFF))));
 }

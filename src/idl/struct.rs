@@ -18,6 +18,10 @@ use crate::idl::r#type::{
     Type,
     parse_type,
 };
+use crate::idl::field_option:: {
+    FieldOption,
+    parse_field_options,
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Struct {
@@ -29,7 +33,8 @@ pub struct Struct {
 pub struct Field {
     pub name: String,
     pub type_: Type,
-    pub optional: bool
+    pub optional: bool,
+    pub options: Vec<FieldOption>,
 }
 
 pub fn parse_struct(input: &str) -> IResult<&str, Struct> {
@@ -69,12 +74,16 @@ fn parse_field(input: &str) -> IResult<&str, Field> {
                 opt(preceded(ws, char('?')))
             ),
             preceded(ws, char(':')),
-            parse_type
+            pair(
+                parse_type,
+                opt(parse_field_options),
+            )
         ),
-        |((name, optional), type_)| Field {
+        |((name, optional), (type_, options))| Field {
             name: name,
             optional: optional != None,
-            type_: type_
+            type_: type_,
+            options: if let Some(options) = options { options } else { vec![] },
         }
     )(input)
 }
@@ -92,7 +101,8 @@ fn test_parse_field() {
             Ok(("", Field {
                 name: "foo".to_string(),
                 type_: Type::Named("FooType".to_string()),
-                optional: false
+                optional: false,
+                options: vec![],
             }))
         );
     }
@@ -112,7 +122,74 @@ fn test_parse_field_optional() {
             Ok(("", Field {
                 name: "foo".to_string(),
                 type_: Type::Named("FooType".to_string()),
-                optional: true
+                optional: true,
+                options: vec![],
+            }))
+        );
+    }
+}
+
+#[test]
+fn test_parse_field_with_options() {
+    use crate::idl::value::Value;
+    let contents = [
+        "name:String(length=2..50)",
+        "name :String(length=2..50)",
+        "name: String(length=2..50)",
+        "name:String (length=2..50)",
+        "name:String( length=2..50)",
+        "name:String(length =2..50)",
+        "name:String(length= 2..50)",
+        /*
+        "name:String(length=2 ..50)",
+        "name:String(length=2.. 50)",
+        */
+        "name:String(length=2..50 )",
+    ];
+    for content in contents.iter() {
+        assert_eq!(
+            parse_field(content),
+            Ok(("", Field {
+                name: "name".to_string(),
+                type_: Type::Named("String".to_string()),
+                optional: false,
+                options: vec![
+                    FieldOption {
+                        name: "length".to_string(),
+                        value: Value::Range(Some(2), Some(50)),
+                    }
+                ],
+            }))
+        );
+    }
+}
+
+#[test]
+fn test_parse_array_field_with_options() {
+    use crate::idl::value::Value;
+    let contents = [
+        "items:[String](length=0..32)",
+        "items :[String](length=0..32)",
+        "items: [String](length=0..32)",
+        "items:[String] (length=0..32)",
+        "items:[String]( length=0..32)",
+        "items:[String](length =0..32)",
+        "items:[String](length= 0..32)",
+        "items:[String](length=0..32 )",
+    ];
+    for content in contents.iter() {
+        assert_eq!(
+            parse_field(content),
+            Ok(("", Field {
+                name: "items".to_string(),
+                type_: Type::Array("String".to_string()),
+                optional: false,
+                options: vec![
+                    FieldOption {
+                        name: "length".to_string(),
+                        value: Value::Range(Some(0), Some(32)),
+                    }
+                ],
             }))
         );
     }
@@ -150,7 +227,8 @@ fn test_parse_fields_1() {
             Ok(("", vec![Field {
                 name: "foo".to_owned(),
                 type_: Type::Named("Foo".to_owned()),
-                optional: false
+                optional: false,
+                options: vec![],
             }]))
         );
     }
@@ -172,12 +250,14 @@ fn test_parse_fields_2() {
                 Field {
                     name: "foo".to_owned(),
                     type_: Type::Named("Foo".to_owned()),
-                    optional: false
+                    optional: false,
+                    options: vec![],
                 },
                 Field {
                     name: "bar".to_owned(),
                     type_: Type::Named("Bar".to_owned()),
-                    optional: false
+                    optional: false,
+                    options: vec![],
                 }
             ]))
         );
@@ -198,6 +278,35 @@ fn test_parse_struct() {
             Ok(("", Struct {
                 name: "Pinger".to_string(),
                 fields: vec![],
+            }))
+        );
+    }
+}
+
+#[test]
+fn test_parse_struct_field_options() {
+    use crate::idl::value::Value;
+    let contents = [
+        "struct Person { name: [String] (length=1..50) }",
+    ];
+    for content in contents.iter() {
+        assert_eq!(
+            parse_struct(content),
+            Ok(("", Struct {
+                name: "Person".to_string(),
+                fields: vec![
+                    Field {
+                        name: "name".to_string(),
+                        type_: Type::Array("String".to_string()),
+                        optional: false,
+                        options: vec![
+                            FieldOption {
+                                name: "length".to_string(),
+                                value: Value::Range(Some(1), Some(50))
+                            }
+                        ]
+                    }
+                ],
             }))
         );
     }
@@ -240,8 +349,18 @@ fn test_parse_struct_with_fields() {
             Ok(("", Struct {
                 name: "Person".to_string(),
                 fields: vec![
-                    Field { name: "name".to_string(), type_: Type::Named("String".to_string()), optional: false },
-                    Field { name: "age".to_string(), type_: Type::Named("Integer".to_string()), optional: false },
+                    Field {
+                        name: "name".to_string(),
+                        type_: Type::Named("String".to_string()),
+                        optional: false,
+                        options: vec![],
+                    },
+                    Field {
+                        name: "age".to_string(),
+                        type_: Type::Named("Integer".to_string()),
+                        optional: false,
+                        options: vec![],
+                    },
                 ],
             }))
         )
