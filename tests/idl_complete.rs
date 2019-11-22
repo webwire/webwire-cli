@@ -102,14 +102,23 @@ fn test_schema_loader() {
                 response: Some("UserList".to_string()),
                 error: Some("ListError".to_string())
             }),
-            DocumentPart::Service(Service { name: "server".to_string(), operations: vec![
-                "get_version".to_string(),
-                "user_get".to_string(),
-                "user_list".to_string()
+            DocumentPart::Service(Service { name: "example".to_string(), endpoints: vec![
+                ServiceEndpoint {
+                    name: "get_version".to_string(),
+                    in_: true,
+                    out: true
+                },
+                ServiceEndpoint {
+                    name: "user_list".to_string(),
+                    in_: true,
+                    out: false
+                },
+                ServiceEndpoint {
+                    name: "user_get".to_string(),
+                    in_: true,
+                    out: false
+                }
             ]}),
-            DocumentPart::Service(Service { name: "client".to_string(), operations: vec![
-                "get_version".to_string()
-            ]})
         ]}),
         result
     );

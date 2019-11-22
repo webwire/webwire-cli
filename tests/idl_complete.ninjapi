@@ -77,12 +77,8 @@ endpoint user_get(UserRequest) -> User | GetError
 
 endpoint user_list(UserListRequest) -> UserList | ListError
 
-service server {
-    get_version,
-    user_get,
-    user_list
-}
-
-service client {
-    get_version,
+service example {
+    inout get_version,
+    in user_list,
+    in user_get
 }

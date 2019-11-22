@@ -16,7 +16,7 @@ pub use r#enum::Enum;
 pub use fieldset::{Fieldset, Field as FieldsetField};
 pub use operation::Operation;
 pub use field_option::FieldOption;
-pub use service::Service;
+pub use service::{Service, ServiceEndpoint };
 pub use r#struct::{Struct, Field};
 pub use r#type::Type;
 pub use value::Value;

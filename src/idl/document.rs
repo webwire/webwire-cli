@@ -75,6 +75,7 @@ fn test_parse_document() {
     use crate::idl::r#struct::Field;
     use crate::idl::r#type::Type;
     use crate::idl::value::Value;
+    use crate::idl::service::ServiceEndpoint;
     let content = "
         struct Person {
             name: String (length=1..50),
@@ -86,8 +87,8 @@ fn test_parse_document() {
         endpoint ping()
         endpoint get_version() -> String
         service Pinger {
-            ping,
-            get_version
+            in ping,
+            inout get_version
         }
     ";
     assert_eq!(
@@ -141,9 +142,17 @@ fn test_parse_document() {
                 }),
                 DocumentPart::Service(Service {
                     name: "Pinger".to_string(),
-                    operations: vec![
-                        "ping".to_string(),
-                        "get_version".to_string(),
+                    endpoints: vec![
+                        ServiceEndpoint {
+                            name: "ping".to_string(),
+                            in_: true,
+                            out: false
+                        },
+                        ServiceEndpoint {
+                            name: "get_version".to_string(),
+                            in_: true,
+                            out: true
+                        }
                     ],
                 }),
             ]
