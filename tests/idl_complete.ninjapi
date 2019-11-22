@@ -71,17 +71,11 @@ enum ListError {
     PermissionDenied
 }
 
-endpoint get_version {
-    response: String,
-}
+endpoint get_version() -> String
 
 endpoint user_get(UserRequest) -> User | GetError
 
-endpoint user_list {
-    in: UserListRequest,
-    out: UserList,
-    err: ListError
-}
+endpoint user_list(UserListRequest) -> UserList | ListError
 
 service server {
     get_version,
@@ -90,5 +84,5 @@ service server {
 }
 
 service client {
-    get_version
+    get_version,
 }

@@ -25,15 +25,12 @@ pub fn trailing_comma(input: &str) -> IResult<&str, Option<char>> {
 }
 
 pub fn parse_identifier(input: &str) -> IResult<&str, String> {
-    preceded(
-        ws,
-        map(
-            pair(
-                take_while1(move |c: char| c.is_ascii_alphabetic()),
-                take_while(move |c: char| c.is_ascii_alphanumeric() || ALPHA_EXTRA.contains(c)),
-            ),
-            |t| format!("{}{}", t.0, t.1)
-        )
+    map(
+        pair(
+            take_while1(move |c: char| c.is_ascii_alphabetic()),
+            take_while(move |c: char| c.is_ascii_alphanumeric() || ALPHA_EXTRA.contains(c)),
+        ),
+        |t| format!("{}{}", t.0, t.1)
     )(input)
 }
 

@@ -13,6 +13,7 @@ use crate::idl::common::{
     parse_field_separator,
     trailing_comma,
     ws,
+    ws1,
 };
 use crate::idl::r#type::{
     Type,
@@ -42,7 +43,7 @@ pub fn parse_struct(input: &str) -> IResult<&str, Struct> {
         pair(
             preceded(
                 tag("struct"),
-                parse_identifier
+                preceded(ws1, parse_identifier)
             ),
             parse_fields
         ),
@@ -70,7 +71,7 @@ fn parse_field(input: &str) -> IResult<&str, Field> {
     map(
         separated_pair(
             pair(
-                parse_identifier,
+                preceded(ws, parse_identifier),
                 opt(preceded(ws, char('?')))
             ),
             preceded(ws, char(':')),

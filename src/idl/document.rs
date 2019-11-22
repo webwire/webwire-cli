@@ -1,11 +1,13 @@
 use nom::{
-    IResult,
     branch::alt,
-    bytes::complete::{take_while, take_while1},
     combinator::map,
+    IResult,
     multi::separated_list,
+    sequence::{preceded, terminated}
 };
 
+use crate::idl::common::{ws, ws1};
+use crate::idl::endpoint::{Endpoint, parse_endpoint};
 use crate::idl::r#enum::{Enum, parse_enum};
 use crate::idl::fieldset::{Fieldset, parse_fieldset};
 use crate::idl::operation::{Operation, parse_operation};
@@ -18,6 +20,7 @@ pub enum DocumentPart {
     Struct(Struct),
     Fieldset(Fieldset),
     Operation(Operation),
+    Endpoint(Endpoint),
     Service(Service)
 }
 
@@ -31,19 +34,39 @@ fn parse_document_part(input: &str) -> IResult<&str, DocumentPart> {
         map(parse_enum, DocumentPart::Enum),
         map(parse_fieldset, DocumentPart::Fieldset),
         map(parse_operation, DocumentPart::Operation),
-        map(parse_service, DocumentPart::Service),
         map(parse_struct, DocumentPart::Struct),
+        map(parse_endpoint, DocumentPart::Endpoint),
+        map(parse_service, DocumentPart::Service),
     ))(input)
 }
 
-pub fn parse_document(input: &str) -> IResult<&str, Document> {
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    let (input, parts) = separated_list(take_while1(char::is_whitespace), parse_document_part)(input)?;
-    let (input, _) = take_while(char::is_whitespace)(input)?;
-    // FIXME fail if there is remaining input
-    Ok((input, Document {
-        parts: parts
-    }))
+fn _parse_document(input: &str) -> IResult<&str, Document> {
+    map(
+        preceded(ws,
+            terminated(
+                separated_list(ws1, parse_document_part),
+                ws
+            )
+        ),
+        |parts| Document {
+            parts: parts
+        }
+    )(input)
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ParseError<'a> {
+    Nom(nom::Err<(&'a str, nom::error::ErrorKind)>),
+    TrailingGarbage(String)
+}
+
+pub fn parse_document<'a>(input: &'a str) -> Result<Document, ParseError> {
+    let result = _parse_document(input);
+    match result {
+        Ok(("", document)) => Ok(document),
+        Ok((garbage, _)) => Err(ParseError::TrailingGarbage(garbage.to_string())),
+        Err(error) => Err(ParseError::Nom(error))
+    }
 }
 
 #[test]
@@ -60,6 +83,8 @@ fn test_parse_document() {
         struct Group {
             name: String
         }
+        endpoint ping()
+        endpoint get_version() -> String
         service Pinger {
             ping,
             get_version
@@ -67,7 +92,7 @@ fn test_parse_document() {
     ";
     assert_eq!(
         parse_document(content),
-        Ok(("", Document {
+        Ok(Document {
             parts: vec![
                 DocumentPart::Struct(Struct {
                     name: "Person".to_string(),
@@ -102,6 +127,18 @@ fn test_parse_document() {
                         },
                     ],
                 }),
+                DocumentPart::Endpoint(Endpoint {
+                    name: "ping".to_string(),
+                    request: None,
+                    response: None,
+                    error: None,
+                }),
+                DocumentPart::Endpoint(Endpoint {
+                    name: "get_version".to_string(),
+                    request: None,
+                    response: Some("String".to_string()),
+                    error: None,
+                }),
                 DocumentPart::Service(Service {
                     name: "Pinger".to_string(),
                     operations: vec![
@@ -110,6 +147,6 @@ fn test_parse_document() {
                     ],
                 }),
             ]
-        }))
+        })
     )
 }

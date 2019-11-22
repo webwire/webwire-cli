@@ -10,6 +10,7 @@ use nom::{
 
 use crate::idl::common::{
     ws,
+    ws1,
     parse_identifier,
     parse_field_separator,
     trailing_comma,
@@ -25,8 +26,8 @@ pub fn parse_enum(input: &str) -> IResult<&str, Enum> {
     map(
         pair(
             preceded(
-                tag("enum"),
-                parse_identifier
+                terminated(tag("enum"), ws1),
+                parse_identifier,
             ),
             parse_enum_values
         ),
@@ -43,7 +44,7 @@ fn parse_enum_values(input: &str) -> IResult<&str, Vec<String>> {
         preceded(
             preceded(ws, char('{')),
             cut(terminated(
-                separated_list(parse_field_separator, parse_identifier),
+                separated_list(parse_field_separator, preceded(ws, parse_identifier)),
                 preceded(trailing_comma, preceded(ws, char('}')))
             ))
         )
@@ -72,7 +73,7 @@ fn test_parse_enum_0() {
 }
 
 #[test]
-fn test_parse_gender_1() {
+fn test_parse_enum_1() {
     let contents = [
         // minimal whitespace
         "enum OneThing{Thing}",
@@ -94,7 +95,7 @@ fn test_parse_gender_1() {
 }
 
 #[test]
-fn test_parse_fieldset_2() {
+fn test_parse_enum_2() {
     let contents = [
         // minimal whitespace
         "enum Direction{Left,Right}",
@@ -103,9 +104,9 @@ fn test_parse_fieldset_2() {
         // whitespace variants
         "enum Direction {Left,Right}",
         "enum Direction{ Left,Right}",
-        "enum Direction{Left,Right }",
-        "enum Direction{Left, Right}",
         "enum Direction{Left ,Right}",
+        "enum Direction{Left, Right}",
+        "enum Direction{Left,Right }",
     ];
     for content in contents.iter() {
         assert_eq!(

@@ -31,8 +31,8 @@ pub struct Fieldset {
 fn parse_field(input: &str) -> IResult<&str, Field> {
     map(
         pair(
-            parse_identifier,
-            opt(char('?'))
+            preceded(ws, parse_identifier),
+            preceded(ws, opt(char('?')))
         ),
         |(name, optional)| Field {
             name: name.to_string(),
@@ -57,7 +57,7 @@ pub fn parse_fieldset(input: &str) -> IResult<&str, Fieldset> {
             terminated(tag("fieldset"), ws1),
             cut(pair(
                 separated_pair(
-                    parse_identifier,
+                    preceded(ws, parse_identifier),
                     preceded(ws, tag("for")),
                     preceded(ws1, parse_identifier),
                 ),
@@ -129,9 +129,10 @@ fn test_parse_fieldset_2() {
         // whitespace variants
         "fieldset PersonName for Person {name,age?}",
         "fieldset PersonName for Person{ name,age?}",
+        "fieldset PersonName for Person{name ,age?}",
+        "fieldset PersonName for Person{name, age?}",
+        "fieldset PersonName for Person{name,age ?}",
         "fieldset PersonName for Person{name,age? }",
-        "fieldset PersonName for Person{name, age? }",
-        "fieldset PersonName for Person { name, age? }",
     ];
     for content in contents.iter() {
         assert_eq!(

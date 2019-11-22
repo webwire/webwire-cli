@@ -26,7 +26,7 @@ fn parse_operations(input: &str) -> IResult<&str, Vec<String>> {
     preceded(
         preceded(ws, char('{')),
         cut(terminated(
-            separated_list(parse_field_separator, parse_identifier),
+            separated_list(parse_field_separator, preceded(ws, parse_identifier)),
             preceded(trailing_comma, preceded(ws, char('}')))
         ))
     )(input)

@@ -1,5 +1,6 @@
 mod common;
 mod document;
+mod endpoint;
 mod r#enum;
 mod fieldset;
 mod operation;
@@ -9,4 +10,13 @@ mod r#struct;
 mod r#type;
 mod value;
 
-pub use document::{Document, parse_document};
+pub use document::{Document, DocumentPart, parse_document};
+pub use endpoint::Endpoint;
+pub use r#enum::Enum;
+pub use fieldset::{Fieldset, Field as FieldsetField};
+pub use operation::Operation;
+pub use field_option::FieldOption;
+pub use service::Service;
+pub use r#struct::{Struct, Field};
+pub use r#type::Type;
+pub use value::Value;
