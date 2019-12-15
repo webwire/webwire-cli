@@ -3,6 +3,7 @@ mod document;
 mod endpoint;
 mod r#enum;
 mod fieldset;
+mod namespace;
 mod operation;
 mod field_option;
 mod service;
@@ -10,8 +11,9 @@ mod r#struct;
 mod r#type;
 mod value;
 
-pub use document::{Document, DocumentPart, parse_document};
+pub use document::{Document, parse_document};
 pub use endpoint::Endpoint;
+pub use namespace::{Namespace, NamespacePart};
 pub use r#enum::Enum;
 pub use fieldset::{Fieldset, Field as FieldsetField};
 pub use operation::Operation;

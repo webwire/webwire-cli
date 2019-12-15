@@ -1,54 +1,109 @@
-use crate::idl::namespace::{NamespacePart, parse_namespace_content};
+use nom::{
+    branch::alt,
+    bytes::complete::{tag},
+    character::complete::char,
+    combinator::{cut, map},
+    IResult,
+    multi::separated_list,
+    sequence::{pair, preceded, terminated}
+};
+
+use crate::idl::common::{parse_identifier, ws, ws1};
+use crate::idl::endpoint::{Endpoint, parse_endpoint};
+use crate::idl::r#enum::{Enum, parse_enum};
+use crate::idl::fieldset::{Fieldset, parse_fieldset};
+use crate::idl::operation::{Operation, parse_operation};
+use crate::idl::service::{Service, parse_service};
+use crate::idl::r#struct::{Struct, parse_struct};
 
 #[derive(Debug, PartialEq)]
-pub struct Document {
-    pub parts: Vec<NamespacePart>
+pub enum NamespacePart {
+    Enum(Enum),
+    Struct(Struct),
+    Fieldset(Fieldset),
+    Operation(Operation),
+    Endpoint(Endpoint),
+    Service(Service),
+    Namespace(Namespace)
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ParseError<'a> {
-    Nom(nom::Err<(&'a str, nom::error::ErrorKind)>),
-    TrailingGarbage(String)
+pub struct Namespace {
+    pub name: String,
+    pub parts: Vec<NamespacePart>,
 }
 
-pub fn parse_document<'a>(input: &'a str) -> Result<Document, ParseError> {
-    let result = parse_namespace_content(input);
-    match result {
-        Ok(("", parts)) => Ok(Document {
+fn parse_namespace_part(input: &str) -> IResult<&str, NamespacePart> {
+    alt((
+        map(parse_enum, NamespacePart::Enum),
+        map(parse_fieldset, NamespacePart::Fieldset),
+        map(parse_operation, NamespacePart::Operation),
+        map(parse_struct, NamespacePart::Struct),
+        map(parse_endpoint, NamespacePart::Endpoint),
+        map(parse_service, NamespacePart::Service),
+        map(parse_namespace, NamespacePart::Namespace),
+    ))(input)
+}
+
+pub fn parse_namespace_content(input: &str) -> IResult<&str, Vec<NamespacePart>> {
+    preceded(ws,
+        terminated(
+            separated_list(ws1, parse_namespace_part),
+            ws
+        )
+    )(input)
+}
+
+pub fn parse_namespace<'a>(input: &'a str) -> IResult<&str, Namespace> {
+    map(
+        preceded(
+            terminated(tag("namespace"), ws1),
+            cut(pair(
+                parse_identifier,
+                preceded(
+                    preceded(ws, char('{')),
+                    cut(terminated(
+                        parse_namespace_content,
+                        preceded(ws, char('}'))
+                    ))
+                )
+            ))
+        ),
+        |(name, parts)| Namespace {
+            name: name,
             parts: parts
-        }),
-        Ok((garbage, _)) => Err(ParseError::TrailingGarbage(garbage.to_string())),
-        Err(error) => Err(ParseError::Nom(error))
-    }
+        }
+    )(input)
 }
 
 #[test]
-fn test_parse_document() {
+fn test_parse_namespace() {
     use crate::idl::field_option::FieldOption;
-    use crate::idl::namespace::NamespacePart;
-    use crate::idl::r#struct::{Field, Struct};
+    use crate::idl::r#struct::Field;
     use crate::idl::r#type::Type;
     use crate::idl::value::Value;
-    use crate::idl::service::{Service, ServiceEndpoint};
-    use crate::idl::endpoint::Endpoint;
+    use crate::idl::service::ServiceEndpoint;
     let content = "
-        struct Person {
-            name: String (length=1..50),
-            age: Integer
-        }
-        struct Group {
-            name: String
-        }
-        endpoint ping()
-        endpoint get_version() -> String
-        service Pinger {
-            in ping,
-            inout get_version
+        namespace test {
+            struct Person {
+                name: String (length=1..50),
+                age: Integer
+            }
+            struct Group {
+                name: String
+            }
+            endpoint ping()
+            endpoint get_version() -> String
+            service Pinger {
+                in ping,
+                inout get_version
+            }
         }
     ";
     assert_eq!(
-        parse_document(content),
-        Ok(Document {
+        parse_namespace(content),
+        Ok(("", Namespace {
+            name: "test".to_string(),
             parts: vec![
                 NamespacePart::Struct(Struct {
                     name: "Person".to_string(),
@@ -111,6 +166,6 @@ fn test_parse_document() {
                     ],
                 }),
             ]
-        })
+        }))
     )
 }
