@@ -2,18 +2,14 @@ use nom::{
     IResult,
     bytes::complete::tag,
     character::complete::char,
-    combinator::{cut, map, opt},
-    error::context,
-    multi::separated_list,
+    combinator::{map, opt},
     sequence::{pair, preceded, terminated, tuple},
 };
 
 use crate::idl::common::{
     ws,
     ws1,
-    parse_identifier,
-    parse_field_separator,
-    trailing_comma,
+    parse_identifier
 };
 
 #[derive(Debug, PartialEq)]
