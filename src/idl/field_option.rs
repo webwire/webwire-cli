@@ -1,22 +1,14 @@
 use nom::{
-    IResult,
     character::complete::char,
     combinator::{cut, map},
-    error::{context},
+    error::context,
     multi::separated_list,
-    sequence::{ preceded, separated_pair, terminated}
+    sequence::{preceded, separated_pair, terminated},
+    IResult,
 };
 
-use crate::idl::common::{
-    parse_identifier,
-    parse_field_separator,
-    trailing_comma,
-    ws,
-};
-use crate::idl::r#value::{
-    Value,
-    parse_value,
-};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws};
+use crate::idl::r#value::{parse_value, Value};
 
 #[derive(Debug, PartialEq)]
 pub struct FieldOption {
@@ -31,9 +23,9 @@ pub fn parse_field_options(input: &str) -> IResult<&str, Vec<FieldOption>> {
             preceded(ws, char('(')),
             cut(terminated(
                 separated_list(parse_field_separator, parse_field_option),
-                preceded(trailing_comma, preceded(ws, char(')')))
-            ))
-        )
+                preceded(trailing_comma, preceded(ws, char(')'))),
+            )),
+        ),
     )(input)
 }
 
@@ -46,25 +38,16 @@ fn parse_field_option(input: &str) -> IResult<&str, FieldOption> {
         ),
         |(name, value)| FieldOption {
             name: name,
-            value: value
-        }
+            value: value,
+        },
     )(input)
 }
 
 #[test]
 fn test_parse_field_options_0() {
-    let contents = [
-        "()",
-        "( )",
-        "(,)",
-        "( ,)",
-        "(, )",
-    ];
+    let contents = ["()", "( )", "(,)", "( ,)", "(, )"];
     for content in contents.iter() {
-        assert_eq!(
-            parse_field_options(content),
-            Ok(("", vec![]))
-        );
+        assert_eq!(parse_field_options(content), Ok(("", vec![])));
     }
 }
 
@@ -75,15 +58,18 @@ fn test_parse_field_options_1() {
         "(foo= 42)",
         "(foo=42 )",
         "( foo=42)",
-        "(foo=42,)"
+        "(foo=42,)",
     ];
     for content in contents.iter() {
         assert_eq!(
             parse_field_options(content),
-            Ok(("", vec![FieldOption {
-                name: "foo".to_owned(),
-                value: Value::Integer(42)
-            }]))
+            Ok((
+                "",
+                vec![FieldOption {
+                    name: "foo".to_owned(),
+                    value: Value::Integer(42)
+                }]
+            ))
         );
     }
 }
@@ -100,16 +86,19 @@ fn test_parse_field_options_2() {
     for content in contents.iter() {
         assert_eq!(
             parse_field_options(content),
-            Ok(("", vec![
-                FieldOption {
-                    name: "foo".to_owned(),
-                    value: Value::Integer(42)
-                },
-                FieldOption {
-                    name: "bar".to_owned(),
-                    value: Value::String("epic".to_string())
-                }
-            ]))
+            Ok((
+                "",
+                vec![
+                    FieldOption {
+                        name: "foo".to_owned(),
+                        value: Value::Integer(42)
+                    },
+                    FieldOption {
+                        name: "bar".to_owned(),
+                        value: Value::String("epic".to_string())
+                    }
+                ]
+            ))
         );
     }
 }

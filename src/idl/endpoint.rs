@@ -1,70 +1,61 @@
 use nom::{
-    IResult,
     bytes::complete::tag,
     character::complete::char,
     combinator::{map, opt},
     sequence::{pair, preceded, terminated, tuple},
+    IResult,
 };
 
-use crate::idl::common::{
-    ws,
-    ws1,
-    parse_identifier
-};
+use crate::idl::common::{parse_identifier, ws, ws1};
 
 #[derive(Debug, PartialEq)]
 pub struct Endpoint {
     pub name: String,
     pub request: Option<String>,
     pub response: Option<String>,
-    pub error: Option<String>
+    pub error: Option<String>,
 }
 
 pub fn parse_endpoint(input: &str) -> IResult<&str, Endpoint> {
     map(
         tuple((
-            preceded(
-                tag("endpoint"),
-                preceded(ws1, parse_identifier)
-            ),
+            preceded(tag("endpoint"), preceded(ws1, parse_identifier)),
             preceded(
                 preceded(ws, char('(')),
-                terminated(
-                    opt(preceded(ws, parse_identifier)),
-                    preceded(ws, char(')'))
-                )
+                terminated(opt(preceded(ws, parse_identifier)), preceded(ws, char(')'))),
             ),
-            opt(
-                preceded(
-                    preceded(ws, tag("->")),
-                    pair(
-                        preceded(ws, parse_identifier),
-                        opt(
-                            preceded(ws, preceded(char('|'), preceded(ws,
-                                parse_identifier
-                            )))
-                        )
-                    )
-                )
-            )
+            opt(preceded(
+                preceded(ws, tag("->")),
+                pair(
+                    preceded(ws, parse_identifier),
+                    opt(preceded(
+                        ws,
+                        preceded(char('|'), preceded(ws, parse_identifier)),
+                    )),
+                ),
+            )),
         )),
         |(name, request, response)| {
             if let Some(response) = response {
                 Endpoint {
                     name: name,
                     request: request,
-                    response: if response.0 != "None" { Some(response.0) } else { None },
-                    error: response.1
+                    response: if response.0 != "None" {
+                        Some(response.0)
+                    } else {
+                        None
+                    },
+                    error: response.1,
                 }
             } else {
                 Endpoint {
                     name: name,
                     request: request,
                     response: None,
-                    error: None
+                    error: None,
                 }
             }
-        }
+        },
     )(input)
 }
 
@@ -80,12 +71,15 @@ fn test_parse_endpoint_0() {
     for content in contents.iter() {
         assert_eq!(
             parse_endpoint(content),
-            Ok(("", Endpoint {
-                name: "ping".to_string(),
-                request: None,
-                response: None,
-                error: None
-            }))
+            Ok((
+                "",
+                Endpoint {
+                    name: "ping".to_string(),
+                    request: None,
+                    response: None,
+                    error: None
+                }
+            ))
         )
     }
 }
@@ -103,12 +97,15 @@ fn test_parse_endpoint_1() {
     for content in contents.iter() {
         assert_eq!(
             parse_endpoint(content),
-            Ok(("", Endpoint {
-                name: "notify".to_string(),
-                request: Some("Notification".to_string()),
-                response: None,
-                error: None
-            }))
+            Ok((
+                "",
+                Endpoint {
+                    name: "notify".to_string(),
+                    request: Some("Notification".to_string()),
+                    response: None,
+                    error: None
+                }
+            ))
         )
     }
 }
@@ -126,12 +123,15 @@ fn test_parse_endpoint_2() {
     for content in contents.iter() {
         assert_eq!(
             parse_endpoint(content),
-            Ok(("", Endpoint {
-                name: "get_time".to_string(),
-                request: None,
-                response: Some("Time".to_string()),
-                error: None
-            }))
+            Ok((
+                "",
+                Endpoint {
+                    name: "get_time".to_string(),
+                    request: None,
+                    response: Some("Time".to_string()),
+                    error: None
+                }
+            ))
         )
     }
 }
@@ -150,12 +150,15 @@ fn test_parse_endpoint_3() {
     for content in contents.iter() {
         assert_eq!(
             parse_endpoint(content),
-            Ok(("", Endpoint {
-                name: "no_response".to_string(),
-                request: None,
-                response: None,
-                error: Some("SomeError".to_string())
-            }))
+            Ok((
+                "",
+                Endpoint {
+                    name: "no_response".to_string(),
+                    request: None,
+                    response: None,
+                    error: Some("SomeError".to_string())
+                }
+            ))
         )
     }
 }
@@ -174,12 +177,15 @@ fn test_parse_endpoint_4() {
     for content in contents.iter() {
         assert_eq!(
             parse_endpoint(content),
-            Ok(("", Endpoint {
-                name: "hello".to_string(),
-                request: Some("HelloRequest".to_string()),
-                response: Some("HelloResponse".to_string()),
-                error: Some("HelloError".to_string())
-            }))
+            Ok((
+                "",
+                Endpoint {
+                    name: "hello".to_string(),
+                    request: Some("HelloRequest".to_string()),
+                    response: Some("HelloResponse".to_string()),
+                    error: Some("HelloError".to_string())
+                }
+            ))
         )
     }
 }

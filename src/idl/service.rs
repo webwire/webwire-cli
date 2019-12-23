@@ -1,20 +1,14 @@
 use nom::{
-    IResult,
     branch::alt,
-    bytes::complete::{tag},
+    bytes::complete::tag,
     character::complete::char,
     combinator::{cut, map, opt},
     multi::separated_list,
-    sequence::{pair, preceded, terminated}
+    sequence::{pair, preceded, terminated},
+    IResult,
 };
 
-use crate::idl::common::{
-    ws,
-    ws1,
-    parse_identifier,
-    parse_field_separator,
-    trailing_comma,
-};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1};
 
 #[derive(Debug, PartialEq)]
 pub struct Service {
@@ -26,20 +20,23 @@ pub struct Service {
 pub struct ServiceEndpoint {
     pub in_: bool,
     pub out: bool,
-    pub name: String
+    pub name: String,
 }
 
 fn parse_endpoint(input: &str) -> IResult<&str, ServiceEndpoint> {
     map(
         pair(
-            preceded(ws, terminated(alt((tag("inout"), tag("in"), tag("out"))), ws1)),
-            parse_identifier
+            preceded(
+                ws,
+                terminated(alt((tag("inout"), tag("in"), tag("out"))), ws1),
+            ),
+            parse_identifier,
         ),
         |(inout, name)| ServiceEndpoint {
             in_: inout == "in" || inout == "inout",
             out: inout == "out" || inout == "inout",
-            name: name
-        }
+            name: name,
+        },
     )(input)
 }
 
@@ -48,8 +45,8 @@ fn parse_endpoints(input: &str) -> IResult<&str, Vec<ServiceEndpoint>> {
         preceded(ws, char('{')),
         cut(terminated(
             separated_list(parse_field_separator, parse_endpoint),
-            preceded(opt(preceded(ws, trailing_comma)), preceded(ws, char('}')))
-        ))
+            preceded(opt(preceded(ws, trailing_comma)), preceded(ws, char('}'))),
+        )),
     )(input)
 }
 
@@ -57,15 +54,12 @@ pub fn parse_service(input: &str) -> IResult<&str, Service> {
     map(
         preceded(
             terminated(tag("service"), ws1),
-            cut(pair(
-                parse_identifier,
-                parse_endpoints,
-            ))
+            cut(pair(parse_identifier, parse_endpoints)),
         ),
         |(name, endpoints)| Service {
             name: name,
-            endpoints: endpoints
-        }
+            endpoints: endpoints,
+        },
     )(input)
 }
 
@@ -73,27 +67,36 @@ pub fn parse_service(input: &str) -> IResult<&str, Service> {
 fn test_parse_endpoint() {
     assert_eq!(
         parse_endpoint("in f"),
-        Ok(("", ServiceEndpoint {
-            name: "f".to_string(),
-            in_: true,
-            out: false
-        }))
+        Ok((
+            "",
+            ServiceEndpoint {
+                name: "f".to_string(),
+                in_: true,
+                out: false
+            }
+        ))
     );
     assert_eq!(
         parse_endpoint("out f"),
-        Ok(("", ServiceEndpoint {
-            name: "f".to_string(),
-            in_: false,
-            out: true
-        }))
+        Ok((
+            "",
+            ServiceEndpoint {
+                name: "f".to_string(),
+                in_: false,
+                out: true
+            }
+        ))
     );
     assert_eq!(
         parse_endpoint("inout f"),
-        Ok(("", ServiceEndpoint {
-            name: "f".to_string(),
-            in_: true,
-            out: true
-        }))
+        Ok((
+            "",
+            ServiceEndpoint {
+                name: "f".to_string(),
+                in_: true,
+                out: true
+            }
+        ))
     );
 }
 
@@ -109,10 +112,13 @@ fn test_parse_service_no_endpoints() {
     for content in contents.iter() {
         assert_eq!(
             parse_service(content),
-            Ok(("", Service {
-                name: "Pinger".to_string(),
-                endpoints: vec![],
-            }))
+            Ok((
+                "",
+                Service {
+                    name: "Pinger".to_string(),
+                    endpoints: vec![],
+                }
+            ))
         )
     }
 }
@@ -131,21 +137,24 @@ fn test_parse_service() {
     for content in contents.iter() {
         assert_eq!(
             parse_service(content),
-            Ok(("", Service {
-                name: "Pinger".to_string(),
-                endpoints: vec![
-                    ServiceEndpoint {
-                        name: "ping".to_string(),
-                        in_: true,
-                        out: false
-                    },
-                    ServiceEndpoint {
-                        name: "get_version".to_string(),
-                        in_: true,
-                        out: true
-                    }
-                ],
-            }))
+            Ok((
+                "",
+                Service {
+                    name: "Pinger".to_string(),
+                    endpoints: vec![
+                        ServiceEndpoint {
+                            name: "ping".to_string(),
+                            in_: true,
+                            out: false
+                        },
+                        ServiceEndpoint {
+                            name: "get_version".to_string(),
+                            in_: true,
+                            out: true
+                        }
+                    ],
+                }
+            ))
         )
     }
 }

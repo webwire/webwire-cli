@@ -1,11 +1,11 @@
 extern crate serde_yaml;
 
-use std::collections::BTreeMap as Map;
 use serde_yaml::Error;
+use std::collections::BTreeMap as Map;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringField {
-    max_length: Option<u32>
+    max_length: Option<u32>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -32,7 +32,7 @@ pub enum FieldDetails {
 #[serde(untagged)]
 pub enum Field {
     Name(String),
-    Details(FieldDetails)
+    Details(FieldDetails),
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]

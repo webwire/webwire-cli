@@ -1,40 +1,31 @@
 use nom::{
-    IResult,
     bytes::complete::tag,
     character::complete::char,
     combinator::{cut, map},
     error::context,
     multi::separated_list,
-    sequence::{pair, preceded, terminated}
+    sequence::{pair, preceded, terminated},
+    IResult,
 };
 
-use crate::idl::common::{
-    ws,
-    ws1,
-    parse_identifier,
-    parse_field_separator,
-    trailing_comma,
-};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1};
 
 #[derive(Debug, PartialEq)]
 pub struct Enum {
     pub name: String,
-    pub values: Vec<String>
+    pub values: Vec<String>,
 }
 
 pub fn parse_enum(input: &str) -> IResult<&str, Enum> {
     map(
         pair(
-            preceded(
-                terminated(tag("enum"), ws1),
-                parse_identifier,
-            ),
-            parse_enum_values
+            preceded(terminated(tag("enum"), ws1), parse_identifier),
+            parse_enum_values,
         ),
         |t| Enum {
             name: t.0.to_string(),
-            values: t.1
-        }
+            values: t.1,
+        },
     )(input)
 }
 
@@ -45,9 +36,9 @@ fn parse_enum_values(input: &str) -> IResult<&str, Vec<String>> {
             preceded(ws, char('{')),
             cut(terminated(
                 separated_list(parse_field_separator, preceded(ws, parse_identifier)),
-                preceded(trailing_comma, preceded(ws, char('}')))
-            ))
-        )
+                preceded(trailing_comma, preceded(ws, char('}'))),
+            )),
+        ),
     )(input)
 }
 
@@ -64,10 +55,13 @@ fn test_parse_enum_0() {
     for content in contents.iter() {
         assert_eq!(
             parse_enum(content),
-            Ok(("", Enum {
-                name: "Nothing".to_string(),
-                values: vec![],
-            }))
+            Ok((
+                "",
+                Enum {
+                    name: "Nothing".to_string(),
+                    values: vec![],
+                }
+            ))
         )
     }
 }
@@ -86,10 +80,13 @@ fn test_parse_enum_1() {
     for content in contents.iter() {
         assert_eq!(
             parse_enum(content),
-            Ok(("", Enum {
-                name: "OneThing".to_string(),
-                values: vec!["Thing".to_string()],
-            }))
+            Ok((
+                "",
+                Enum {
+                    name: "OneThing".to_string(),
+                    values: vec!["Thing".to_string()],
+                }
+            ))
         )
     }
 }
@@ -111,10 +108,13 @@ fn test_parse_enum_2() {
     for content in contents.iter() {
         assert_eq!(
             parse_enum(content),
-            Ok(("", Enum {
-                name: "Direction".to_string(),
-                values: vec!["Left".to_string(), "Right".to_string()],
-            }))
+            Ok((
+                "",
+                Enum {
+                    name: "Direction".to_string(),
+                    values: vec!["Left".to_string(), "Right".to_string()],
+                }
+            ))
         )
     }
 }

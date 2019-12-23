@@ -73,4 +73,3 @@ fn test_schema_loader() {
         Err(error) => assert!(false, format!("{}", error)),
     }
 }
-

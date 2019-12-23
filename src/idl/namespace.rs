@@ -1,20 +1,20 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag},
+    bytes::complete::tag,
     character::complete::char,
     combinator::{cut, map},
-    IResult,
     multi::separated_list,
-    sequence::{pair, preceded, terminated}
+    sequence::{pair, preceded, terminated},
+    IResult,
 };
 
 use crate::idl::common::{parse_identifier, ws, ws1};
-use crate::idl::endpoint::{Endpoint, parse_endpoint};
-use crate::idl::r#enum::{Enum, parse_enum};
-use crate::idl::fieldset::{Fieldset, parse_fieldset};
-use crate::idl::operation::{Operation, parse_operation};
-use crate::idl::service::{Service, parse_service};
-use crate::idl::r#struct::{Struct, parse_struct};
+use crate::idl::endpoint::{parse_endpoint, Endpoint};
+use crate::idl::fieldset::{parse_fieldset, Fieldset};
+use crate::idl::operation::{parse_operation, Operation};
+use crate::idl::r#enum::{parse_enum, Enum};
+use crate::idl::r#struct::{parse_struct, Struct};
+use crate::idl::service::{parse_service, Service};
 
 #[derive(Debug, PartialEq)]
 pub enum NamespacePart {
@@ -24,7 +24,7 @@ pub enum NamespacePart {
     Operation(Operation),
     Endpoint(Endpoint),
     Service(Service),
-    Namespace(Namespace)
+    Namespace(Namespace),
 }
 
 #[derive(Debug, PartialEq)]
@@ -46,11 +46,9 @@ fn parse_namespace_part(input: &str) -> IResult<&str, NamespacePart> {
 }
 
 pub fn parse_namespace_content(input: &str) -> IResult<&str, Vec<NamespacePart>> {
-    preceded(ws,
-        terminated(
-            separated_list(ws1, parse_namespace_part),
-            ws
-        )
+    preceded(
+        ws,
+        terminated(separated_list(ws1, parse_namespace_part), ws),
     )(input)
 }
 
@@ -62,17 +60,14 @@ pub fn parse_namespace<'a>(input: &'a str) -> IResult<&str, Namespace> {
                 parse_identifier,
                 preceded(
                     preceded(ws, char('{')),
-                    cut(terminated(
-                        parse_namespace_content,
-                        preceded(ws, char('}'))
-                    ))
-                )
-            ))
+                    cut(terminated(parse_namespace_content, preceded(ws, char('}')))),
+                ),
+            )),
         ),
         |(name, parts)| Namespace {
             name: name,
-            parts: parts
-        }
+            parts: parts,
+        },
     )(input)
 }
 
@@ -81,8 +76,8 @@ fn test_parse_namespace() {
     use crate::idl::field_option::FieldOption;
     use crate::idl::r#struct::Field;
     use crate::idl::r#type::Type;
-    use crate::idl::value::Value;
     use crate::idl::service::ServiceEndpoint;
+    use crate::idl::value::Value;
     let content = "
         namespace test {
             struct Person {
@@ -102,70 +97,69 @@ fn test_parse_namespace() {
     ";
     assert_eq!(
         parse_namespace(content),
-        Ok(("", Namespace {
-            name: "test".to_string(),
-            parts: vec![
-                NamespacePart::Struct(Struct {
-                    name: "Person".to_string(),
-                    fields: vec![
-                        Field {
-                            name: "name".to_string(),
-                            type_: Type::Named("String".to_string()),
-                            optional: false,
-                            options: vec![
-                                FieldOption {
+        Ok((
+            "",
+            Namespace {
+                name: "test".to_string(),
+                parts: vec![
+                    NamespacePart::Struct(Struct {
+                        name: "Person".to_string(),
+                        fields: vec![
+                            Field {
+                                name: "name".to_string(),
+                                type_: Type::Named("String".to_string()),
+                                optional: false,
+                                options: vec![FieldOption {
                                     name: "length".to_string(),
                                     value: Value::Range(Some(1), Some(50))
-                                }
-                            ],
-                        },
-                        Field {
-                            name: "age".to_string(),
-                            type_: Type::Named("Integer".to_string()),
-                            optional: false,
-                            options: vec![],
-                        },
-                    ],
-                }),
-                NamespacePart::Struct(Struct {
-                    name: "Group".to_string(),
-                    fields: vec![
-                        Field {
+                                }],
+                            },
+                            Field {
+                                name: "age".to_string(),
+                                type_: Type::Named("Integer".to_string()),
+                                optional: false,
+                                options: vec![],
+                            },
+                        ],
+                    }),
+                    NamespacePart::Struct(Struct {
+                        name: "Group".to_string(),
+                        fields: vec![Field {
                             name: "name".to_string(),
                             type_: Type::Named("String".to_string()),
                             optional: false,
                             options: vec![],
-                        },
-                    ],
-                }),
-                NamespacePart::Endpoint(Endpoint {
-                    name: "ping".to_string(),
-                    request: None,
-                    response: None,
-                    error: None,
-                }),
-                NamespacePart::Endpoint(Endpoint {
-                    name: "get_version".to_string(),
-                    request: None,
-                    response: Some("String".to_string()),
-                    error: None,
-                }),
-                NamespacePart::Service(Service {
-                    name: "Pinger".to_string(),
-                    endpoints: vec![
-                        ServiceEndpoint {
-                            name: "ping".to_string(),
-                            in_: true,
-                            out: false
-                        },
-                        ServiceEndpoint {
-                            name: "get_version".to_string(),
-                            in_: true,
-                            out: true
-                        }
-                    ],
-                }),
-            ]
-        }))
+                        },],
+                    }),
+                    NamespacePart::Endpoint(Endpoint {
+                        name: "ping".to_string(),
+                        request: None,
+                        response: None,
+                        error: None,
+                    }),
+                    NamespacePart::Endpoint(Endpoint {
+                        name: "get_version".to_string(),
+                        request: None,
+                        response: Some("String".to_string()),
+                        error: None,
+                    }),
+                    NamespacePart::Service(Service {
+                        name: "Pinger".to_string(),
+                        endpoints: vec![
+                            ServiceEndpoint {
+                                name: "ping".to_string(),
+                                in_: true,
+                                out: false
+                            },
+                            ServiceEndpoint {
+                                name: "get_version".to_string(),
+                                in_: true,
+                                out: true
+                            }
+                        ],
+                    }),
+                ]
+            }
+        ))
     )
 }

@@ -1,24 +1,18 @@
 use nom::{
-    IResult,
-    bytes::complete::{tag},
+    bytes::complete::tag,
     character::complete::char,
     combinator::{cut, map, opt},
     multi::separated_list,
-    sequence::{pair, preceded, separated_pair, terminated}
+    sequence::{pair, preceded, separated_pair, terminated},
+    IResult,
 };
 
-use crate::idl::common::{
-    parse_identifier,
-    parse_field_separator,
-    trailing_comma,
-    ws,
-    ws1,
-};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1};
 
 #[derive(Debug, PartialEq)]
 pub struct Field {
     pub name: String,
-    pub optional: bool
+    pub optional: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -30,14 +24,11 @@ pub struct Fieldset {
 
 fn parse_field(input: &str) -> IResult<&str, Field> {
     map(
-        pair(
-            preceded(ws, parse_identifier),
-            preceded(ws, opt(char('?')))
-        ),
+        pair(preceded(ws, parse_identifier), preceded(ws, opt(char('?')))),
         |(name, optional)| Field {
             name: name.to_string(),
-            optional: optional != None
-        }
+            optional: optional != None,
+        },
     )(input)
 }
 
@@ -46,8 +37,8 @@ fn parse_fields(input: &str) -> IResult<&str, Vec<Field>> {
         preceded(ws, char('{')),
         cut(terminated(
             separated_list(parse_field_separator, parse_field),
-            preceded(trailing_comma, preceded(ws, char('}')))
-        ))
+            preceded(trailing_comma, preceded(ws, char('}'))),
+        )),
     )(input)
 }
 
@@ -61,17 +52,16 @@ pub fn parse_fieldset(input: &str) -> IResult<&str, Fieldset> {
                     preceded(ws, tag("for")),
                     preceded(ws1, parse_identifier),
                 ),
-                parse_fields
-            ))
+                parse_fields,
+            )),
         ),
         |((name, struct_name), fields)| Fieldset {
             name: name.to_string(),
             struct_name: struct_name.to_string(),
-            fields: fields
-        }
+            fields: fields,
+        },
     )(input)
 }
-
 
 #[test]
 fn test_parse_fieldset_0() {
@@ -86,11 +76,14 @@ fn test_parse_fieldset_0() {
     for content in contents.iter() {
         assert_eq!(
             parse_fieldset(content),
-            Ok(("", Fieldset {
-                name: "PersonName".to_string(),
-                struct_name: "Person".to_string(),
-                fields: vec![],
-            }))
+            Ok((
+                "",
+                Fieldset {
+                    name: "PersonName".to_string(),
+                    struct_name: "Person".to_string(),
+                    fields: vec![],
+                }
+            ))
         )
     }
 }
@@ -108,13 +101,17 @@ fn test_parse_fieldset_1() {
     for content in contents.iter() {
         assert_eq!(
             parse_fieldset(content),
-            Ok(("", Fieldset {
-                name: "PersonName".to_string(),
-                struct_name: "Person".to_string(),
-                fields: vec![
-                    Field { name: "name".to_string(), optional: false },
-                ],
-            }))
+            Ok((
+                "",
+                Fieldset {
+                    name: "PersonName".to_string(),
+                    struct_name: "Person".to_string(),
+                    fields: vec![Field {
+                        name: "name".to_string(),
+                        optional: false
+                    },],
+                }
+            ))
         )
     }
 }
@@ -137,14 +134,23 @@ fn test_parse_fieldset_2() {
     for content in contents.iter() {
         assert_eq!(
             parse_fieldset(content),
-            Ok(("", Fieldset {
-                name: "PersonName".to_string(),
-                struct_name: "Person".to_string(),
-                fields: vec![
-                    Field { name: "name".to_string(), optional: false },
-                    Field { name: "age".to_string(), optional: true },
-                ],
-            }))
+            Ok((
+                "",
+                Fieldset {
+                    name: "PersonName".to_string(),
+                    struct_name: "Person".to_string(),
+                    fields: vec![
+                        Field {
+                            name: "name".to_string(),
+                            optional: false
+                        },
+                        Field {
+                            name: "age".to_string(),
+                            optional: true
+                        },
+                    ],
+                }
+            ))
         )
     }
 }

@@ -1,16 +1,13 @@
 use nom::{
-    IResult,
     branch::alt,
     character::complete::char,
     combinator::{cut, map},
     error::context,
-    sequence::{preceded, separated_pair, terminated}
+    sequence::{preceded, separated_pair, terminated},
+    IResult,
 };
 
-use crate::idl::common::{
-    parse_identifier,
-    ws,
-};
+use crate::idl::common::{parse_identifier, ws};
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
@@ -20,14 +17,15 @@ pub enum Type {
 }
 
 fn parse_type_array(input: &str) -> IResult<&str, Type> {
-    context("array",
+    context(
+        "array",
         preceded(
             char('['),
             cut(terminated(
                 preceded(ws, map(parse_identifier, Type::Array)),
-                preceded(ws, char(']'))
-            ))
-        )
+                preceded(ws, char(']')),
+            )),
+        ),
     )(input)
 }
 
@@ -38,40 +36,37 @@ fn parse_type_map_inner(input: &str) -> IResult<&str, Type> {
             cut(preceded(ws, char(':'))),
             preceded(ws, parse_identifier),
         ),
-        |types| Type::Map(types.0.to_string(), types.1.to_string())
+        |types| Type::Map(types.0.to_string(), types.1.to_string()),
     )(input)
 }
 
 fn parse_type_map(input: &str) -> IResult<&str, Type> {
-    context("map",
+    context(
+        "map",
         preceded(
             char('{'),
             cut(terminated(
                 preceded(ws, parse_type_map_inner),
-                preceded(ws, char('}'))
-            ))
-        )
+                preceded(ws, char('}')),
+            )),
+        ),
     )(input)
 }
 
 pub fn parse_type(input: &str) -> IResult<&str, Type> {
-    preceded(ws,
+    preceded(
+        ws,
         alt((
             map(parse_identifier, Type::Named),
             parse_type_array,
             parse_type_map,
-        ))
+        )),
     )(input)
 }
 
 #[test]
 fn test_parse_type_array() {
-    let contents = [
-        "[UUID]",
-        "[ UUID]",
-        "[UUID ]",
-        "[ UUID ]",
-    ];
+    let contents = ["[UUID]", "[ UUID]", "[UUID ]", "[ UUID ]"];
     for content in contents.iter() {
         assert_eq!(
             parse_type(content),
@@ -93,11 +88,7 @@ fn test_parse_type_map() {
     for content in contents.iter() {
         assert_eq!(
             parse_type(content),
-            Ok(("", Type::Map(
-                "UUID".to_string(),
-                "String".to_string()
-            )))
+            Ok(("", Type::Map("UUID".to_string(), "String".to_string())))
         );
     }
 }
-

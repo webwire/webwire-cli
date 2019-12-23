@@ -1,28 +1,16 @@
 use nom::{
-    IResult,
-    bytes::complete::{tag,},
+    bytes::complete::tag,
     character::complete::char,
     combinator::{cut, map, opt},
-    error::{context},
+    error::context,
     multi::separated_list,
-    sequence::{pair, preceded, separated_pair, terminated}
+    sequence::{pair, preceded, separated_pair, terminated},
+    IResult,
 };
 
-use crate::idl::common::{
-    parse_identifier,
-    parse_field_separator,
-    trailing_comma,
-    ws,
-    ws1,
-};
-use crate::idl::r#type::{
-    Type,
-    parse_type,
-};
-use crate::idl::field_option:: {
-    FieldOption,
-    parse_field_options,
-};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1};
+use crate::idl::field_option::{parse_field_options, FieldOption};
+use crate::idl::r#type::{parse_type, Type};
 
 #[derive(Debug, PartialEq)]
 pub struct Struct {
@@ -41,16 +29,13 @@ pub struct Field {
 pub fn parse_struct(input: &str) -> IResult<&str, Struct> {
     map(
         pair(
-            preceded(
-                tag("struct"),
-                preceded(ws1, parse_identifier)
-            ),
-            parse_fields
+            preceded(tag("struct"), preceded(ws1, parse_identifier)),
+            parse_fields,
         ),
         |t| Struct {
             name: t.0.to_string(),
-            fields: t.1
-        }
+            fields: t.1,
+        },
     )(input)
 }
 
@@ -61,50 +46,47 @@ fn parse_fields(input: &str) -> IResult<&str, Vec<Field>> {
             preceded(ws, char('{')),
             cut(terminated(
                 separated_list(parse_field_separator, parse_field),
-                preceded(trailing_comma, preceded(ws, char('}')))
-            ))
-        )
+                preceded(trailing_comma, preceded(ws, char('}'))),
+            )),
+        ),
     )(input)
 }
 
 fn parse_field(input: &str) -> IResult<&str, Field> {
     map(
         separated_pair(
-            pair(
-                preceded(ws, parse_identifier),
-                opt(preceded(ws, char('?')))
-            ),
+            pair(preceded(ws, parse_identifier), opt(preceded(ws, char('?')))),
             preceded(ws, char(':')),
-            pair(
-                parse_type,
-                opt(parse_field_options),
-            )
+            pair(parse_type, opt(parse_field_options)),
         ),
         |((name, optional), (type_, options))| Field {
             name: name,
             optional: optional != None,
             type_: type_,
-            options: if let Some(options) = options { options } else { vec![] },
-        }
+            options: if let Some(options) = options {
+                options
+            } else {
+                vec![]
+            },
+        },
     )(input)
 }
 
 #[test]
 fn test_parse_field() {
-    let contents = [
-        "foo:FooType",
-        "foo: FooType",
-        "foo : FooType",
-    ];
+    let contents = ["foo:FooType", "foo: FooType", "foo : FooType"];
     for content in contents.iter() {
         assert_eq!(
             parse_field(content),
-            Ok(("", Field {
-                name: "foo".to_string(),
-                type_: Type::Named("FooType".to_string()),
-                optional: false,
-                options: vec![],
-            }))
+            Ok((
+                "",
+                Field {
+                    name: "foo".to_string(),
+                    type_: Type::Named("FooType".to_string()),
+                    optional: false,
+                    options: vec![],
+                }
+            ))
         );
     }
 }
@@ -120,12 +102,15 @@ fn test_parse_field_optional() {
     for content in contents.iter() {
         assert_eq!(
             parse_field(content),
-            Ok(("", Field {
-                name: "foo".to_string(),
-                type_: Type::Named("FooType".to_string()),
-                optional: true,
-                options: vec![],
-            }))
+            Ok((
+                "",
+                Field {
+                    name: "foo".to_string(),
+                    type_: Type::Named("FooType".to_string()),
+                    optional: true,
+                    options: vec![],
+                }
+            ))
         );
     }
 }
@@ -150,17 +135,18 @@ fn test_parse_field_with_options() {
     for content in contents.iter() {
         assert_eq!(
             parse_field(content),
-            Ok(("", Field {
-                name: "name".to_string(),
-                type_: Type::Named("String".to_string()),
-                optional: false,
-                options: vec![
-                    FieldOption {
+            Ok((
+                "",
+                Field {
+                    name: "name".to_string(),
+                    type_: Type::Named("String".to_string()),
+                    optional: false,
+                    options: vec![FieldOption {
                         name: "length".to_string(),
                         value: Value::Range(Some(2), Some(50)),
-                    }
-                ],
-            }))
+                    }],
+                }
+            ))
         );
     }
 }
@@ -181,35 +167,27 @@ fn test_parse_array_field_with_options() {
     for content in contents.iter() {
         assert_eq!(
             parse_field(content),
-            Ok(("", Field {
-                name: "items".to_string(),
-                type_: Type::Array("String".to_string()),
-                optional: false,
-                options: vec![
-                    FieldOption {
+            Ok((
+                "",
+                Field {
+                    name: "items".to_string(),
+                    type_: Type::Array("String".to_string()),
+                    optional: false,
+                    options: vec![FieldOption {
                         name: "length".to_string(),
                         value: Value::Range(Some(0), Some(32)),
-                    }
-                ],
-            }))
+                    }],
+                }
+            ))
         );
     }
 }
 
 #[test]
 fn test_parse_fields_0() {
-    let contents = [
-        "{}",
-        "{ }",
-        "{,}",
-        "{ ,}",
-        "{, }",
-    ];
+    let contents = ["{}", "{ }", "{,}", "{ ,}", "{, }"];
     for content in contents.iter() {
-        assert_eq!(
-            parse_fields(content),
-            Ok(("", vec![]))
-        );
+        assert_eq!(parse_fields(content), Ok(("", vec![])));
     }
 }
 
@@ -220,17 +198,20 @@ fn test_parse_fields_1() {
         "{foo: Foo}",
         "{foo:Foo }",
         "{ foo:Foo}",
-        "{foo:Foo,}"
+        "{foo:Foo,}",
     ];
     for content in contents.iter() {
         assert_eq!(
             parse_fields(content),
-            Ok(("", vec![Field {
-                name: "foo".to_owned(),
-                type_: Type::Named("Foo".to_owned()),
-                optional: false,
-                options: vec![],
-            }]))
+            Ok((
+                "",
+                vec![Field {
+                    name: "foo".to_owned(),
+                    type_: Type::Named("Foo".to_owned()),
+                    optional: false,
+                    options: vec![],
+                }]
+            ))
         );
     }
 }
@@ -247,20 +228,23 @@ fn test_parse_fields_2() {
     for content in contents.iter() {
         assert_eq!(
             parse_fields(content),
-            Ok(("", vec![
-                Field {
-                    name: "foo".to_owned(),
-                    type_: Type::Named("Foo".to_owned()),
-                    optional: false,
-                    options: vec![],
-                },
-                Field {
-                    name: "bar".to_owned(),
-                    type_: Type::Named("Bar".to_owned()),
-                    optional: false,
-                    options: vec![],
-                }
-            ]))
+            Ok((
+                "",
+                vec![
+                    Field {
+                        name: "foo".to_owned(),
+                        type_: Type::Named("Foo".to_owned()),
+                        optional: false,
+                        options: vec![],
+                    },
+                    Field {
+                        name: "bar".to_owned(),
+                        type_: Type::Named("Bar".to_owned()),
+                        optional: false,
+                        options: vec![],
+                    }
+                ]
+            ))
         );
     }
 }
@@ -276,10 +260,13 @@ fn test_parse_struct() {
     for content in contents.iter() {
         assert_eq!(
             parse_struct(content),
-            Ok(("", Struct {
-                name: "Pinger".to_string(),
-                fields: vec![],
-            }))
+            Ok((
+                "",
+                Struct {
+                    name: "Pinger".to_string(),
+                    fields: vec![],
+                }
+            ))
         );
     }
 }
@@ -287,28 +274,25 @@ fn test_parse_struct() {
 #[test]
 fn test_parse_struct_field_options() {
     use crate::idl::value::Value;
-    let contents = [
-        "struct Person { name: [String] (length=1..50) }",
-    ];
+    let contents = ["struct Person { name: [String] (length=1..50) }"];
     for content in contents.iter() {
         assert_eq!(
             parse_struct(content),
-            Ok(("", Struct {
-                name: "Person".to_string(),
-                fields: vec![
-                    Field {
+            Ok((
+                "",
+                Struct {
+                    name: "Person".to_string(),
+                    fields: vec![Field {
                         name: "name".to_string(),
                         type_: Type::Array("String".to_string()),
                         optional: false,
-                        options: vec![
-                            FieldOption {
-                                name: "length".to_string(),
-                                value: Value::Range(Some(1), Some(50))
-                            }
-                        ]
-                    }
-                ],
-            }))
+                        options: vec![FieldOption {
+                            name: "length".to_string(),
+                            value: Value::Range(Some(1), Some(50))
+                        }]
+                    }],
+                }
+            ))
         );
     }
 }
@@ -347,23 +331,26 @@ fn test_parse_struct_with_fields() {
     for content in contents.iter() {
         assert_eq!(
             parse_struct(content),
-            Ok(("", Struct {
-                name: "Person".to_string(),
-                fields: vec![
-                    Field {
-                        name: "name".to_string(),
-                        type_: Type::Named("String".to_string()),
-                        optional: false,
-                        options: vec![],
-                    },
-                    Field {
-                        name: "age".to_string(),
-                        type_: Type::Named("Integer".to_string()),
-                        optional: false,
-                        options: vec![],
-                    },
-                ],
-            }))
+            Ok((
+                "",
+                Struct {
+                    name: "Person".to_string(),
+                    fields: vec![
+                        Field {
+                            name: "name".to_string(),
+                            type_: Type::Named("String".to_string()),
+                            optional: false,
+                            options: vec![],
+                        },
+                        Field {
+                            name: "age".to_string(),
+                            type_: Type::Named("Integer".to_string()),
+                            optional: false,
+                            options: vec![],
+                        },
+                    ],
+                }
+            ))
         )
     }
 }
