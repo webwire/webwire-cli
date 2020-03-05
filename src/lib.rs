@@ -3,5 +3,6 @@ extern crate serde_derive;
 
 extern crate nom;
 
-pub mod schema;
+pub mod ast;
 pub mod idl;
+pub mod schema;
