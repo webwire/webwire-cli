@@ -144,14 +144,13 @@ impl Type {
     }
 }
 
-type IType = crate::idl::Type;
-impl From<IType> for Type {
-    fn from(itype: IType) -> Self {
+impl From<idl::Type> for Type {
+    fn from(itype: idl::Type) -> Self {
         match itype {
             // builtin types
-            IType::Named(name) => Type::from_name(name.as_str()),
-            IType::Array(item_type) => Type::Array(Rc::new(Type::from_name(item_type.as_str()))),
-            IType::Map(key_type, value_type) => Type::Map(
+            idl::Type::Named(name) => Type::from_name(name.as_str()),
+            idl::Type::Array(item_type) => Type::Array(Rc::new(Type::from_name(item_type.as_str()))),
+            idl::Type::Map(key_type, value_type) => Type::Map(
                 Rc::new(Type::from_name(key_type.as_str())),
                 Rc::new(Type::from_name(value_type.as_str())),
             ),
