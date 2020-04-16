@@ -54,15 +54,17 @@ pub fn parse_namespace_content(input: &str) -> IResult<&str, Vec<NamespacePart>>
 
 pub fn parse_namespace<'a>(input: &'a str) -> IResult<&str, Namespace> {
     map(
-        preceded(
-            terminated(tag("namespace"), ws1),
-            cut(pair(
-                parse_identifier,
-                preceded(
-                    preceded(ws, char('{')),
-                    cut(terminated(parse_namespace_content, preceded(ws, char('}')))),
-                ),
-            )),
+        preceded(ws,
+            preceded(
+                terminated(tag("namespace"), ws1),
+                cut(pair(
+                    parse_identifier,
+                    preceded(
+                        preceded(ws, char('{')),
+                        cut(terminated(parse_namespace_content, preceded(ws, char('}')))),
+                    ),
+                )),
+            ),
         ),
         |(name, parts)| Namespace {
             name: name,
@@ -93,8 +95,7 @@ fn test_parse_namespace() {
                 in ping,
                 inout get_version
             }
-        }
-    ";
+        }";
     assert_eq!(
         parse_namespace(content),
         Ok((
