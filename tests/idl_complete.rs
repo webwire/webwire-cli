@@ -1,8 +1,8 @@
-const EXAMPLE_SCHEMA: &str = include_str!("./idl_complete.ninjapi");
+const EXAMPLE_SCHEMA: &str = include_str!("./idl_complete.ww");
 
 #[test]
 fn test_schema_loader() {
-    use ninjapi::idl::*;
+    use webwire::idl::*;
     let result = parse_document(EXAMPLE_SCHEMA);
     assert_eq!(
         Ok(Document {

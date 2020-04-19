@@ -67,7 +67,7 @@ const EXAMPLE_SCHEMA: &str = "
 
 #[test]
 fn test_schema_loader() {
-    let result = ninjapi::schema::parse_string(&EXAMPLE_SCHEMA.to_string());
+    let result = webwire::schema::parse_string(&EXAMPLE_SCHEMA.to_string());
     match result {
         Ok(_schema) => (),
         Err(error) => assert!(false, format!("{}", error)),

@@ -1,5 +1,5 @@
 [package]
-name = "ninjapi"
+name = "webwire"
 version = "0.1.0"
 authors = ["Michael P. Jung <michael.jung@terreon.de>"]
 edition = "2018"
