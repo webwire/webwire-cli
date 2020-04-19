@@ -170,20 +170,14 @@ fn test_parse_value_float() {
     assert_eq!(parse_value("13.37"), Ok(("", Value::Float(13.37f64))));
 }
 
-/*
-#[test]
-fn test_parse_value_string() {
-    assert_eq!(parse_value("\"hello\""), Ok(("", Value::String("hello".to_string()))));
-    assert_eq!(parse_value("\"hello world\""), Ok(("", Value::String("hello world".to_string()))));
-}
-*/
-
 #[test]
 fn test_parse_value_range() {
     assert_eq!(
         parse_value("0..1337"),
         Ok(("", Value::Range(Some(0), Some(1337))))
     );
-    // TODO add support for hexadecimal numbers
-    //assert_eq!(parse_value("0..0xFF"), Ok(("", Value::Range(0, 0xFF))));
+    assert_eq!(
+        parse_value("0..0xFF"),
+        Ok(("", Value::Range(Some(0), Some(0xFF))))
+    );
 }
