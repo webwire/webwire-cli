@@ -283,20 +283,27 @@ fn test_schema_loader() {
                 NamespacePart::Endpoint(Endpoint {
                     name: "get_version".to_string(),
                     request: None,
-                    response: Some("String".to_string()),
-                    error: None
+                    response: Some(Type::Named("String".to_string(), vec![])),
                 }),
                 NamespacePart::Endpoint(Endpoint {
                     name: "user_get".to_string(),
-                    request: Some("UserRequest".to_string()),
-                    response: Some("User".to_string()),
-                    error: Some("GetError".to_string())
+                    request: Some(Type::Named("UserRequest".to_string(), vec![])),
+                    response: Some(
+                        Type::Named("Result".to_string(), vec![
+                            Type::Named("User".to_string(), vec![]),
+                            Type::Named("GetError".to_string(), vec![]),
+                        ])
+                    )
                 }),
                 NamespacePart::Endpoint(Endpoint {
                     name: "user_list".to_string(),
-                    request: Some("UserListRequest".to_string()),
-                    response: Some("UserList".to_string()),
-                    error: Some("ListError".to_string())
+                    request: Some(Type::Named("UserListRequest".to_string(), vec![])),
+                    response: Some(
+                        Type::Named("Result".to_string(), vec![
+                            Type::Named("UserList".to_string(), vec![]),
+                            Type::Named("ListError".to_string(), vec![])
+                        ])
+                    )
                 }),
                 NamespacePart::Service(Service {
                     name: "example".to_string(),

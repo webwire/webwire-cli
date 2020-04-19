@@ -73,9 +73,9 @@ enum ListError {
 
 endpoint get_version() -> String
 
-endpoint user_get(UserRequest) -> User | GetError
+endpoint user_get(UserRequest) -> Result<User, GetError>
 
-endpoint user_list(UserListRequest) -> UserList | ListError
+endpoint user_list(UserListRequest) -> Result<UserList, ListError>
 
 service example {
     inout get_version,

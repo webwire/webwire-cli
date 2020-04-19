@@ -7,13 +7,13 @@ use nom::{
 };
 
 use crate::idl::common::{parse_identifier, ws, ws1};
+use crate::idl::r#type::{parse_type, Type};
 
 #[derive(Debug, PartialEq)]
 pub struct Endpoint {
     pub name: String,
-    pub request: Option<String>,
-    pub response: Option<String>,
-    pub error: Option<String>,
+    pub request: Option<Type>,
+    pub response: Option<Type>,
 }
 
 pub fn parse_endpoint(input: &str) -> IResult<&str, Endpoint> {
@@ -22,38 +22,18 @@ pub fn parse_endpoint(input: &str) -> IResult<&str, Endpoint> {
             preceded(tag("endpoint"), preceded(ws1, parse_identifier)),
             preceded(
                 preceded(ws, char('(')),
-                terminated(opt(preceded(ws, parse_identifier)), preceded(ws, char(')'))),
+                terminated(opt(preceded(ws, parse_type)), preceded(ws, char(')'))),
             ),
             opt(preceded(
                 preceded(ws, tag("->")),
-                pair(
-                    preceded(ws, parse_identifier),
-                    opt(preceded(
-                        ws,
-                        preceded(char('|'), preceded(ws, parse_identifier)),
-                    )),
-                ),
+                preceded(ws, parse_type),
             )),
         )),
         |(name, request, response)| {
-            if let Some(response) = response {
-                Endpoint {
-                    name: name,
-                    request: request,
-                    response: if response.0 != "None" {
-                        Some(response.0)
-                    } else {
-                        None
-                    },
-                    error: response.1,
-                }
-            } else {
-                Endpoint {
-                    name: name,
-                    request: request,
-                    response: None,
-                    error: None,
-                }
+            Endpoint {
+                name: name,
+                request: request,
+                response: response,
             }
         },
     )(input)
@@ -77,7 +57,6 @@ fn test_parse_endpoint_0() {
                     name: "ping".to_string(),
                     request: None,
                     response: None,
-                    error: None
                 }
             ))
         )
@@ -101,9 +80,8 @@ fn test_parse_endpoint_1() {
                 "",
                 Endpoint {
                     name: "notify".to_string(),
-                    request: Some("Notification".to_string()),
+                    request: Some(Type::Named("Notification".to_string(), vec![])),
                     response: None,
-                    error: None
                 }
             ))
         )
@@ -128,8 +106,7 @@ fn test_parse_endpoint_2() {
                 Endpoint {
                     name: "get_time".to_string(),
                     request: None,
-                    response: Some("Time".to_string()),
-                    error: None
+                    response: Some(Type::Named("Time".to_string(), vec![])),
                 }
             ))
         )
@@ -140,12 +117,15 @@ fn test_parse_endpoint_2() {
 fn test_parse_endpoint_3() {
     let contents = [
         // normal whitespace
-        "endpoint no_response() -> None | SomeError",
+        "endpoint no_response() -> Result<None, SomeError>",
         // whitespace variants
-        "endpoint no_response() ->None|SomeError",
-        "endpoint no_response()-> None|SomeError",
-        "endpoint no_response()->None |SomeError",
-        "endpoint no_response()->None| SomeError",
+        "endpoint no_response() ->Result<None,SomeError>",
+        "endpoint no_response()-> Result<None,SomeError>",
+        "endpoint no_response()->Result <None,SomeError>",
+        "endpoint no_response()->Result< None,SomeError>",
+        "endpoint no_response()->Result<None ,SomeError>",
+        "endpoint no_response()->Result<None, SomeError>",
+        "endpoint no_response()->Result<None,SomeError >",
     ];
     for content in contents.iter() {
         assert_eq!(
@@ -155,8 +135,10 @@ fn test_parse_endpoint_3() {
                 Endpoint {
                     name: "no_response".to_string(),
                     request: None,
-                    response: None,
-                    error: Some("SomeError".to_string())
+                    response: Some(Type::Named("Result".to_string(), vec![
+                        Type::Named("None".to_string(), vec![]),
+                        Type::Named("SomeError".to_string(), vec![]),
+                    ])),
                 }
             ))
         )
@@ -167,12 +149,15 @@ fn test_parse_endpoint_3() {
 fn test_parse_endpoint_4() {
     let contents = [
         // normal whitespace
-        "endpoint hello(HelloRequest) -> HelloResponse | HelloError",
+        "endpoint hello(HelloRequest) -> Result<HelloResponse, HelloError>",
         // whitespace variants
-        "endpoint hello(HelloRequest) ->HelloResponse|HelloError",
-        "endpoint hello(HelloRequest)-> HelloResponse|HelloError",
-        "endpoint hello(HelloRequest)->HelloResponse |HelloError",
-        "endpoint hello(HelloRequest)->HelloResponse| HelloError",
+        "endpoint hello(HelloRequest) ->Result<HelloResponse,HelloError>",
+        "endpoint hello(HelloRequest)-> Result<HelloResponse,HelloError>",
+        "endpoint hello(HelloRequest)->Result <HelloResponse,HelloError>",
+        "endpoint hello(HelloRequest)->Result< HelloResponse,HelloError>",
+        "endpoint hello(HelloRequest)->Result<HelloResponse ,HelloError>",
+        "endpoint hello(HelloRequest)->Result<HelloResponse, HelloError>",
+        "endpoint hello(HelloRequest)->Result<HelloResponse,HelloError >",
     ];
     for content in contents.iter() {
         assert_eq!(
@@ -181,9 +166,11 @@ fn test_parse_endpoint_4() {
                 "",
                 Endpoint {
                     name: "hello".to_string(),
-                    request: Some("HelloRequest".to_string()),
-                    response: Some("HelloResponse".to_string()),
-                    error: Some("HelloError".to_string())
+                    request: Some(Type::Named("HelloRequest".to_string(), vec![])),
+                    response: Some(Type::Named("Result".to_string(), vec![
+                        Type::Named("HelloResponse".to_string(), vec![]),
+                        Type::Named("HelloError".to_string(), vec![]),
+                    ])),
                 }
             ))
         )

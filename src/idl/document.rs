@@ -83,13 +83,11 @@ fn test_parse_document() {
                     name: "ping".to_string(),
                     request: None,
                     response: None,
-                    error: None,
                 }),
                 NamespacePart::Endpoint(Endpoint {
                     name: "get_version".to_string(),
                     request: None,
-                    response: Some("String".to_string()),
-                    error: None,
+                    response: Some(Type::Named("String".to_string(), vec![])),
                 }),
                 NamespacePart::Service(Service {
                     name: "Pinger".to_string(),
