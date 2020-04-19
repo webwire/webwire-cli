@@ -45,7 +45,7 @@ use std::net::SocketAddr;
 use webwire::hyper::{Server, Request, Response};
 
 mod api;
-use api::{Hello, HelloRequest, HelloResponse}; // this is the generated code
+use api::v1::{Hello, HelloRequest, HelloResponse}; // this is the generated code
 
 struct HelloService {}
 
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error> {
 A TypeScript client using the generated code would look like that:
 
 ```typescript
-import { Client } from 'api' // this is the generated code
+import { Client } from 'api/v1' // this is the generated code
 
 client = new Client('http://localhost:8000/')
 const response = await client.hello({ name: 'World' })
