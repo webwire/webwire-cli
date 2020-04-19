@@ -17,19 +17,21 @@ fn test_schema_loader() {
                 }),
                 NamespacePart::Struct(Struct {
                     name: "UserRequest".to_string(),
+                    generics: vec![],
                     fields: vec![Field {
                         name: "email".to_string(),
-                        type_: Type::Named("Email".to_string()),
+                        type_: Type::Named("Email".to_string(), vec![]),
                         optional: false,
                         options: vec![]
                     }]
                 }),
                 NamespacePart::Struct(Struct {
                     name: "Name".to_string(),
+                    generics: vec![],
                     fields: vec![
                         Field {
                             name: "prefix".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -38,7 +40,7 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "first_name".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -47,7 +49,7 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "middle_name".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -56,7 +58,7 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "last_name".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![
                                 FieldOption {
@@ -71,7 +73,7 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "suffix".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -80,7 +82,7 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "full_name".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![]
                         }
@@ -114,28 +116,29 @@ fn test_schema_loader() {
                 }),
                 NamespacePart::Struct(Struct {
                     name: "User".to_string(),
+                    generics: vec![],
                     fields: vec![
                         Field {
                             name: "id".to_string(),
-                            type_: Type::Named("UUID".to_string()),
+                            type_: Type::Named("UUID".to_string(), vec![]),
                             optional: false,
                             options: vec![]
                         },
                         Field {
                             name: "email".to_string(),
-                            type_: Type::Named("Email".to_string()),
+                            type_: Type::Named("Email".to_string(), vec![]),
                             optional: false,
                             options: vec![]
                         },
                         Field {
                             name: "name".to_string(),
-                            type_: Type::Named("Name".to_string()),
+                            type_: Type::Named("Name".to_string(), vec![]),
                             optional: false,
                             options: vec![]
                         },
                         Field {
                             name: "password".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -144,7 +147,7 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "is_admin".to_string(),
-                            type_: Type::Named("Boolean".to_string()),
+                            type_: Type::Named("Boolean".to_string(), vec![]),
                             optional: false,
                             options: vec![]
                         }
@@ -200,10 +203,11 @@ fn test_schema_loader() {
                 }),
                 NamespacePart::Struct(Struct {
                     name: "UserListRequest".to_string(),
+                    generics: vec![],
                     fields: vec![
                         Field {
                             name: "offset".to_string(),
-                            type_: Type::Named("Integer".to_string()),
+                            type_: Type::Named("Integer".to_string(), vec![]),
                             optional: true,
                             options: vec![
                                 FieldOption {
@@ -218,7 +222,7 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "limit".to_string(),
-                            type_: Type::Named("Integer".to_string()),
+                            type_: Type::Named("Integer".to_string(), vec![]),
                             optional: true,
                             options: vec![FieldOption {
                                 name: "range".to_string(),
@@ -229,10 +233,11 @@ fn test_schema_loader() {
                 }),
                 NamespacePart::Struct(Struct {
                     name: "UserList".to_string(),
+                    generics: vec![],
                     fields: vec![
                         Field {
                             name: "count".to_string(),
-                            type_: Type::Named("Integer".to_string()),
+                            type_: Type::Named("Integer".to_string(), vec![]),
                             optional: false,
                             options: vec![
                                 FieldOption {
@@ -247,7 +252,9 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "users".to_string(),
-                            type_: Type::Array("User".to_string()),
+                            type_: Type::Array(
+                                Box::new(Type::Named("User".to_string(), vec![]))
+                            ),
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -256,7 +263,10 @@ fn test_schema_loader() {
                         },
                         Field {
                             name: "permissions".to_string(),
-                            type_: Type::Map("UUID".to_string(), "String".to_string()),
+                            type_: Type::Map(
+                                Box::new(Type::Named("UUID".to_string(), vec![])),
+                                Box::new(Type::Named("String".to_string(), vec![])),
+                            ),
                             optional: false,
                             options: vec![]
                         }

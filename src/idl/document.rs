@@ -50,10 +50,11 @@ fn test_parse_document() {
             parts: vec![
                 NamespacePart::Struct(Struct {
                     name: "Person".to_string(),
+                    generics: vec![],
                     fields: vec![
                         Field {
                             name: "name".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -62,7 +63,7 @@ fn test_parse_document() {
                         },
                         Field {
                             name: "age".to_string(),
-                            type_: Type::Named("Integer".to_string()),
+                            type_: Type::Named("Integer".to_string(), vec![]),
                             optional: false,
                             options: vec![],
                         },
@@ -70,9 +71,10 @@ fn test_parse_document() {
                 }),
                 NamespacePart::Struct(Struct {
                     name: "Group".to_string(),
+                    generics: vec![],
                     fields: vec![Field {
                         name: "name".to_string(),
-                        type_: Type::Named("String".to_string()),
+                        type_: Type::Named("String".to_string(), vec![]),
                         optional: false,
                         options: vec![],
                     },],

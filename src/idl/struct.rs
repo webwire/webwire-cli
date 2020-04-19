@@ -4,7 +4,7 @@ use nom::{
     combinator::{cut, map, opt},
     error::context,
     multi::separated_list,
-    sequence::{pair, preceded, separated_pair, terminated},
+    sequence::{pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
 
@@ -15,6 +15,7 @@ use crate::idl::r#type::{parse_type, Type};
 #[derive(Debug, PartialEq)]
 pub struct Struct {
     pub name: String,
+    pub generics: Vec<String>,
     pub fields: Vec<Field>,
 }
 
@@ -28,14 +29,34 @@ pub struct Field {
 
 pub fn parse_struct(input: &str) -> IResult<&str, Struct> {
     map(
-        pair(
+        tuple((
             preceded(tag("struct"), preceded(ws1, parse_identifier)),
+            parse_generics,
             parse_fields,
-        ),
+        )),
         |t| Struct {
             name: t.0.to_string(),
-            fields: t.1,
+            generics: t.1,
+            fields: t.2,
         },
+    )(input)
+}
+
+fn parse_generics(input: &str) -> IResult<&str, Vec<String>> {
+    map(
+        opt(
+            preceded(
+                preceded(ws, char('<')),
+                cut(terminated(
+                    separated_list(parse_field_separator, preceded(ws, parse_identifier)),
+                    preceded(trailing_comma, preceded(ws, char('>'))),
+                )),
+            ),
+        ),
+        |v| match v {
+            Some(v) => v,
+            None => Vec::with_capacity(0),
+        }
     )(input)
 }
 
@@ -82,7 +103,7 @@ fn test_parse_field() {
                 "",
                 Field {
                     name: "foo".to_string(),
-                    type_: Type::Named("FooType".to_string()),
+                    type_: Type::Named("FooType".to_string(), vec![]),
                     optional: false,
                     options: vec![],
                 }
@@ -106,7 +127,7 @@ fn test_parse_field_optional() {
                 "",
                 Field {
                     name: "foo".to_string(),
-                    type_: Type::Named("FooType".to_string()),
+                    type_: Type::Named("FooType".to_string(), vec![]),
                     optional: true,
                     options: vec![],
                 }
@@ -139,7 +160,7 @@ fn test_parse_field_with_options() {
                 "",
                 Field {
                     name: "name".to_string(),
-                    type_: Type::Named("String".to_string()),
+                    type_: Type::Named("String".to_string(), vec![]),
                     optional: false,
                     options: vec![FieldOption {
                         name: "length".to_string(),
@@ -171,7 +192,7 @@ fn test_parse_array_field_with_options() {
                 "",
                 Field {
                     name: "items".to_string(),
-                    type_: Type::Array("String".to_string()),
+                    type_: Type::Array(Box::new(Type::Named("String".to_string(), vec![]))),
                     optional: false,
                     options: vec![FieldOption {
                         name: "length".to_string(),
@@ -207,7 +228,7 @@ fn test_parse_fields_1() {
                 "",
                 vec![Field {
                     name: "foo".to_owned(),
-                    type_: Type::Named("Foo".to_owned()),
+                    type_: Type::Named("Foo".to_owned(), vec![]),
                     optional: false,
                     options: vec![],
                 }]
@@ -233,13 +254,13 @@ fn test_parse_fields_2() {
                 vec![
                     Field {
                         name: "foo".to_owned(),
-                        type_: Type::Named("Foo".to_owned()),
+                        type_: Type::Named("Foo".to_owned(), vec![]),
                         optional: false,
                         options: vec![],
                     },
                     Field {
                         name: "bar".to_owned(),
-                        type_: Type::Named("Bar".to_owned()),
+                        type_: Type::Named("Bar".to_owned(), vec![]),
                         optional: false,
                         options: vec![],
                     }
@@ -264,6 +285,7 @@ fn test_parse_struct() {
                 "",
                 Struct {
                     name: "Pinger".to_string(),
+                    generics: vec![],
                     fields: vec![],
                 }
             ))
@@ -282,9 +304,10 @@ fn test_parse_struct_field_options() {
                 "",
                 Struct {
                     name: "Person".to_string(),
+                    generics: vec![],
                     fields: vec![Field {
                         name: "name".to_string(),
-                        type_: Type::Array("String".to_string()),
+                        type_: Type::Array(Box::new(Type::Named("String".to_string(), vec![]))),
                         optional: false,
                         options: vec![FieldOption {
                             name: "length".to_string(),
@@ -335,16 +358,17 @@ fn test_parse_struct_with_fields() {
                 "",
                 Struct {
                     name: "Person".to_string(),
+                    generics: vec![],
                     fields: vec![
                         Field {
                             name: "name".to_string(),
-                            type_: Type::Named("String".to_string()),
+                            type_: Type::Named("String".to_string(), vec![]),
                             optional: false,
                             options: vec![],
                         },
                         Field {
                             name: "age".to_string(),
-                            type_: Type::Named("Integer".to_string()),
+                            type_: Type::Named("Integer".to_string(), vec![]),
                             optional: false,
                             options: vec![],
                         },
@@ -352,5 +376,42 @@ fn test_parse_struct_with_fields() {
                 }
             ))
         )
+    }
+}
+
+#[test]
+fn test_parse_struct_with_generics() {
+    let contents = [
+        "struct Wrapper<T>{value:T}",
+        "struct Wrapper <T>{value:T}",
+        "struct Wrapper< T>{value:T}",
+        "struct Wrapper<T >{value:T}",
+        "struct Wrapper<T> {value:T}",
+        "struct Wrapper<T>{ value:T}",
+        "struct Wrapper<T>{value :T}",
+        "struct Wrapper<T>{value: T}",
+        "struct Wrapper<T>{value:T }",
+        "struct Wrapper<T,>{value:T}",
+        "struct Wrapper<T,>{value:T,}",
+    ];
+    for content in contents.iter() {
+        assert_eq!(
+            parse_struct(content),
+            Ok((
+                "",
+                Struct {
+                    name: "Wrapper".to_string(),
+                    generics: vec!["T".to_string()],
+                    fields: vec![
+                        Field {
+                            name: "value".to_string(),
+                            type_: Type::Named("T".to_string(), vec![]),
+                            optional: false,
+                            options: vec![],
+                        }
+                    ],
+                }
+            ))
+        );
     }
 }

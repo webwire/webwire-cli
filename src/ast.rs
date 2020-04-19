@@ -7,11 +7,16 @@ pub enum ValidationError {
     DuplicateIdentifier(String),
 }
 
+pub enum Ref<T> {
+    Resolved(Rc<T>),
+    Unresolved(String),
+}
+
 #[derive(Default)]
 pub struct Document {
-    types: HashMap<String, Rc<Type>>,
-    endpoints: HashMap<String, Rc<Endpoint>>,
-    services: HashMap<String, Rc<Service>>,
+    types: HashMap<String, Type>,
+    endpoints: HashMap<String, Endpoint>,
+    services: HashMap<String, Service>,
 }
 
 pub enum Type {
@@ -25,11 +30,18 @@ pub enum Type {
     Time,
     DateTime,
     //
+    Enum(Rc<Enum>),
     Struct(Rc<Struct>),
+    Fieldset(Rc<Fieldset>),
     Array(Rc<Type>),
     Map(Rc<Type>, Rc<Type>),
     // named
     Unresolved(String),
+}
+
+pub struct Enum {
+    name: String,
+    values: Vec<String>,
 }
 
 pub struct Struct {
@@ -75,22 +87,49 @@ pub struct Endpoint {
 impl Document {
     pub fn from_idl(idoc: &crate::idl::Document) -> Result<Self, ValidationError> {
         let mut doc = Self::default();
-        for part in idoc.parts.iter() {
-            match part {
-                idl::NamespacePart::Struct(istruct) => {
-                    if doc.types.contains_key(&istruct.name) {
-                        return Err(ValidationError::DuplicateIdentifier(istruct.name.clone()));
-                    }
+        for ipart in idoc.parts.iter() {
+            if doc.types.contains_key(ipart.name()) {
+                return Err(ValidationError::DuplicateIdentifier(ipart.name().to_owned()));
+            }
+            match ipart {
+                idl::NamespacePart::Enum(ienum) => {
                     doc.types.insert(
-                        istruct.name.clone(),
-                        Rc::new(Type::Struct(Rc::new(Struct::from_idl(&istruct)))),
+                        ipart.name().to_owned(),
+                        Type::Enum(Rc::new(Enum::from_idl(&ienum))),
                     );
                 }
-                // FIXME add support for more types
-                _ => {}
-            }
+                idl::NamespacePart::Struct(istruct) => {
+                    doc.types.insert(
+                        ipart.name().to_owned(),
+                        Type::Struct(Rc::new(Struct::from_idl(&istruct))),
+                    );
+                }
+                idl::NamespacePart::Fieldset(ifieldset) => {
+                    doc.types.insert(
+                        ipart.name().to_owned(),
+                        Type::Fieldset(Rc::new(Fieldset::from_idl(&ifieldset))),
+                    );
+                }
+                idl::NamespacePart::Operation(ioperation) => {
+
+                }
+                //idl::NamespacePart::Endpoint(iendpoint)
+                //idl::NamespacePart::Service(iservice)
+                //idl::NamespacePart::Namespace(inamespace)
+            };
+
         }
         Ok(doc)
+    }
+}
+
+impl Enum {
+    pub fn from_idl(ienum: &idl::Enum) -> Self {
+        let values = ienum.values.clone();
+        Self {
+            name: ienum.name.clone(),
+            values,
+        }
     }
 }
 
@@ -109,7 +148,7 @@ impl Struct {
                 })
             })
             .collect();
-        Struct {
+        Self {
             name: istruct.name.clone(),
             fields,
             // FIXME
@@ -154,6 +193,24 @@ impl From<idl::Type> for Type {
                 Rc::new(Type::from_name(key_type.as_str())),
                 Rc::new(Type::from_name(value_type.as_str())),
             ),
+        }
+    }
+}
+
+struct Fieldset {
+    name: String,
+    r#struct: Ref<Struct>,
+    fields: Vec<FieldsetField>,
+}
+
+type FieldsetField = idl::FieldsetField;
+
+impl Fieldset {
+    pub fn from_idl(ifieldset: &idl::Fieldset) -> Self {
+        Self {
+            name: ifieldset.name.clone(),
+            r#struct: Ref::Unresolved(ifieldset.struct_name.clone()),
+            fields: ifieldset.fields.clone(),
         }
     }
 }
