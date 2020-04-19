@@ -27,6 +27,21 @@ pub enum NamespacePart {
     Namespace(Namespace),
 }
 
+impl NamespacePart {
+    pub fn name<'a>(&'a self) -> &'a str {
+        let name = match self {
+            Self::Enum(part) => &part.name,
+            Self::Struct(part) => &part.name,
+            Self::Fieldset(part) => &part.name,
+            Self::Operation(part) => &part.name,
+            Self::Endpoint(part) => &part.name,
+            Self::Service(part) => &part.name,
+            Self::Namespace(part) => &part.name,
+        };
+        name.as_str()
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Namespace {
     pub name: String,

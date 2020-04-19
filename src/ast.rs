@@ -111,11 +111,17 @@ impl Document {
                     );
                 }
                 idl::NamespacePart::Operation(ioperation) => {
-
+                    unimplemented!();
                 }
-                //idl::NamespacePart::Endpoint(iendpoint)
-                //idl::NamespacePart::Service(iservice)
-                //idl::NamespacePart::Namespace(inamespace)
+                idl::NamespacePart::Endpoint(iendpoint) => {
+                    unimplemented!();
+                }
+                idl::NamespacePart::Service(iservice) => {
+                    unimplemented!();
+                }
+                idl::NamespacePart::Namespace(inamespace) => {
+                    unimplemented!();
+                }
             };
 
         }
@@ -173,11 +179,11 @@ impl Type {
     }
     pub fn from_idl(itype: &idl::Type) -> Self {
         match itype {
-            idl::Type::Named(name) => Self::from_name(name),
-            idl::Type::Array(item_type) => Self::Array(Rc::new(Self::from_name(item_type))),
+            idl::Type::Named(name, generics) => Self::from_name(name),
+            idl::Type::Array(item_type) => Self::Array(Rc::new(Self::from_idl(item_type))),
             idl::Type::Map(key_type, value_type) => Self::Map(
-                Rc::new(Self::from_name(key_type)),
-                Rc::new(Self::from_name(value_type)),
+                Rc::new(Self::from_idl(key_type)),
+                Rc::new(Self::from_idl(value_type)),
             ),
         }
     }
@@ -185,19 +191,11 @@ impl Type {
 
 impl From<idl::Type> for Type {
     fn from(itype: idl::Type) -> Self {
-        match itype {
-            // builtin types
-            idl::Type::Named(name) => Type::from_name(name.as_str()),
-            idl::Type::Array(item_type) => Type::Array(Rc::new(Type::from_name(item_type.as_str()))),
-            idl::Type::Map(key_type, value_type) => Type::Map(
-                Rc::new(Type::from_name(key_type.as_str())),
-                Rc::new(Type::from_name(value_type.as_str())),
-            ),
-        }
+        Type::from_idl(&itype)
     }
 }
 
-struct Fieldset {
+pub struct Fieldset {
     name: String,
     r#struct: Ref<Struct>,
     fields: Vec<FieldsetField>,

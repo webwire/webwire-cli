@@ -9,7 +9,7 @@ use nom::{
 
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1};
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Field {
     pub name: String,
     pub optional: bool,
