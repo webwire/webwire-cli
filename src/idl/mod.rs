@@ -11,6 +11,7 @@ mod r#struct;
 mod r#type;
 mod value;
 
+pub use common::Span;
 pub use document::{parse_document, Document};
 pub use endpoint::Endpoint;
 pub use field_option::FieldOption;

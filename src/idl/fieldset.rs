@@ -7,7 +7,17 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1};
+use crate::idl::common::{
+    parse_field_separator,
+    parse_identifier,
+    trailing_comma,
+    ws,
+    ws1,
+    Span,
+};
+
+#[cfg(test)]
+use crate::idl::common::assert_parse;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Field {
@@ -22,7 +32,7 @@ pub struct Fieldset {
     pub fields: Vec<Field>,
 }
 
-fn parse_field(input: &str) -> IResult<&str, Field> {
+fn parse_field(input: Span) -> IResult<Span, Field> {
     map(
         pair(preceded(ws, parse_identifier), preceded(ws, opt(char('?')))),
         |(name, optional)| Field {
@@ -32,7 +42,7 @@ fn parse_field(input: &str) -> IResult<&str, Field> {
     )(input)
 }
 
-fn parse_fields(input: &str) -> IResult<&str, Vec<Field>> {
+fn parse_fields(input: Span) -> IResult<Span, Vec<Field>> {
     preceded(
         preceded(ws, char('{')),
         cut(terminated(
@@ -42,7 +52,7 @@ fn parse_fields(input: &str) -> IResult<&str, Vec<Field>> {
     )(input)
 }
 
-pub fn parse_fieldset(input: &str) -> IResult<&str, Fieldset> {
+pub fn parse_fieldset(input: Span) -> IResult<Span, Fieldset> {
     map(
         preceded(
             terminated(tag("fieldset"), ws1),
@@ -74,16 +84,13 @@ fn test_parse_fieldset_0() {
         "fieldset PersonName for Person { }",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_fieldset(content),
-            Ok((
-                "",
-                Fieldset {
-                    name: "PersonName".to_string(),
-                    struct_name: "Person".to_string(),
-                    fields: vec![],
-                }
-            ))
+        assert_parse(
+            parse_fieldset(Span::new(content)),
+            Fieldset {
+                name: "PersonName".to_string(),
+                struct_name: "Person".to_string(),
+                fields: vec![],
+            }
         )
     }
 }
@@ -99,19 +106,18 @@ fn test_parse_fieldset_1() {
         "fieldset PersonName for Person{name }",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_fieldset(content),
-            Ok((
-                "",
-                Fieldset {
-                    name: "PersonName".to_string(),
-                    struct_name: "Person".to_string(),
-                    fields: vec![Field {
+        assert_parse(
+            parse_fieldset(Span::new(content)),
+            Fieldset {
+                name: "PersonName".to_string(),
+                struct_name: "Person".to_string(),
+                fields: vec![
+                    Field {
                         name: "name".to_string(),
                         optional: false
-                    },],
-                }
-            ))
+                    },
+                ],
+            }
         )
     }
 }
@@ -132,25 +138,22 @@ fn test_parse_fieldset_2() {
         "fieldset PersonName for Person{name,age? }",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_fieldset(content),
-            Ok((
-                "",
-                Fieldset {
-                    name: "PersonName".to_string(),
-                    struct_name: "Person".to_string(),
-                    fields: vec![
-                        Field {
-                            name: "name".to_string(),
-                            optional: false
-                        },
-                        Field {
-                            name: "age".to_string(),
-                            optional: true
-                        },
-                    ],
-                }
-            ))
+        assert_parse(
+            parse_fieldset(Span::new(content)),
+            Fieldset {
+                name: "PersonName".to_string(),
+                struct_name: "Person".to_string(),
+                fields: vec![
+                    Field {
+                        name: "name".to_string(),
+                        optional: false
+                    },
+                    Field {
+                        name: "age".to_string(),
+                        optional: true
+                    },
+                ],
+            }
         )
     }
 }

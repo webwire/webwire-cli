@@ -8,7 +8,17 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1};
+use crate::idl::common::{
+    parse_field_separator,
+    parse_identifier,
+    trailing_comma,
+    ws,
+    ws1,
+    Span
+};
+
+#[cfg(test)]
+use crate::idl::common::assert_parse;
 
 #[derive(Debug, PartialEq)]
 pub struct Enum {
@@ -16,7 +26,7 @@ pub struct Enum {
     pub values: Vec<String>,
 }
 
-pub fn parse_enum(input: &str) -> IResult<&str, Enum> {
+pub fn parse_enum(input: Span) -> IResult<Span, Enum> {
     map(
         pair(
             preceded(terminated(tag("enum"), ws1), parse_identifier),
@@ -29,7 +39,7 @@ pub fn parse_enum(input: &str) -> IResult<&str, Enum> {
     )(input)
 }
 
-fn parse_enum_values(input: &str) -> IResult<&str, Vec<String>> {
+fn parse_enum_values(input: Span) -> IResult<Span, Vec<String>> {
     context(
         "enum_values",
         preceded(
@@ -53,15 +63,12 @@ fn test_parse_enum_0() {
         "enum Nothing { }",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_enum(content),
-            Ok((
-                "",
-                Enum {
-                    name: "Nothing".to_string(),
-                    values: vec![],
-                }
-            ))
+        assert_parse(
+            parse_enum(Span::new(content)),
+            Enum {
+                name: "Nothing".to_string(),
+                values: vec![],
+            }
         )
     }
 }
@@ -78,15 +85,12 @@ fn test_parse_enum_1() {
         "enum OneThing { Thing }",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_enum(content),
-            Ok((
-                "",
-                Enum {
-                    name: "OneThing".to_string(),
-                    values: vec!["Thing".to_string()],
-                }
-            ))
+        assert_parse(
+            parse_enum(Span::new(content)),
+            Enum {
+                name: "OneThing".to_string(),
+                values: vec!["Thing".to_string()],
+            }
         )
     }
 }
@@ -106,15 +110,12 @@ fn test_parse_enum_2() {
         "enum Direction{Left,Right }",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_enum(content),
-            Ok((
-                "",
-                Enum {
-                    name: "Direction".to_string(),
-                    values: vec!["Left".to_string(), "Right".to_string()],
-                }
-            ))
+        assert_parse(
+            parse_enum(Span::new(content)),
+            Enum {
+                name: "Direction".to_string(),
+                values: vec!["Left".to_string(), "Right".to_string()],
+            }
         )
     }
 }

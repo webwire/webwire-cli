@@ -1,13 +1,13 @@
 [package]
-name = "webwire"
-version = "0.1.0"
 authors = ["Michael P. Jung <michael.jung@terreon.de>"]
 edition = "2018"
-
+name = "webwire"
+version = "0.1.0"
 [dependencies]
+chrono = "0.4.9"
+codegen = "0.1.1"
+nom = "5.0"
+nom_locate = "2.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_yaml = "0.8"
-nom = "5.0"
-codegen = "0.1.1"
-chrono = "0.4.9"

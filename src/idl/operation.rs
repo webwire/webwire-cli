@@ -7,7 +7,14 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1};
+use crate::idl::common::{
+    parse_field_separator,
+    parse_identifier,
+    trailing_comma,
+    ws,
+    ws1,
+    Span,
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Operation {
@@ -22,7 +29,7 @@ struct Parameter {
     pub type_: String,
 }
 
-fn parse_parameter(input: &str) -> IResult<&str, Parameter> {
+fn parse_parameter(input: Span) -> IResult<Span, Parameter> {
     map(
         separated_pair(parse_identifier, preceded(ws, char(':')), parse_identifier),
         |(name, type_)| Parameter {
@@ -32,7 +39,7 @@ fn parse_parameter(input: &str) -> IResult<&str, Parameter> {
     )(input)
 }
 
-fn parse_parameters(input: &str) -> IResult<&str, Vec<Parameter>> {
+fn parse_parameters(input: Span) -> IResult<Span, Vec<Parameter>> {
     preceded(
         preceded(ws, char('{')),
         cut(terminated(
@@ -42,7 +49,7 @@ fn parse_parameters(input: &str) -> IResult<&str, Vec<Parameter>> {
     )(input)
 }
 
-pub fn parse_operation(input: &str) -> IResult<&str, Operation> {
+pub fn parse_operation(input: Span) -> IResult<Span, Operation> {
     map(
         preceded(
             terminated(tag("operation"), ws1),

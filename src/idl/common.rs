@@ -5,23 +5,26 @@ use nom::{
     sequence::{pair, preceded},
     IResult,
 };
+use nom_locate::LocatedSpan;
+
+pub type Span<'a> = LocatedSpan<&'a str>;
 
 const WHITSPACE: &str = " \t\r\n";
 const ALPHA_EXTRA: &str = "_";
 
-pub fn ws(input: &str) -> IResult<&str, &str> {
+pub fn ws(input: Span) -> IResult<Span, Span> {
     take_while(move |c| WHITSPACE.contains(c))(input)
 }
 
-pub fn ws1(input: &str) -> IResult<&str, &str> {
+pub fn ws1(input: Span) -> IResult<Span, Span> {
     take_while1(move |c| WHITSPACE.contains(c))(input)
 }
 
-pub fn trailing_comma(input: &str) -> IResult<&str, Option<char>> {
+pub fn trailing_comma(input: Span) -> IResult<Span, Option<char>> {
     opt(preceded(ws, char(',')))(input)
 }
 
-pub fn parse_identifier(input: &str) -> IResult<&str, String> {
+pub fn parse_identifier(input: Span) -> IResult<Span, String> {
     map(
         pair(
             take_while1(move |c: char| c.is_ascii_alphabetic()),
@@ -31,25 +34,39 @@ pub fn parse_identifier(input: &str) -> IResult<&str, String> {
     )(input)
 }
 
+#[cfg(test)]
+pub(crate) fn assert_parse<'a, T: std::fmt::Debug + PartialEq>(output: IResult<LocatedSpan<&'a str>, T>, expected_value: T) {
+    assert!(output.is_ok(), "{:?}", output);
+    let output = output.unwrap();
+    assert_eq!(output.0.fragment(), &"");
+    assert_eq!(output.1, expected_value);
+}
+
 #[test]
 fn test_parse_identifier() {
-    assert_eq!(parse_identifier("test"), Ok(("", "test".to_string())));
-    assert_eq!(parse_identifier("test123"), Ok(("", "test123".to_string())));
+    assert_parse(
+        parse_identifier(Span::new("test")),
+        "test".to_string(),
+    );
+    assert_parse(
+        parse_identifier(Span::new("test123")),
+        "test123".to_string(),
+    );
 }
 
 #[test]
 fn test_parse_identifier_invalid() {
     use nom::error::ErrorKind;
     assert_eq!(
-        parse_identifier("123test"),
-        Err(nom::Err::Error(("123test", ErrorKind::TakeWhile1)))
+        parse_identifier(Span::new("123test")),
+        Err(nom::Err::Error((Span::new("123test"), ErrorKind::TakeWhile1)))
     );
     assert_eq!(
-        parse_identifier("_test"),
-        Err(nom::Err::Error(("_test", ErrorKind::TakeWhile1)))
+        parse_identifier(Span::new("_test")),
+        Err(nom::Err::Error((Span::new("_test"), ErrorKind::TakeWhile1)))
     );
 }
 
-pub fn parse_field_separator(input: &str) -> IResult<&str, char> {
+pub fn parse_field_separator(input: Span) -> IResult<Span, char> {
     preceded(ws, char(','))(input)
 }

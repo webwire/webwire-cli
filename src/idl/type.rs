@@ -7,8 +7,15 @@ use nom::{
     sequence::{pair, preceded, separated_pair, terminated},
     IResult,
 };
-
-use crate::idl::common::{parse_identifier, parse_field_separator, trailing_comma, ws};
+use crate::idl::common::{
+    parse_identifier,
+    parse_field_separator,
+    trailing_comma,
+    ws,
+    Span,
+};
+#[cfg(test)]
+use crate::idl::common::assert_parse;
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
@@ -17,7 +24,7 @@ pub enum Type {
     Map(Box<Type>, Box<Type>),
 }
 
-fn parse_type_named(input: &str) -> IResult<&str, Type> {
+fn parse_type_named(input: Span) -> IResult<Span, Type> {
     map(
         pair(
             parse_identifier,
@@ -27,7 +34,7 @@ fn parse_type_named(input: &str) -> IResult<&str, Type> {
     )(input)
 }
 
-fn parse_generics(input: &str) -> IResult<&str, Vec<Type>> {
+fn parse_generics(input: Span) -> IResult<Span, Vec<Type>> {
     map(
         opt(
             preceded(
@@ -45,7 +52,7 @@ fn parse_generics(input: &str) -> IResult<&str, Vec<Type>> {
     )(input)
 }
 
-fn parse_type_array(input: &str) -> IResult<&str, Type> {
+fn parse_type_array(input: Span) -> IResult<Span, Type> {
     context(
         "array",
         preceded(
@@ -58,7 +65,7 @@ fn parse_type_array(input: &str) -> IResult<&str, Type> {
     )(input)
 }
 
-fn parse_type_map_inner(input: &str) -> IResult<&str, Type> {
+fn parse_type_map_inner(input: Span) -> IResult<Span, Type> {
     map(
         separated_pair(
             preceded(ws, parse_type),
@@ -72,7 +79,7 @@ fn parse_type_map_inner(input: &str) -> IResult<&str, Type> {
     )(input)
 }
 
-fn parse_type_map(input: &str) -> IResult<&str, Type> {
+fn parse_type_map(input: Span) -> IResult<Span, Type> {
     context(
         "map",
         preceded(
@@ -85,7 +92,7 @@ fn parse_type_map(input: &str) -> IResult<&str, Type> {
     )(input)
 }
 
-pub fn parse_type(input: &str) -> IResult<&str, Type> {
+pub fn parse_type(input: Span) -> IResult<Span, Type> {
     preceded(
         ws,
         alt((
@@ -100,9 +107,9 @@ pub fn parse_type(input: &str) -> IResult<&str, Type> {
 fn test_parse_type_named() {
     let contents = ["Foo"];
     for content in contents.iter() {
-        assert_eq!(
-            parse_type(content),
-            Ok(("", Type::Named("Foo".to_string(), vec![])))
+        assert_parse(
+            parse_type(Span::new(content)),
+            Type::Named("Foo".to_string(), vec![])
         );
     }
 }
@@ -117,9 +124,9 @@ fn test_parse_type_named_with_generic_named() {
         "Foo<UUID,>",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_type(content),
-            Ok(("", Type::Named("Foo".to_string(), vec![Type::Named("UUID".to_string(), vec![])])))
+        assert_parse(
+            parse_type(Span::new(content)),
+            Type::Named("Foo".to_string(), vec![Type::Named("UUID".to_string(), vec![])])
         );
     }
 }
@@ -137,13 +144,13 @@ fn test_parse_type_named_with_generic_generic() {
         "Foo<Bar<UUID,>,>",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_type(content),
-            Ok(("", Type::Named("Foo".to_string(), vec![
+        assert_parse(
+            parse_type(Span::new(content)),
+            Type::Named("Foo".to_string(), vec![
                 Type::Named("Bar".to_string(), vec![
                     Type::Named("UUID".to_string(), vec![])
                 ])
-            ])))
+            ])
         );
     }
 }
@@ -153,11 +160,11 @@ fn test_parse_type_named_with_generic_generic() {
 fn test_parse_type_array() {
     let contents = ["[UUID]", "[ UUID]", "[UUID ]", "[ UUID ]"];
     for content in contents.iter() {
-        assert_eq!(
-            parse_type(content),
-            Ok(("", Type::Array(
+        assert_parse(
+            parse_type(Span::new(content)),
+            Type::Array(
                 Box::new(Type::Named("UUID".to_string(), vec![]))
-            )))
+            )
         );
     }
 }
@@ -173,12 +180,12 @@ fn test_parse_type_map() {
         "{ UUID : String }",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_type(content),
-            Ok(("", Type::Map(
+        assert_parse(
+            parse_type(Span::new(content)),
+            Type::Map(
                 Box::new(Type::Named("UUID".to_string(), vec![])),
                 Box::new(Type::Named("String".to_string(), vec![]))
-            )))
+            )
         );
     }
 }

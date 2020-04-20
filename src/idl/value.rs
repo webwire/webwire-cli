@@ -9,8 +9,12 @@ use nom::{
     sequence::{pair, preceded, separated_pair, terminated},
     IResult,
 };
-
-use crate::idl::common::parse_identifier;
+use crate::idl::common::{
+    parse_identifier,
+    Span,
+};
+#[cfg(test)]
+use crate::idl::common::assert_parse;
 
 #[derive(Debug, PartialEq)]
 pub enum Value {
@@ -22,11 +26,11 @@ pub enum Value {
     Identifier(String),
 }
 
-pub fn parse_boolean(input: &str) -> IResult<&str, bool> {
+pub fn parse_boolean(input: Span) -> IResult<Span, bool> {
     alt((map(tag("false"), |_| false), map(tag("true"), |_| true)))(input)
 }
 
-pub fn parse_string(input: &str) -> IResult<&str, String> {
+pub fn parse_string(input: Span) -> IResult<Span, String> {
     context(
         "string",
         preceded(
@@ -52,35 +56,35 @@ pub fn parse_string(input: &str) -> IResult<&str, String> {
 
 #[test]
 fn test_parse_value_string() {
-    assert_eq!(
-        parse_value("\"hello\""),
-        Ok(("", Value::String("hello".to_string())))
+    assert_parse(
+        parse_value(Span::new("\"hello\"")),
+        Value::String("hello".to_string())
     );
-    assert_eq!(
-        parse_value("\"hello world\""),
-        Ok(("", Value::String("hello world".to_string())))
+    assert_parse(
+        parse_value(Span::new("\"hello world\"")),
+        Value::String("hello world".to_string())
     );
-    assert_eq!(
-        parse_value("\"hello\\nworld\""),
-        Ok(("", Value::String("hello\nworld".to_string())))
+    assert_parse(
+        parse_value(Span::new("\"hello\\nworld\"")),
+        Value::String("hello\nworld".to_string())
     );
-    assert_eq!(
-        parse_value("\"hello \\\"world\\\"\""),
-        Ok(("", Value::String("hello \"world\"".to_string())))
+    assert_parse(
+        parse_value(Span::new("\"hello \\\"world\\\"\"")),
+        Value::String("hello \"world\"".to_string())
     );
-    assert_eq!(
-        parse_value("\"backspace\\\\\""),
-        Ok(("", Value::String("backspace\\".to_string())))
+    assert_parse(
+        parse_value(Span::new("\"backspace\\\\\"")),
+        Value::String("backspace\\".to_string())
     );
 }
 
-pub fn parse_integer_dec(input: &str) -> IResult<&str, i64> {
+pub fn parse_integer_dec(input: Span) -> IResult<Span, i64> {
     map_res(pair(opt(one_of("+-")), digit1), |(sign, number)| {
         i64::from_str_radix(format!("{}{}", sign.unwrap_or('+'), number).as_str(), 10)
     })(input)
 }
 
-pub fn parse_integer_hex(input: &str) -> IResult<&str, i64> {
+pub fn parse_integer_hex(input: Span) -> IResult<Span, i64> {
     map_res(
         pair(
             opt(one_of("+-")),
@@ -92,11 +96,11 @@ pub fn parse_integer_hex(input: &str) -> IResult<&str, i64> {
     )(input)
 }
 
-pub fn parse_integer(input: &str) -> IResult<&str, i64> {
+pub fn parse_integer(input: Span) -> IResult<Span, i64> {
     alt((parse_integer_hex, parse_integer_dec))(input)
 }
 
-pub fn parse_float(input: &str) -> IResult<&str, f64> {
+pub fn parse_float(input: Span) -> IResult<Span, f64> {
     context(
         "float",
         map_res(separated_pair(digit1, char('.'), digit1), |(a, b)| {
@@ -105,14 +109,14 @@ pub fn parse_float(input: &str) -> IResult<&str, f64> {
     )(input)
 }
 
-pub fn parse_range(input: &str) -> IResult<&str, (Option<i64>, Option<i64>)> {
+pub fn parse_range(input: Span) -> IResult<Span, (Option<i64>, Option<i64>)> {
     context(
         "range",
         separated_pair(opt(parse_integer), tag(".."), opt(parse_integer)),
     )(input)
 }
 
-pub fn parse_value(input: &str) -> IResult<&str, Value> {
+pub fn parse_value(input: Span) -> IResult<Span, Value> {
     alt((
         map(parse_boolean, Value::Boolean),
         map(parse_range, |(min, max)| Value::Range(min, max)),
@@ -125,40 +129,40 @@ pub fn parse_value(input: &str) -> IResult<&str, Value> {
 
 #[test]
 fn test_parse_value_boolean() {
-    assert_eq!(parse_value("true"), Ok(("", Value::Boolean(true))));
-    assert_eq!(parse_value("false"), Ok(("", Value::Boolean(false))));
+    assert_parse(parse_value(Span::new("true")), Value::Boolean(true));
+    assert_parse(parse_value(Span::new("false")), Value::Boolean(false));
 }
 
 #[test]
 fn test_parse_value_integer() {
-    assert_eq!(parse_value("1337"), Ok(("", Value::Integer(1337))));
-    assert_eq!(parse_value("-42"), Ok(("", Value::Integer(-42))));
-    assert_eq!(
-        parse_value("9223372036854775807"),
-        Ok(("", Value::Integer(9223372036854775807)))
+    assert_parse(parse_value(Span::new("1337")), Value::Integer(1337));
+    assert_parse(parse_value(Span::new("-42")), Value::Integer(-42));
+    assert_parse(
+        parse_value(Span::new("9223372036854775807")),
+        Value::Integer(9223372036854775807)
     );
-    assert_eq!(
-        parse_value("-9223372036854775808"),
-        Ok(("", Value::Integer(-9223372036854775808)))
+    assert_parse(
+        parse_value(Span::new("-9223372036854775808")),
+        Value::Integer(-9223372036854775808)
     );
-    assert_eq!(parse_value("0xFF"), Ok(("", Value::Integer(0xFF))));
-    assert_eq!(parse_value("-0xFF"), Ok(("", Value::Integer(-0xFF))));
+    assert_parse(parse_value(Span::new("0xFF")), Value::Integer(0xFF));
+    assert_parse(parse_value(Span::new("-0xFF")), Value::Integer(-0xFF));
 }
 
 #[test]
 fn test_parse_value_integer_out_of_range() {
     use nom::error::ErrorKind;
     assert_eq!(
-        parse_value("9223372036854775808"),
+        parse_value(Span::new("9223372036854775808")),
         Err(nom::Err::Error((
-            "9223372036854775808",
+            Span::new("9223372036854775808"),
             ErrorKind::TakeWhile1
         )))
     );
     assert_eq!(
-        parse_value("-9223372036854775809"),
+        parse_value(Span::new("-9223372036854775809")),
         Err(nom::Err::Error((
-            "-9223372036854775809",
+            Span::new("-9223372036854775809"),
             ErrorKind::TakeWhile1
         )))
     );
@@ -166,18 +170,18 @@ fn test_parse_value_integer_out_of_range() {
 
 #[test]
 fn test_parse_value_float() {
-    assert_eq!(parse_value("1337.0"), Ok(("", Value::Float(1337f64))));
-    assert_eq!(parse_value("13.37"), Ok(("", Value::Float(13.37f64))));
+    assert_parse(parse_value(Span::new("1337.0")), Value::Float(1337f64));
+    assert_parse(parse_value(Span::new("13.37")), Value::Float(13.37f64));
 }
 
 #[test]
 fn test_parse_value_range() {
-    assert_eq!(
-        parse_value("0..1337"),
-        Ok(("", Value::Range(Some(0), Some(1337))))
+    assert_parse(
+        parse_value(Span::new("0..1337")),
+        Value::Range(Some(0), Some(1337))
     );
-    assert_eq!(
-        parse_value("0..0xFF"),
-        Ok(("", Value::Range(Some(0), Some(0xFF))))
+    assert_parse(
+        parse_value(Span::new("0..0xFF")),
+        Value::Range(Some(0), Some(0xFF))
     );
 }

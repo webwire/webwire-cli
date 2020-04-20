@@ -3,9 +3,12 @@ const EXAMPLE_SCHEMA: &str = include_str!("./idl_complete.ww");
 #[test]
 fn test_schema_loader() {
     use webwire::idl::*;
-    let result = parse_document(EXAMPLE_SCHEMA);
+    let result = parse_document(Span::new(EXAMPLE_SCHEMA));
+    assert!(result.is_ok(), "{:?}", result);
+    let result = result.unwrap();
     assert_eq!(
-        Ok(Document {
+        result,
+        Document {
             parts: vec![
                 NamespacePart::Enum(Enum {
                     name: "UserState".to_string(),
@@ -326,7 +329,6 @@ fn test_schema_loader() {
                     ]
                 }),
             ]
-        }),
-        result
+        },
     );
 }

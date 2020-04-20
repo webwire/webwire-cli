@@ -1,4 +1,5 @@
 use crate::idl::namespace::{parse_namespace_content, NamespacePart};
+use crate::idl::common::Span;
 
 #[derive(Debug, PartialEq)]
 pub struct Document {
@@ -7,15 +8,15 @@ pub struct Document {
 
 #[derive(Debug, PartialEq)]
 pub enum ParseError<'a> {
-    Nom(nom::Err<(&'a str, nom::error::ErrorKind)>),
-    TrailingGarbage(String),
+    Nom(nom::Err<(Span<'a>, nom::error::ErrorKind)>),
+    TrailingGarbage(Span<'a>),
 }
 
-pub fn parse_document<'a>(input: &'a str) -> Result<Document, ParseError> {
+pub fn parse_document(input: Span) -> Result<Document, ParseError> {
     let result = parse_namespace_content(input);
     match result {
-        Ok(("", parts)) => Ok(Document { parts: parts }),
-        Ok((garbage, _)) => Err(ParseError::TrailingGarbage(garbage.to_string())),
+        Ok((span, parts)) if span.fragment() == &"" => Ok(Document { parts: parts }),
+        Ok((garbage, _)) => Err(ParseError::TrailingGarbage(garbage)),
         Err(error) => Err(ParseError::Nom(error)),
     }
 }
@@ -45,7 +46,7 @@ fn test_parse_document() {
         }
     ";
     assert_eq!(
-        parse_document(content),
+        parse_document(Span::new(content)),
         Ok(Document {
             parts: vec![
                 NamespacePart::Struct(Struct {

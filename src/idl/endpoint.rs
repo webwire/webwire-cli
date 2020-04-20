@@ -2,12 +2,15 @@ use nom::{
     bytes::complete::tag,
     character::complete::char,
     combinator::{map, opt},
-    sequence::{pair, preceded, terminated, tuple},
+    sequence::{preceded, terminated, tuple},
     IResult,
 };
 
-use crate::idl::common::{parse_identifier, ws, ws1};
+use crate::idl::common::{parse_identifier, ws, ws1, Span};
 use crate::idl::r#type::{parse_type, Type};
+
+#[cfg(test)]
+use crate::idl::common::assert_parse;
 
 #[derive(Debug, PartialEq)]
 pub struct Endpoint {
@@ -16,7 +19,7 @@ pub struct Endpoint {
     pub response: Option<Type>,
 }
 
-pub fn parse_endpoint(input: &str) -> IResult<&str, Endpoint> {
+pub fn parse_endpoint(input: Span) -> IResult<Span, Endpoint> {
     map(
         tuple((
             preceded(tag("endpoint"), preceded(ws1, parse_identifier)),
@@ -49,16 +52,13 @@ fn test_parse_endpoint_0() {
         "endpoint ping( )",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_endpoint(content),
-            Ok((
-                "",
-                Endpoint {
-                    name: "ping".to_string(),
-                    request: None,
-                    response: None,
-                }
-            ))
+        assert_parse(
+            parse_endpoint(Span::new(content)),
+            Endpoint {
+                name: "ping".to_string(),
+                request: None,
+                response: None,
+            }
         )
     }
 }
@@ -74,16 +74,13 @@ fn test_parse_endpoint_1() {
         "endpoint notify(Notification )",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_endpoint(content),
-            Ok((
-                "",
-                Endpoint {
-                    name: "notify".to_string(),
-                    request: Some(Type::Named("Notification".to_string(), vec![])),
-                    response: None,
-                }
-            ))
+        assert_parse(
+            parse_endpoint(Span::new(content)),
+            Endpoint {
+                name: "notify".to_string(),
+                request: Some(Type::Named("Notification".to_string(), vec![])),
+                response: None,
+            }
         )
     }
 }
@@ -99,16 +96,13 @@ fn test_parse_endpoint_2() {
         "endpoint get_time()-> Time",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_endpoint(content),
-            Ok((
-                "",
-                Endpoint {
-                    name: "get_time".to_string(),
-                    request: None,
-                    response: Some(Type::Named("Time".to_string(), vec![])),
-                }
-            ))
+        assert_parse(
+            parse_endpoint(Span::new(content)),
+            Endpoint {
+                name: "get_time".to_string(),
+                request: None,
+                response: Some(Type::Named("Time".to_string(), vec![])),
+            }
         )
     }
 }
@@ -128,19 +122,16 @@ fn test_parse_endpoint_3() {
         "endpoint no_response()->Result<None,SomeError >",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_endpoint(content),
-            Ok((
-                "",
-                Endpoint {
-                    name: "no_response".to_string(),
-                    request: None,
-                    response: Some(Type::Named("Result".to_string(), vec![
-                        Type::Named("None".to_string(), vec![]),
-                        Type::Named("SomeError".to_string(), vec![]),
-                    ])),
-                }
-            ))
+        assert_parse(
+            parse_endpoint(Span::new(content)),
+            Endpoint {
+                name: "no_response".to_string(),
+                request: None,
+                response: Some(Type::Named("Result".to_string(), vec![
+                    Type::Named("None".to_string(), vec![]),
+                    Type::Named("SomeError".to_string(), vec![]),
+                ])),
+            }
         )
     }
 }
@@ -160,19 +151,16 @@ fn test_parse_endpoint_4() {
         "endpoint hello(HelloRequest)->Result<HelloResponse,HelloError >",
     ];
     for content in contents.iter() {
-        assert_eq!(
-            parse_endpoint(content),
-            Ok((
-                "",
-                Endpoint {
-                    name: "hello".to_string(),
-                    request: Some(Type::Named("HelloRequest".to_string(), vec![])),
-                    response: Some(Type::Named("Result".to_string(), vec![
-                        Type::Named("HelloResponse".to_string(), vec![]),
-                        Type::Named("HelloError".to_string(), vec![]),
-                    ])),
-                }
-            ))
+        assert_parse(
+            parse_endpoint(Span::new(content)),
+            Endpoint {
+                name: "hello".to_string(),
+                request: Some(Type::Named("HelloRequest".to_string(), vec![])),
+                response: Some(Type::Named("Result".to_string(), vec![
+                    Type::Named("HelloResponse".to_string(), vec![]),
+                    Type::Named("HelloError".to_string(), vec![]),
+                ])),
+            }
         )
     }
 }
