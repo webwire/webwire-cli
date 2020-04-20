@@ -1,13 +1,12 @@
-webwire
-=======
+# webwire
 
 Webwire is a **contract-first API** system which features an
 [interface description language](docs/interface_description_language.md),
 a network [protocol](doc/protocol.md) and
 [code generator](docs/code_generator.md) for both servers and clients.
 
-Example
--------
+
+## Example
 
 The following example assumes a Rust server and a TypeScript client. Webwire
 is by no means limited to those two but those languages show the potential of
@@ -42,7 +41,8 @@ A Rust server implementation for the given code would look like this:
 
 ```rust
 use std::net::SocketAddr;
-use webwire::hyper::{Server, Request, Response};
+use webwire::{Context, Request, Response}
+use webwire::hyper::Server;
 
 mod api;
 use api::v1::{Hello, HelloRequest, HelloResponse}; // this is the generated code
@@ -50,10 +50,10 @@ use api::v1::{Hello, HelloRequest, HelloResponse}; // this is the generated code
 struct HelloService {}
 
 impl Hello for HelloService {
-    fn hello(request: Request<HelloRequest>) -> Response<HelloResponse> {
-        Response::Ok(proto::HelloResponse {
+    fn hello(&self, ctx: &Context, request: &HelloRequest) -> HelloResponse {
+        HelloResponse {
             message: format!("Hello {}!", request.name)
-        })
+        }
     }
 }
 
@@ -76,8 +76,7 @@ const response = await client.hello({ name: 'World' })
 assert(response.message === 'Hello World!')
 ```
 
-Building blocks
----------------
+## Building blocks
 
 - The [webwire interface description language](docs/interface_description_language.md)
   describes service endpoints and how they are called.
@@ -89,11 +88,15 @@ Building blocks
   language to generate client and server stubs.
 
 
-Unique selling points
----------------------
+## Unique selling points
 
-- Webwire generates client code which is ready to run. The generated
-  client code contains everything to make requests to servers.
+- Webwire generates client and server code which is ready to run. The
+  generated code contains everything to make requests and
+
+- Webwire supports both **stateless unidirectional** communication and and
+  **stateful bidirectional** communication. This makes it a perfect fit for
+  application that require some kind of real-time update from the server
+  without the client having to poll for updates.
 
 - Webwire validates requests and responses. If data does not match the
   given schema an error is raised an the data is not processed any
@@ -112,8 +115,7 @@ Unique selling points
   use almost the same structure which just differs in a few fields.
 
 
-Non goals
----------
+## Non goals
 
 - Webwire can not be used to describe existing APIs. Webwire only makes
   sense as a whole package. The IDL, protocol and code generator all make
