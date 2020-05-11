@@ -1,5 +1,7 @@
 # webwire
 
+![webwire logo](docs/logo.svg)
+
 Webwire is a **contract-first API** system which features an
 [interface description language](docs/interface_description_language.md),
 a network [protocol](doc/protocol.md) and
