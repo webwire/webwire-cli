@@ -103,9 +103,15 @@ pub fn parse_integer(input: Span) -> IResult<Span, i64> {
 pub fn parse_float(input: Span) -> IResult<Span, f64> {
     context(
         "float",
-        map_res(separated_pair(digit1, char('.'), digit1), |(a, b)| {
-            f64::from_str(format!("{}.{}", a, b).as_str())
-        }),
+        map_res(
+            pair(
+                opt(one_of("+-")),
+                separated_pair(digit1, char('.'), digit1),
+            ),
+            |(sign, (a, b))| {
+                f64::from_str(format!("{}{}.{}", sign.unwrap_or('+'), a, b).as_str())
+            }
+        ),
     )(input)
 }
 
@@ -172,6 +178,8 @@ fn test_parse_value_integer_out_of_range() {
 fn test_parse_value_float() {
     assert_parse(parse_value(Span::new("1337.0")), Value::Float(1337f64));
     assert_parse(parse_value(Span::new("13.37")), Value::Float(13.37f64));
+    assert_parse(parse_value(Span::new("+13.37")), Value::Float(13.37f64));
+    assert_parse(parse_value(Span::new("-13.37")), Value::Float(-13.37f64));
 }
 
 #[test]
