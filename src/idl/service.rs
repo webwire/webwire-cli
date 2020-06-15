@@ -3,6 +3,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::char,
     combinator::{cut, map, opt},
+    error::context,
     multi::separated_list,
     sequence::{pair, preceded, terminated},
     IResult,
@@ -16,6 +17,7 @@ use crate::idl::common::{
     ws1,
     Span
 };
+use crate::idl::method::{Method, parse_method};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -23,82 +25,36 @@ use crate::idl::common::assert_parse;
 #[derive(Debug, PartialEq)]
 pub struct Service {
     pub name: String,
-    pub endpoints: Vec<ServiceEndpoint>,
+    pub methods: Vec<Method>,
 }
 
-#[derive(Debug, PartialEq)]
-pub struct ServiceEndpoint {
-    pub in_: bool,
-    pub out: bool,
-    pub name: String,
-}
-
-fn parse_endpoint(input: Span) -> IResult<Span, ServiceEndpoint> {
-    map(
-        pair(
-            preceded(
-                ws,
-                terminated(alt((tag("inout"), tag("in"), tag("out"))), ws1),
-            ),
-            parse_identifier,
+fn parse_methods(input: Span) -> IResult<Span, Vec<Method>> {
+    context(
+        "methods",
+        preceded(
+            preceded(ws, char('{')),
+            cut(terminated(
+                separated_list(parse_field_separator, preceded(ws, parse_method)),
+                preceded(trailing_comma, preceded(ws, char('}'))),
+            )),
         ),
-        |(inout, name)| ServiceEndpoint {
-            in_: inout.fragment() == &"in" || inout.fragment() == &"inout",
-            out: inout.fragment() == &"out" || inout.fragment() == &"inout",
-            name: name,
-        },
-    )(input)
-}
-
-fn parse_endpoints(input: Span) -> IResult<Span, Vec<ServiceEndpoint>> {
-    preceded(
-        preceded(ws, char('{')),
-        cut(terminated(
-            separated_list(parse_field_separator, parse_endpoint),
-            preceded(opt(preceded(ws, trailing_comma)), preceded(ws, char('}'))),
-        )),
     )(input)
 }
 
 pub fn parse_service(input: Span) -> IResult<Span, Service> {
-    map(
-        preceded(
-            terminated(tag("service"), ws1),
-            cut(pair(parse_identifier, parse_endpoints)),
-        ),
-        |(name, endpoints)| Service {
-            name: name,
-            endpoints: endpoints,
-        },
+    context(
+        "service",
+        map(
+            preceded(
+                terminated(tag("service"), ws1),
+                cut(pair(parse_identifier, parse_methods)),
+            ),
+            |(name, methods)| Service {
+                name,
+                methods,
+            },
+        )
     )(input)
-}
-
-#[test]
-fn test_parse_endpoint() {
-    assert_parse(
-        parse_endpoint(Span::new("in f")),
-        ServiceEndpoint {
-            name: "f".to_string(),
-            in_: true,
-            out: false
-        }
-    );
-    assert_parse(
-        parse_endpoint(Span::new("out f")),
-        ServiceEndpoint {
-            name: "f".to_string(),
-            in_: false,
-            out: true
-        }
-    );
-    assert_parse(
-        parse_endpoint(Span::new("inout f")),
-        ServiceEndpoint {
-            name: "f".to_string(),
-            in_: true,
-            out: true
-        }
-    );
 }
 
 #[test]
@@ -115,7 +71,7 @@ fn test_parse_service_no_endpoints() {
             parse_service(Span::new(content)),
             Service {
                 name: "Pinger".to_string(),
-                endpoints: vec![],
+                methods: vec![],
             }
         )
     }
@@ -123,30 +79,38 @@ fn test_parse_service_no_endpoints() {
 
 #[test]
 fn test_parse_service() {
+    use crate::idl::r#type::Type;
     let contents = [
         // normal whitespaces
-        "service Pinger { in ping, inout get_version }",
+        "service Pinger { ping(), get_version() -> String }",
         // whitespace variants
-        "service Pinger{ in ping,inout get_version}",
-        "service Pinger{in ping ,inout get_version}",
-        "service Pinger{in ping, inout get_version}",
-        "service Pinger{in ping,inout get_version }",
+        "service Pinger{ping(),get_version()->String}",
+        "service Pinger {ping(),get_version()->String}",
+        "service Pinger{ping (),get_version()->String}",
+        "service Pinger{ping( ),get_version()->String}",
+        "service Pinger{ping() ,get_version()->String}",
+        "service Pinger{ping(), get_version()->String}",
+        "service Pinger{ping(),get_version ()->String}",
+        "service Pinger{ping(),get_version( )->String}",
+        "service Pinger{ping(),get_version() ->String}",
+        "service Pinger{ping(),get_version()-> String}",
+        "service Pinger{ping(),get_version()->String }",
     ];
     for content in contents.iter() {
         assert_parse(
             parse_service(Span::new(content)),
             Service {
                 name: "Pinger".to_string(),
-                endpoints: vec![
-                    ServiceEndpoint {
+                methods: vec![
+                    Method {
                         name: "ping".to_string(),
-                        in_: true,
-                        out: false
+                        request: None,
+                        response: None,
                     },
-                    ServiceEndpoint {
+                    Method {
                         name: "get_version".to_string(),
-                        in_: true,
-                        out: true
+                        request: None,
+                        response: Some(Type::Named("String".to_string(), vec!())),
                     }
                 ],
             }

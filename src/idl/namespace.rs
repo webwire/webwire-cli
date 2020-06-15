@@ -9,9 +9,7 @@ use nom::{
 };
 
 use crate::idl::common::{parse_identifier, ws, ws1, Span};
-use crate::idl::endpoint::{parse_endpoint, Endpoint};
 use crate::idl::fieldset::{parse_fieldset, Fieldset};
-use crate::idl::operation::{parse_operation, Operation};
 use crate::idl::r#enum::{parse_enum, Enum};
 use crate::idl::r#struct::{parse_struct, Struct};
 use crate::idl::service::{parse_service, Service};
@@ -24,8 +22,6 @@ pub enum NamespacePart {
     Enum(Enum),
     Struct(Struct),
     Fieldset(Fieldset),
-    Operation(Operation),
-    Endpoint(Endpoint),
     Service(Service),
     Namespace(Namespace),
 }
@@ -36,8 +32,6 @@ impl NamespacePart {
             Self::Enum(part) => &part.name,
             Self::Struct(part) => &part.name,
             Self::Fieldset(part) => &part.name,
-            Self::Operation(part) => &part.name,
-            Self::Endpoint(part) => &part.name,
             Self::Service(part) => &part.name,
             Self::Namespace(part) => &part.name,
         };
@@ -55,9 +49,7 @@ fn parse_namespace_part(input: Span) -> IResult<Span, NamespacePart> {
     alt((
         map(parse_enum, NamespacePart::Enum),
         map(parse_fieldset, NamespacePart::Fieldset),
-        map(parse_operation, NamespacePart::Operation),
         map(parse_struct, NamespacePart::Struct),
-        map(parse_endpoint, NamespacePart::Endpoint),
         map(parse_service, NamespacePart::Service),
         map(parse_namespace, NamespacePart::Namespace),
     ))(input)
@@ -96,7 +88,7 @@ fn test_parse_namespace() {
     use crate::idl::field_option::FieldOption;
     use crate::idl::r#struct::Field;
     use crate::idl::r#type::Type;
-    use crate::idl::service::ServiceEndpoint;
+    use crate::idl::method::Method;
     use crate::idl::value::Value;
     let content = "
         namespace test {
@@ -107,11 +99,9 @@ fn test_parse_namespace() {
             struct Group {
                 name: String
             }
-            endpoint ping()
-            endpoint get_version() -> String
             service Pinger {
-                in ping,
-                inout get_version
+                ping(),
+                get_version() -> String
             }
         }";
     assert_parse(
@@ -150,29 +140,19 @@ fn test_parse_namespace() {
                         options: vec![],
                     },],
                 }),
-                NamespacePart::Endpoint(Endpoint {
-                    name: "ping".to_string(),
-                    request: None,
-                    response: None,
-                }),
-                NamespacePart::Endpoint(Endpoint {
-                    name: "get_version".to_string(),
-                    request: None,
-                    response: Some(Type::Named("String".to_string(), vec![])),
-                }),
                 NamespacePart::Service(Service {
                     name: "Pinger".to_string(),
-                    endpoints: vec![
-                        ServiceEndpoint {
+                    methods: vec![
+                        Method {
                             name: "ping".to_string(),
-                            in_: true,
-                            out: false
+                            request: None,
+                            response: None,
                         },
-                        ServiceEndpoint {
+                        Method {
                             name: "get_version".to_string(),
-                            in_: true,
-                            out: true
-                        }
+                            request: None,
+                            response: Some(Type::Named("String".to_string(), vec![])),
+                        },
                     ],
                 }),
             ]

@@ -23,26 +23,24 @@ pub fn parse_document(input: Span) -> Result<Document, ParseError> {
 
 #[test]
 fn test_parse_document() {
-    use crate::idl::endpoint::Endpoint;
     use crate::idl::field_option::FieldOption;
+    use crate::idl::method::Method;
     use crate::idl::namespace::NamespacePart;
     use crate::idl::r#struct::{Field, Struct};
     use crate::idl::r#type::Type;
-    use crate::idl::service::{Service, ServiceEndpoint};
+    use crate::idl::service::Service;
     use crate::idl::value::Value;
     let content = "
         struct Person {
             name: String (length=1..50),
-            age: Integer
+            age: Integer,
         }
         struct Group {
-            name: String
+            name: String,
         }
-        endpoint ping()
-        endpoint get_version() -> String
         service Pinger {
-            in ping,
-            inout get_version
+            ping(),
+            get_version() -> String,
         }
     ";
     assert_eq!(
@@ -80,29 +78,19 @@ fn test_parse_document() {
                         options: vec![],
                     },],
                 }),
-                NamespacePart::Endpoint(Endpoint {
-                    name: "ping".to_string(),
-                    request: None,
-                    response: None,
-                }),
-                NamespacePart::Endpoint(Endpoint {
-                    name: "get_version".to_string(),
-                    request: None,
-                    response: Some(Type::Named("String".to_string(), vec![])),
-                }),
                 NamespacePart::Service(Service {
                     name: "Pinger".to_string(),
-                    endpoints: vec![
-                        ServiceEndpoint {
+                    methods: vec![
+                        Method {
                             name: "ping".to_string(),
-                            in_: true,
-                            out: false
+                            request: None,
+                            response: None,
                         },
-                        ServiceEndpoint {
+                        Method {
                             name: "get_version".to_string(),
-                            in_: true,
-                            out: true
-                        }
+                            request: None,
+                            response: Some(Type::Named("String".to_string(), vec![])),
+                        },
                     ],
                 }),
             ]

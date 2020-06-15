@@ -13,16 +13,16 @@ use crate::idl::r#type::{parse_type, Type};
 use crate::idl::common::assert_parse;
 
 #[derive(Debug, PartialEq)]
-pub struct Endpoint {
+pub struct Method {
     pub name: String,
     pub request: Option<Type>,
     pub response: Option<Type>,
 }
 
-pub fn parse_endpoint(input: Span) -> IResult<Span, Endpoint> {
+pub fn parse_method(input: Span) -> IResult<Span, Method> {
     map(
         tuple((
-            preceded(tag("endpoint"), preceded(ws1, parse_identifier)),
+            parse_identifier,
             preceded(
                 preceded(ws, char('(')),
                 terminated(opt(preceded(ws, parse_type)), preceded(ws, char(')'))),
@@ -33,7 +33,7 @@ pub fn parse_endpoint(input: Span) -> IResult<Span, Endpoint> {
             )),
         )),
         |(name, request, response)| {
-            Endpoint {
+            Method {
                 name: name,
                 request: request,
                 response: response,
@@ -43,18 +43,18 @@ pub fn parse_endpoint(input: Span) -> IResult<Span, Endpoint> {
 }
 
 #[test]
-fn test_parse_endpoint_0() {
+fn test_parse_method_0() {
     let contents = [
         // normal whitespace
-        "endpoint ping()",
+        "ping()",
         // whitespace variants
-        "endpoint ping ()",
-        "endpoint ping( )",
+        "ping ()",
+        "ping( )",
     ];
     for content in contents.iter() {
         assert_parse(
-            parse_endpoint(Span::new(content)),
-            Endpoint {
+            parse_method(Span::new(content)),
+            Method {
                 name: "ping".to_string(),
                 request: None,
                 response: None,
@@ -64,19 +64,19 @@ fn test_parse_endpoint_0() {
 }
 
 #[test]
-fn test_parse_endpoint_1() {
+fn test_parse_method_1() {
     let contents = [
         // normal whitespace
-        "endpoint notify(Notification)",
+        "notify(Notification)",
         // whitespace variants
-        "endpoint notify (Notification)",
-        "endpoint notify( Notification)",
-        "endpoint notify(Notification )",
+        "notify (Notification)",
+        "notify( Notification)",
+        "notify(Notification )",
     ];
     for content in contents.iter() {
         assert_parse(
-            parse_endpoint(Span::new(content)),
-            Endpoint {
+            parse_method(Span::new(content)),
+            Method {
                 name: "notify".to_string(),
                 request: Some(Type::Named("Notification".to_string(), vec![])),
                 response: None,
@@ -86,19 +86,19 @@ fn test_parse_endpoint_1() {
 }
 
 #[test]
-fn test_parse_endpoint_2() {
+fn test_parse_method_2() {
     let contents = [
         // normal whitespace
-        "endpoint get_time() -> Time",
+        "get_time() -> Time",
         // whitespace variants
-        "endpoint get_time()->Time",
-        "endpoint get_time() ->Time",
-        "endpoint get_time()-> Time",
+        "get_time()->Time",
+        "get_time() ->Time",
+        "get_time()-> Time",
     ];
     for content in contents.iter() {
         assert_parse(
-            parse_endpoint(Span::new(content)),
-            Endpoint {
+            parse_method(Span::new(content)),
+            Method {
                 name: "get_time".to_string(),
                 request: None,
                 response: Some(Type::Named("Time".to_string(), vec![])),
@@ -108,23 +108,23 @@ fn test_parse_endpoint_2() {
 }
 
 #[test]
-fn test_parse_endpoint_3() {
+fn test_parse_method_3() {
     let contents = [
         // normal whitespace
-        "endpoint no_response() -> Result<None, SomeError>",
+        "no_response() -> Result<None, SomeError>",
         // whitespace variants
-        "endpoint no_response() ->Result<None,SomeError>",
-        "endpoint no_response()-> Result<None,SomeError>",
-        "endpoint no_response()->Result <None,SomeError>",
-        "endpoint no_response()->Result< None,SomeError>",
-        "endpoint no_response()->Result<None ,SomeError>",
-        "endpoint no_response()->Result<None, SomeError>",
-        "endpoint no_response()->Result<None,SomeError >",
+        "no_response() ->Result<None,SomeError>",
+        "no_response()-> Result<None,SomeError>",
+        "no_response()->Result <None,SomeError>",
+        "no_response()->Result< None,SomeError>",
+        "no_response()->Result<None ,SomeError>",
+        "no_response()->Result<None, SomeError>",
+        "no_response()->Result<None,SomeError >",
     ];
     for content in contents.iter() {
         assert_parse(
-            parse_endpoint(Span::new(content)),
-            Endpoint {
+            parse_method(Span::new(content)),
+            Method {
                 name: "no_response".to_string(),
                 request: None,
                 response: Some(Type::Named("Result".to_string(), vec![
@@ -137,23 +137,23 @@ fn test_parse_endpoint_3() {
 }
 
 #[test]
-fn test_parse_endpoint_4() {
+fn test_parse_method_4() {
     let contents = [
         // normal whitespace
-        "endpoint hello(HelloRequest) -> Result<HelloResponse, HelloError>",
+        "hello(HelloRequest) -> Result<HelloResponse, HelloError>",
         // whitespace variants
-        "endpoint hello(HelloRequest) ->Result<HelloResponse,HelloError>",
-        "endpoint hello(HelloRequest)-> Result<HelloResponse,HelloError>",
-        "endpoint hello(HelloRequest)->Result <HelloResponse,HelloError>",
-        "endpoint hello(HelloRequest)->Result< HelloResponse,HelloError>",
-        "endpoint hello(HelloRequest)->Result<HelloResponse ,HelloError>",
-        "endpoint hello(HelloRequest)->Result<HelloResponse, HelloError>",
-        "endpoint hello(HelloRequest)->Result<HelloResponse,HelloError >",
+        "hello(HelloRequest) ->Result<HelloResponse,HelloError>",
+        "hello(HelloRequest)-> Result<HelloResponse,HelloError>",
+        "hello(HelloRequest)->Result <HelloResponse,HelloError>",
+        "hello(HelloRequest)->Result< HelloResponse,HelloError>",
+        "hello(HelloRequest)->Result<HelloResponse ,HelloError>",
+        "hello(HelloRequest)->Result<HelloResponse, HelloError>",
+        "hello(HelloRequest)->Result<HelloResponse,HelloError >",
     ];
     for content in contents.iter() {
         assert_parse(
-            parse_endpoint(Span::new(content)),
-            Endpoint {
+            parse_method(Span::new(content)),
+            Method {
                 name: "hello".to_string(),
                 request: Some(Type::Named("HelloRequest".to_string(), vec![])),
                 response: Some(Type::Named("Result".to_string(), vec![

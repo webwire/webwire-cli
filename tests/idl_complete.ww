@@ -1,84 +1,82 @@
-enum UserState {
-    ACTIVE,
-    INACTIVE,
-    BANNED
-}
+namespace user {
 
-struct UserRequest {
-    email: Email
-}
+    enum UserState {
+        ACTIVE,
+        INACTIVE,
+        BANNED
+    }
 
-struct Name {
-    prefix: String (length=0..50),
-    first_name: String (length=0..100),
-    middle_name: String (length=0..100),
-    last_name: String (length=0..100, help="aka. family name"),
-    suffix: String (length=0..50),
-    full_name: String
-}
+    struct UserRequest {
+        email: Email
+    }
 
-fieldset NameUpdate for Name {
-    prefix?,
-    first_name?,
-    middle_name?,
-    last_name?,
-    suffix?
-}
+    struct Name {
+        prefix: String (length=0..50),
+        first_name: String (length=0..100),
+        middle_name: String (length=0..100),
+        last_name: String (length=0..100, help="aka. family name"),
+        suffix: String (length=0..50),
+        full_name: String
+    }
 
-struct User {
-    id: UUID,
-    email: Email,
-    name: Name,
-    password: String (length=5..64),
-    is_admin: Boolean,
-}
+    fieldset NameUpdate for Name {
+        prefix?,
+        first_name?,
+        middle_name?,
+        last_name?,
+        suffix?
+    }
 
-fieldset UserRead for User {
-    id,
-    email,
-    is_admin,
-    full_name
-}
+    struct User {
+        id: UUID,
+        email: Email,
+        name: Name,
+        password: String (length=5..64),
+        is_admin: Boolean,
+    }
 
-fieldset UserWrite for User {
-    id,
-    email?,
-    is_admin?,
-    name?,
-    password?,
-}
+    fieldset UserRead for User {
+        id,
+        email,
+        is_admin,
+        full_name
+    }
 
-struct UserListRequest {
-    offset?: Integer (size=32, range=0..),
-    limit?: Integer (range=1..200)
-}
+    fieldset UserWrite for User {
+        id,
+        email?,
+        is_admin?,
+        name?,
+        password?,
+    }
 
-struct UserList {
-    count: Integer (
-        range=0..0xFFFF,
-        help="Count of objects returned"
-    ),
-    users: [User] (length=0..128),
-    permissions: {UUID: String}
-}
+    struct UserListRequest {
+        offset?: Integer (size=32, range=0..),
+        limit?: Integer (range=1..200)
+    }
 
-enum GetError {
-    PermissionDenied,
-    DoesNotExist
-}
+    struct UserList {
+        count: Integer (
+            range=0..0xFFFF,
+            help="Count of objects returned"
+        ),
+        users: [User] (length=0..128),
+        permissions: {UUID: String}
+    }
 
-enum ListError {
-    PermissionDenied
-}
+    enum GetError {
+        PermissionDenied,
+        DoesNotExist
+    }
 
-endpoint get_version() -> String
+    enum ListError {
+        PermissionDenied
+    }
 
-endpoint user_get(UserRequest) -> Result<User, GetError>
+    service ExampleService {
+        get_version() -> String,
+        user_get(UserRequest) -> Result<UserRead, GetError>,
+        user_list(UserListRequest) -> Result<UserList, ListError>,
+    }
 
-endpoint user_list(UserListRequest) -> Result<UserList, ListError>
-
-service example {
-    inout get_version,
-    in user_list,
-    in user_get
 }
