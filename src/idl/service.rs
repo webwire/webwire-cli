@@ -1,8 +1,7 @@
 use nom::{
-    branch::alt,
     bytes::complete::tag,
     character::complete::char,
-    combinator::{cut, map, opt},
+    combinator::{cut, map},
     error::context,
     multi::separated_list,
     sequence::{pair, preceded, terminated},

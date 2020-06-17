@@ -6,7 +6,7 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{parse_identifier, ws, ws1, Span};
+use crate::idl::common::{parse_identifier, ws, Span};
 use crate::idl::r#type::{parse_type, Type};
 
 #[cfg(test)]
