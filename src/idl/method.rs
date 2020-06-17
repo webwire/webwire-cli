@@ -151,7 +151,7 @@ fn test_parse_method_4() {
             parse_method(Span::new(content)),
             Method {
                 name: "hello".to_string(),
-                input: Some(Type::Named("Helloinput".to_string(), vec![])),
+                input: Some(Type::Named("HelloRequest".to_string(), vec![])),
                 output: Some(Type::Named(
                     "Result".to_string(),
                     vec![

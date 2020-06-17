@@ -317,13 +317,13 @@ fn test_schema_loader() {
                         methods: vec![
                             Method {
                                 name: "get_version".to_string(),
-                                request: None,
-                                response: Some(Type::Named("String".to_string(), vec![])),
+                                input: None,
+                                output: Some(Type::Named("String".to_string(), vec![])),
                             },
                             Method {
                                 name: "user_get".to_string(),
-                                request: Some(Type::Named("UserRequest".to_string(), vec![])),
-                                response: Some(Type::Named(
+                                input: Some(Type::Named("UserRequest".to_string(), vec![])),
+                                output: Some(Type::Named(
                                     "Result".to_string(),
                                     vec![
                                         Type::Named("UserRead".to_string(), vec![]),
@@ -333,8 +333,8 @@ fn test_schema_loader() {
                             },
                             Method {
                                 name: "user_list".to_string(),
-                                request: Some(Type::Named("UserListRequest".to_string(), vec![])),
-                                response: Some(Type::Named(
+                                input: Some(Type::Named("UserListRequest".to_string(), vec![])),
+                                output: Some(Type::Named(
                                     "Result".to_string(),
                                     vec![
                                         Type::Named("UserList".to_string(), vec![]),
