@@ -16,7 +16,7 @@ pub use field_option::FieldOption;
 pub use fieldset::{Field as FieldsetField, Fieldset};
 pub use method::Method;
 pub use namespace::{Namespace, NamespacePart};
-pub use r#enum::Enum;
+pub use r#enum::{Enum, EnumVariant};
 pub use r#struct::{Field, Struct};
 pub use r#type::Type;
 pub use service::Service;

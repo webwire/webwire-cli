@@ -15,10 +15,19 @@ fn test_schema_loader() {
                     parts: vec![
                         NamespacePart::Enum(Enum {
                             name: "UserState".to_string(),
-                            values: vec![
-                                "ACTIVE".to_string(),
-                                "INACTIVE".to_string(),
-                                "BANNED".to_string()
+                            variants: vec![
+                                EnumVariant {
+                                    name: "ACTIVE".to_string(),
+                                    value_type: None,
+                                },
+                                EnumVariant {
+                                    name: "INACTIVE".to_string(),
+                                    value_type: None,
+                                },
+                                EnumVariant {
+                                    name: "BANNED".to_string(),
+                                    value_type: None,
+                                },
                             ]
                         }),
                         NamespacePart::Struct(Struct {
@@ -280,11 +289,25 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Enum(Enum {
                             name: "GetError".to_string(),
-                            values: vec!["PermissionDenied".to_string(), "DoesNotExist".to_string()]
+                            variants: vec![
+                                EnumVariant {
+                                    name: "PermissionDenied".to_string(),
+                                    value_type: None,
+                                },
+                                EnumVariant {
+                                    name: "DoesNotExist".to_string(),
+                                    value_type: None,
+                                },
+                            ],
                         }),
                         NamespacePart::Enum(Enum {
                             name: "ListError".to_string(),
-                            values: vec!["PermissionDenied".to_string()]
+                            variants: vec![
+                                EnumVariant {
+                                    name: "PermissionDenied".to_string(),
+                                    value_type: None,
+                                },
+                            ],
                         }),
                         NamespacePart::Service(Service {
                             name: "ExampleService".to_string(),
