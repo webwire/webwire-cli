@@ -1,3 +1,6 @@
+#[cfg(test)]
+use crate::idl::common::assert_parse;
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, Span};
 use nom::{
     branch::alt,
     character::complete::char,
@@ -7,15 +10,6 @@ use nom::{
     sequence::{pair, preceded, separated_pair, terminated},
     IResult,
 };
-use crate::idl::common::{
-    parse_identifier,
-    parse_field_separator,
-    trailing_comma,
-    ws,
-    Span,
-};
-#[cfg(test)]
-use crate::idl::common::assert_parse;
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
@@ -25,30 +19,24 @@ pub enum Type {
 }
 
 fn parse_type_named(input: Span) -> IResult<Span, Type> {
-    map(
-        pair(
-            parse_identifier,
-            parse_generics,
-        ),
-        |t| Type::Named(t.0, t.1)
-    )(input)
+    map(pair(parse_identifier, parse_generics), |t| {
+        Type::Named(t.0, t.1)
+    })(input)
 }
 
 fn parse_generics(input: Span) -> IResult<Span, Vec<Type>> {
     map(
-        opt(
-            preceded(
-                preceded(ws, char('<')),
-                cut(terminated(
-                    separated_list(parse_field_separator, preceded(ws, parse_type)),
-                    preceded(trailing_comma, preceded(ws, char('>'))),
-                )),
-            ),
-        ),
+        opt(preceded(
+            preceded(ws, char('<')),
+            cut(terminated(
+                separated_list(parse_field_separator, preceded(ws, parse_type)),
+                preceded(trailing_comma, preceded(ws, char('>'))),
+            )),
+        )),
         |v| match v {
             Some(v) => v,
             None => Vec::with_capacity(0),
-        }
+        },
     )(input)
 }
 
@@ -72,10 +60,7 @@ fn parse_type_map_inner(input: Span) -> IResult<Span, Type> {
             cut(preceded(ws, char(':'))),
             preceded(ws, parse_type),
         ),
-        |t| Type::Map(
-            Box::new(t.0),
-            Box::new(t.1)
-        ),
+        |t| Type::Map(Box::new(t.0), Box::new(t.1)),
     )(input)
 }
 
@@ -95,11 +80,7 @@ fn parse_type_map(input: Span) -> IResult<Span, Type> {
 pub fn parse_type(input: Span) -> IResult<Span, Type> {
     preceded(
         ws,
-        alt((
-            parse_type_named,
-            parse_type_array,
-            parse_type_map,
-        )),
+        alt((parse_type_named, parse_type_array, parse_type_map)),
     )(input)
 }
 
@@ -109,7 +90,7 @@ fn test_parse_type_named() {
     for content in contents.iter() {
         assert_parse(
             parse_type(Span::new(content)),
-            Type::Named("Foo".to_string(), vec![])
+            Type::Named("Foo".to_string(), vec![]),
         );
     }
 }
@@ -126,7 +107,10 @@ fn test_parse_type_named_with_generic_named() {
     for content in contents.iter() {
         assert_parse(
             parse_type(Span::new(content)),
-            Type::Named("Foo".to_string(), vec![Type::Named("UUID".to_string(), vec![])])
+            Type::Named(
+                "Foo".to_string(),
+                vec![Type::Named("UUID".to_string(), vec![])],
+            ),
         );
     }
 }
@@ -146,15 +130,16 @@ fn test_parse_type_named_with_generic_generic() {
     for content in contents.iter() {
         assert_parse(
             parse_type(Span::new(content)),
-            Type::Named("Foo".to_string(), vec![
-                Type::Named("Bar".to_string(), vec![
-                    Type::Named("UUID".to_string(), vec![])
-                ])
-            ])
+            Type::Named(
+                "Foo".to_string(),
+                vec![Type::Named(
+                    "Bar".to_string(),
+                    vec![Type::Named("UUID".to_string(), vec![])],
+                )],
+            ),
         );
     }
 }
-
 
 #[test]
 fn test_parse_type_array() {
@@ -162,9 +147,7 @@ fn test_parse_type_array() {
     for content in contents.iter() {
         assert_parse(
             parse_type(Span::new(content)),
-            Type::Array(
-                Box::new(Type::Named("UUID".to_string(), vec![]))
-            )
+            Type::Array(Box::new(Type::Named("UUID".to_string(), vec![]))),
         );
     }
 }
@@ -184,8 +167,8 @@ fn test_parse_type_map() {
             parse_type(Span::new(content)),
             Type::Map(
                 Box::new(Type::Named("UUID".to_string(), vec![])),
-                Box::new(Type::Named("String".to_string(), vec![]))
-            )
+                Box::new(Type::Named("String".to_string(), vec![])),
+            ),
         );
     }
 }

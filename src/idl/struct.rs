@@ -8,14 +8,7 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{
-    parse_field_separator,
-    parse_identifier,
-    trailing_comma,
-    ws,
-    ws1,
-    Span,
-};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
 use crate::idl::field_option::{parse_field_options, FieldOption};
 use crate::idl::r#type::{parse_type, Type};
 
@@ -56,19 +49,17 @@ pub fn parse_struct(input: Span) -> IResult<Span, Struct> {
 
 fn parse_generics(input: Span) -> IResult<Span, Vec<String>> {
     map(
-        opt(
-            preceded(
-                preceded(ws, char('<')),
-                cut(terminated(
-                    separated_list(parse_field_separator, preceded(ws, parse_identifier)),
-                    preceded(trailing_comma, preceded(ws, char('>'))),
-                )),
-            ),
-        ),
+        opt(preceded(
+            preceded(ws, char('<')),
+            cut(terminated(
+                separated_list(parse_field_separator, preceded(ws, parse_identifier)),
+                preceded(trailing_comma, preceded(ws, char('>'))),
+            )),
+        )),
         |v| match v {
             Some(v) => v,
             None => Vec::with_capacity(0),
-        }
+        },
     )(input)
 }
 
@@ -116,7 +107,7 @@ fn test_parse_field() {
                 type_: Type::Named("FooType".to_string(), vec![]),
                 optional: false,
                 options: vec![],
-            }
+            },
         );
     }
 }
@@ -137,7 +128,7 @@ fn test_parse_field_optional() {
                 type_: Type::Named("FooType".to_string(), vec![]),
                 optional: true,
                 options: vec![],
-            }
+            },
         );
     }
 }
@@ -170,7 +161,7 @@ fn test_parse_field_with_options() {
                     name: "length".to_string(),
                     value: Value::Range(Some(2), Some(50)),
                 }],
-            }
+            },
         );
     }
 }
@@ -199,7 +190,7 @@ fn test_parse_array_field_with_options() {
                     name: "length".to_string(),
                     value: Value::Range(Some(0), Some(32)),
                 }],
-            }
+            },
         );
     }
 }
@@ -229,7 +220,7 @@ fn test_parse_fields_1() {
                 type_: Type::Named("Foo".to_owned(), vec![]),
                 optional: false,
                 options: vec![],
-            }]
+            }],
         );
     }
 }
@@ -258,8 +249,8 @@ fn test_parse_fields_2() {
                     type_: Type::Named("Bar".to_owned(), vec![]),
                     optional: false,
                     options: vec![],
-                }
-            ]
+                },
+            ],
         );
     }
 }
@@ -279,7 +270,7 @@ fn test_parse_struct() {
                 name: "Pinger".to_string(),
                 generics: vec![],
                 fields: vec![],
-            }
+            },
         );
     }
 }
@@ -300,10 +291,10 @@ fn test_parse_struct_field_options() {
                     optional: false,
                     options: vec![FieldOption {
                         name: "length".to_string(),
-                        value: Value::Range(Some(1), Some(50))
-                    }]
+                        value: Value::Range(Some(1), Some(50)),
+                    }],
                 }],
-            }
+            },
         );
     }
 }
@@ -361,7 +352,7 @@ fn test_parse_struct_with_fields() {
                         options: vec![],
                     },
                 ],
-            }
+            },
         )
     }
 }
@@ -387,15 +378,13 @@ fn test_parse_struct_with_generics() {
             Struct {
                 name: "Wrapper".to_string(),
                 generics: vec!["T".to_string()],
-                fields: vec![
-                    Field {
-                        name: "value".to_string(),
-                        type_: Type::Named("T".to_string(), vec![]),
-                        optional: false,
-                        options: vec![],
-                    }
-                ],
-            }
+                fields: vec![Field {
+                    name: "value".to_string(),
+                    type_: Type::Named("T".to_string(), vec![]),
+                    optional: false,
+                    options: vec![],
+                }],
+            },
         );
     }
 }

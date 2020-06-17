@@ -7,15 +7,9 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{
-    parse_field_separator,
-    parse_identifier,
-    trailing_comma,
-    ws,
-    Span,
-};
 #[cfg(test)]
 use crate::idl::common::assert_parse;
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, Span};
 use crate::idl::r#value::{parse_value, Value};
 
 #[derive(Debug, PartialEq)]
@@ -73,8 +67,8 @@ fn test_parse_field_options_1() {
             parse_field_options(Span::new(content)),
             vec![FieldOption {
                 name: "foo".to_owned(),
-                value: Value::Integer(42)
-            }]
+                value: Value::Integer(42),
+            }],
         );
     }
 }
@@ -94,13 +88,13 @@ fn test_parse_field_options_2() {
             vec![
                 FieldOption {
                     name: "foo".to_owned(),
-                    value: Value::Integer(42)
+                    value: Value::Integer(42),
                 },
                 FieldOption {
                     name: "bar".to_owned(),
-                    value: Value::String("epic".to_string())
-                }
-            ]
+                    value: Value::String("epic".to_string()),
+                },
+            ],
         );
     }
 }

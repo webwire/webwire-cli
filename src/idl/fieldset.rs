@@ -7,14 +7,7 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{
-    parse_field_separator,
-    parse_identifier,
-    trailing_comma,
-    ws,
-    ws1,
-    Span,
-};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -90,7 +83,7 @@ fn test_parse_fieldset_0() {
                 name: "PersonName".to_string(),
                 struct_name: "Person".to_string(),
                 fields: vec![],
-            }
+            },
         )
     }
 }
@@ -111,13 +104,11 @@ fn test_parse_fieldset_1() {
             Fieldset {
                 name: "PersonName".to_string(),
                 struct_name: "Person".to_string(),
-                fields: vec![
-                    Field {
-                        name: "name".to_string(),
-                        optional: false
-                    },
-                ],
-            }
+                fields: vec![Field {
+                    name: "name".to_string(),
+                    optional: false,
+                }],
+            },
         )
     }
 }
@@ -146,14 +137,14 @@ fn test_parse_fieldset_2() {
                 fields: vec![
                     Field {
                         name: "name".to_string(),
-                        optional: false
+                        optional: false,
                     },
                     Field {
                         name: "age".to_string(),
-                        optional: true
+                        optional: true,
                     },
                 ],
-            }
+            },
         )
     }
 }

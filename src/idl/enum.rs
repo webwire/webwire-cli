@@ -8,15 +8,8 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{
-    parse_field_separator,
-    parse_identifier,
-    trailing_comma,
-    ws,
-    ws1,
-    Span
-};
-use crate::idl::r#type::{Type, parse_type};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
+use crate::idl::r#type::{parse_type, Type};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -73,8 +66,8 @@ fn parse_enum_variant(input: Span) -> IResult<Span, EnumVariant> {
                     )),
                 )),
             ),
-            |(name, value_type)| EnumVariant { name, value_type }
-        )
+            |(name, value_type)| EnumVariant { name, value_type },
+        ),
     )(input)
 }
 
@@ -94,7 +87,7 @@ fn test_parse_enum_0() {
             Enum {
                 name: "Nothing".to_string(),
                 variants: vec![],
-            }
+            },
         )
     }
 }
@@ -115,13 +108,11 @@ fn test_parse_enum_1() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "OneThing".to_string(),
-                variants: vec![
-                    EnumVariant {
-                        name: "Thing".to_string(),
-                        value_type: None,
-                    }
-                ],
-            }
+                variants: vec![EnumVariant {
+                    name: "Thing".to_string(),
+                    value_type: None,
+                }],
+            },
         )
     }
 }
@@ -148,14 +139,14 @@ fn test_parse_enum_2() {
                 variants: vec![
                     EnumVariant {
                         name: "Left".to_string(),
-                        value_type: None
+                        value_type: None,
                     },
                     EnumVariant {
                         name: "Right".to_string(),
-                        value_type: None
-                    }
+                        value_type: None,
+                    },
                 ],
-            }
+            },
         )
     }
 }
@@ -193,9 +184,9 @@ fn test_parse_enum_with_value() {
                     EnumVariant {
                         name: "I".to_string(),
                         value_type: Some(Type::Named("Integer".to_string(), vec![])),
-                    }
+                    },
                 ],
-            }
+            },
         )
     }
 }

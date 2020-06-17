@@ -1,5 +1,5 @@
-use crate::idl::namespace::{parse_namespace_content, NamespacePart};
 use crate::idl::common::Span;
+use crate::idl::namespace::{parse_namespace_content, NamespacePart};
 
 #[derive(Debug, PartialEq)]
 pub struct Document {

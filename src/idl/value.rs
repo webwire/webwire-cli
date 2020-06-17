@@ -1,5 +1,8 @@
 use std::str::FromStr;
 
+#[cfg(test)]
+use crate::idl::common::assert_parse;
+use crate::idl::common::{parse_identifier, Span};
 use nom::{
     branch::alt,
     bytes::complete::{escaped_transform, is_a, is_not, tag},
@@ -9,12 +12,6 @@ use nom::{
     sequence::{pair, preceded, separated_pair, terminated},
     IResult,
 };
-use crate::idl::common::{
-    parse_identifier,
-    Span,
-};
-#[cfg(test)]
-use crate::idl::common::assert_parse;
 
 #[derive(Debug, PartialEq)]
 pub enum Value {
@@ -58,23 +55,23 @@ pub fn parse_string(input: Span) -> IResult<Span, String> {
 fn test_parse_value_string() {
     assert_parse(
         parse_value(Span::new("\"hello\"")),
-        Value::String("hello".to_string())
+        Value::String("hello".to_string()),
     );
     assert_parse(
         parse_value(Span::new("\"hello world\"")),
-        Value::String("hello world".to_string())
+        Value::String("hello world".to_string()),
     );
     assert_parse(
         parse_value(Span::new("\"hello\\nworld\"")),
-        Value::String("hello\nworld".to_string())
+        Value::String("hello\nworld".to_string()),
     );
     assert_parse(
         parse_value(Span::new("\"hello \\\"world\\\"\"")),
-        Value::String("hello \"world\"".to_string())
+        Value::String("hello \"world\"".to_string()),
     );
     assert_parse(
         parse_value(Span::new("\"backspace\\\\\"")),
-        Value::String("backspace\\".to_string())
+        Value::String("backspace\\".to_string()),
     );
 }
 
@@ -104,13 +101,8 @@ pub fn parse_float(input: Span) -> IResult<Span, f64> {
     context(
         "float",
         map_res(
-            pair(
-                opt(one_of("+-")),
-                separated_pair(digit1, char('.'), digit1),
-            ),
-            |(sign, (a, b))| {
-                f64::from_str(format!("{}{}.{}", sign.unwrap_or('+'), a, b).as_str())
-            }
+            pair(opt(one_of("+-")), separated_pair(digit1, char('.'), digit1)),
+            |(sign, (a, b))| f64::from_str(format!("{}{}.{}", sign.unwrap_or('+'), a, b).as_str()),
         ),
     )(input)
 }
@@ -145,11 +137,11 @@ fn test_parse_value_integer() {
     assert_parse(parse_value(Span::new("-42")), Value::Integer(-42));
     assert_parse(
         parse_value(Span::new("9223372036854775807")),
-        Value::Integer(9223372036854775807)
+        Value::Integer(9223372036854775807),
     );
     assert_parse(
         parse_value(Span::new("-9223372036854775808")),
-        Value::Integer(-9223372036854775808)
+        Value::Integer(-9223372036854775808),
     );
     assert_parse(parse_value(Span::new("0xFF")), Value::Integer(0xFF));
     assert_parse(parse_value(Span::new("-0xFF")), Value::Integer(-0xFF));
@@ -186,10 +178,10 @@ fn test_parse_value_float() {
 fn test_parse_value_range() {
     assert_parse(
         parse_value(Span::new("0..1337")),
-        Value::Range(Some(0), Some(1337))
+        Value::Range(Some(0), Some(1337)),
     );
     assert_parse(
         parse_value(Span::new("0..0xFF")),
-        Value::Range(Some(0), Some(0xFF))
+        Value::Range(Some(0), Some(0xFF)),
     );
 }

@@ -27,17 +27,12 @@ pub fn parse_method(input: Span) -> IResult<Span, Method> {
                 preceded(ws, char('(')),
                 terminated(opt(preceded(ws, parse_type)), preceded(ws, char(')'))),
             ),
-            opt(preceded(
-                preceded(ws, tag("->")),
-                preceded(ws, parse_type),
-            )),
+            opt(preceded(preceded(ws, tag("->")), preceded(ws, parse_type))),
         )),
-        |(name, request, response)| {
-            Method {
-                name: name,
-                request: request,
-                response: response,
-            }
+        |(name, request, response)| Method {
+            name: name,
+            request: request,
+            response: response,
         },
     )(input)
 }
@@ -46,10 +41,8 @@ pub fn parse_method(input: Span) -> IResult<Span, Method> {
 fn test_parse_method_0() {
     let contents = [
         // normal whitespace
-        "ping()",
-        // whitespace variants
-        "ping ()",
-        "ping( )",
+        "ping()", // whitespace variants
+        "ping ()", "ping( )",
     ];
     for content in contents.iter() {
         assert_parse(
@@ -58,7 +51,7 @@ fn test_parse_method_0() {
                 name: "ping".to_string(),
                 request: None,
                 response: None,
-            }
+            },
         )
     }
 }
@@ -80,7 +73,7 @@ fn test_parse_method_1() {
                 name: "notify".to_string(),
                 request: Some(Type::Named("Notification".to_string(), vec![])),
                 response: None,
-            }
+            },
         )
     }
 }
@@ -102,7 +95,7 @@ fn test_parse_method_2() {
                 name: "get_time".to_string(),
                 request: None,
                 response: Some(Type::Named("Time".to_string(), vec![])),
-            }
+            },
         )
     }
 }
@@ -127,11 +120,14 @@ fn test_parse_method_3() {
             Method {
                 name: "no_response".to_string(),
                 request: None,
-                response: Some(Type::Named("Result".to_string(), vec![
-                    Type::Named("None".to_string(), vec![]),
-                    Type::Named("SomeError".to_string(), vec![]),
-                ])),
-            }
+                response: Some(Type::Named(
+                    "Result".to_string(),
+                    vec![
+                        Type::Named("None".to_string(), vec![]),
+                        Type::Named("SomeError".to_string(), vec![]),
+                    ],
+                )),
+            },
         )
     }
 }
@@ -156,11 +152,14 @@ fn test_parse_method_4() {
             Method {
                 name: "hello".to_string(),
                 request: Some(Type::Named("HelloRequest".to_string(), vec![])),
-                response: Some(Type::Named("Result".to_string(), vec![
-                    Type::Named("HelloResponse".to_string(), vec![]),
-                    Type::Named("HelloError".to_string(), vec![]),
-                ])),
-            }
+                response: Some(Type::Named(
+                    "Result".to_string(),
+                    vec![
+                        Type::Named("HelloResponse".to_string(), vec![]),
+                        Type::Named("HelloError".to_string(), vec![]),
+                    ],
+                )),
+            },
         )
     }
 }

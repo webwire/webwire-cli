@@ -8,15 +8,8 @@ use nom::{
     IResult,
 };
 
-use crate::idl::common::{
-    parse_field_separator,
-    parse_identifier,
-    trailing_comma,
-    ws,
-    ws1,
-    Span
-};
-use crate::idl::method::{Method, parse_method};
+use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
+use crate::idl::method::{parse_method, Method};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -48,11 +41,8 @@ pub fn parse_service(input: Span) -> IResult<Span, Service> {
                 terminated(tag("service"), ws1),
                 cut(pair(parse_identifier, parse_methods)),
             ),
-            |(name, methods)| Service {
-                name,
-                methods,
-            },
-        )
+            |(name, methods)| Service { name, methods },
+        ),
     )(input)
 }
 
@@ -71,7 +61,7 @@ fn test_parse_service_no_endpoints() {
             Service {
                 name: "Pinger".to_string(),
                 methods: vec![],
-            }
+            },
         )
     }
 }
@@ -109,10 +99,10 @@ fn test_parse_service() {
                     Method {
                         name: "get_version".to_string(),
                         request: None,
-                        response: Some(Type::Named("String".to_string(), vec!())),
-                    }
+                        response: Some(Type::Named("String".to_string(), vec![])),
+                    },
                 ],
-            }
+            },
         )
     }
 }

@@ -35,7 +35,10 @@ pub fn parse_identifier(input: Span) -> IResult<Span, String> {
 }
 
 #[cfg(test)]
-pub(crate) fn assert_parse<'a, T: std::fmt::Debug + PartialEq>(output: IResult<LocatedSpan<&'a str>, T>, expected_value: T) {
+pub(crate) fn assert_parse<'a, T: std::fmt::Debug + PartialEq>(
+    output: IResult<LocatedSpan<&'a str>, T>,
+    expected_value: T,
+) {
     assert!(output.is_ok(), "{:?}", output);
     let output = output.unwrap();
     assert_eq!(output.0.fragment(), &"");
@@ -44,10 +47,7 @@ pub(crate) fn assert_parse<'a, T: std::fmt::Debug + PartialEq>(output: IResult<L
 
 #[test]
 fn test_parse_identifier() {
-    assert_parse(
-        parse_identifier(Span::new("test")),
-        "test".to_string(),
-    );
+    assert_parse(parse_identifier(Span::new("test")), "test".to_string());
     assert_parse(
         parse_identifier(Span::new("test123")),
         "test123".to_string(),
@@ -59,7 +59,10 @@ fn test_parse_identifier_invalid() {
     use nom::error::ErrorKind;
     assert_eq!(
         parse_identifier(Span::new("123test")),
-        Err(nom::Err::Error((Span::new("123test"), ErrorKind::TakeWhile1)))
+        Err(nom::Err::Error((
+            Span::new("123test"),
+            ErrorKind::TakeWhile1
+        )))
     );
     assert_eq!(
         parse_identifier(Span::new("_test")),

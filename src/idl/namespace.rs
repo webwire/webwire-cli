@@ -64,7 +64,8 @@ pub fn parse_namespace_content(input: Span) -> IResult<Span, Vec<NamespacePart>>
 
 pub fn parse_namespace(input: Span) -> IResult<Span, Namespace> {
     map(
-        preceded(ws,
+        preceded(
+            ws,
             preceded(
                 terminated(tag("namespace"), ws1),
                 cut(pair(
@@ -86,9 +87,9 @@ pub fn parse_namespace(input: Span) -> IResult<Span, Namespace> {
 #[test]
 fn test_parse_namespace() {
     use crate::idl::field_option::FieldOption;
+    use crate::idl::method::Method;
     use crate::idl::r#struct::Field;
     use crate::idl::r#type::Type;
-    use crate::idl::method::Method;
     use crate::idl::value::Value;
     let content = "
         namespace test {
@@ -119,7 +120,7 @@ fn test_parse_namespace() {
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
-                                value: Value::Range(Some(1), Some(50))
+                                value: Value::Range(Some(1), Some(50)),
                             }],
                         },
                         Field {
@@ -138,7 +139,7 @@ fn test_parse_namespace() {
                         type_: Type::Named("String".to_string(), vec![]),
                         optional: false,
                         options: vec![],
-                    },],
+                    }],
                 }),
                 NamespacePart::Service(Service {
                     name: "Pinger".to_string(),
@@ -155,7 +156,7 @@ fn test_parse_namespace() {
                         },
                     ],
                 }),
-            ]
-        }
+            ],
+        },
     )
 }
