@@ -4,7 +4,7 @@ use nom::{
     combinator::{cut, map, opt},
     error::context,
     multi::separated_list,
-    sequence::{pair, preceded, terminated},
+    sequence::{pair, preceded, terminated, tuple},
     IResult,
 };
 
@@ -17,6 +17,7 @@ use crate::idl::common::assert_parse;
 #[derive(Debug, PartialEq)]
 pub struct Enum {
     pub name: String,
+    pub extends: Option<Type>,
     pub variants: Vec<EnumVariant>,
 }
 
@@ -28,14 +29,26 @@ pub struct EnumVariant {
 
 pub fn parse_enum(input: Span) -> IResult<Span, Enum> {
     map(
-        pair(
+        tuple((
             preceded(terminated(tag("enum"), ws1), parse_identifier),
+            parse_enum_extends,
             parse_enum_variants,
-        ),
+        )),
         |t| Enum {
             name: t.0.to_string(),
-            variants: t.1,
+            extends: t.1,
+            variants: t.2,
         },
+    )(input)
+}
+
+fn parse_enum_extends(input: Span) -> IResult<Span, Option<Type>> {
+    context(
+        "enum_extends",
+        opt(preceded(
+            terminated(preceded(ws1, tag("extends")), ws1),
+            parse_type,
+        )),
     )(input)
 }
 
@@ -86,6 +99,7 @@ fn test_parse_enum_0() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Nothing".to_string(),
+                extends: None,
                 variants: vec![],
             },
         )
@@ -108,6 +122,7 @@ fn test_parse_enum_1() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "OneThing".to_string(),
+                extends: None,
                 variants: vec![EnumVariant {
                     name: "Thing".to_string(),
                     value_type: None,
@@ -136,6 +151,7 @@ fn test_parse_enum_2() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Direction".to_string(),
+                extends: None,
                 variants: vec![
                     EnumVariant {
                         name: "Left".to_string(),
@@ -176,6 +192,7 @@ fn test_parse_enum_with_value() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Value".to_string(),
+                extends: None,
                 variants: vec![
                     EnumVariant {
                         name: "S".to_string(),
@@ -186,6 +203,28 @@ fn test_parse_enum_with_value() {
                         value_type: Some(Type::Named("Integer".to_string(), vec![])),
                     },
                 ],
+            },
+        )
+    }
+}
+
+#[test]
+fn test_parse_enum_extends() {
+    let contents = [
+        // minimal whitespace
+        "enum GetError extends GenericError{}",
+        // normal whitespace
+        "enum GetError extends GenericError {}",
+        // whitespace variants
+        "enum GetError extends GenericError{ }",
+    ];
+    for content in contents.iter() {
+        assert_parse(
+            parse_enum(Span::new(content)),
+            Enum {
+                name: "GetError".to_string(),
+                extends: Some(Type::Named("GenericError".to_string(), vec![])),
+                variants: vec![],
             },
         )
     }

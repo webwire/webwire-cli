@@ -14,6 +14,7 @@ fn test_schema_loader() {
                 parts: vec![
                     NamespacePart::Enum(Enum {
                         name: "UserState".to_string(),
+                        extends: None,
                         variants: vec![
                             EnumVariant {
                                 name: "ACTIVE".to_string(),
@@ -291,6 +292,7 @@ fn test_schema_loader() {
                     }),
                     NamespacePart::Enum(Enum {
                         name: "GetError".to_string(),
+                        extends: None,
                         variants: vec![
                             EnumVariant {
                                 name: "PermissionDenied".to_string(),
@@ -304,6 +306,7 @@ fn test_schema_loader() {
                     }),
                     NamespacePart::Enum(Enum {
                         name: "ListError".to_string(),
+                        extends: None,
                         variants: vec![EnumVariant {
                             name: "PermissionDenied".to_string(),
                             value_type: None,
