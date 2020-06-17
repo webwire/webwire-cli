@@ -7,6 +7,12 @@ Webwire is a **contract-first API** system which features an
 a network [protocol](doc/protocol.md) and
 [code generator](docs/code_generator.md) for both servers and clients.
 
+## WORK IN PROGRESS
+
+**Webwire is not ready to use! All the documentation and code in this
+repository is either incomplete or non functional. Don't expect anything
+to work, yet. Right now this repository is just a collection of ideas and
+preliminary implementations.**
 
 ## Example
 
