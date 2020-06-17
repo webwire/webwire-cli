@@ -15,8 +15,8 @@ use crate::idl::common::assert_parse;
 #[derive(Debug, PartialEq)]
 pub struct Method {
     pub name: String,
-    pub request: Option<Type>,
-    pub response: Option<Type>,
+    pub input: Option<Type>,
+    pub output: Option<Type>,
 }
 
 pub fn parse_method(input: Span) -> IResult<Span, Method> {
@@ -29,10 +29,10 @@ pub fn parse_method(input: Span) -> IResult<Span, Method> {
             ),
             opt(preceded(preceded(ws, tag("->")), preceded(ws, parse_type))),
         )),
-        |(name, request, response)| Method {
-            name: name,
-            request: request,
-            response: response,
+        |(name, input, output)| Method {
+            name,
+            input,
+            output,
         },
     )(input)
 }
@@ -49,8 +49,8 @@ fn test_parse_method_0() {
             parse_method(Span::new(content)),
             Method {
                 name: "ping".to_string(),
-                request: None,
-                response: None,
+                input: None,
+                output: None,
             },
         )
     }
@@ -71,8 +71,8 @@ fn test_parse_method_1() {
             parse_method(Span::new(content)),
             Method {
                 name: "notify".to_string(),
-                request: Some(Type::Named("Notification".to_string(), vec![])),
-                response: None,
+                input: Some(Type::Named("Notification".to_string(), vec![])),
+                output: None,
             },
         )
     }
@@ -93,8 +93,8 @@ fn test_parse_method_2() {
             parse_method(Span::new(content)),
             Method {
                 name: "get_time".to_string(),
-                request: None,
-                response: Some(Type::Named("Time".to_string(), vec![])),
+                input: None,
+                output: Some(Type::Named("Time".to_string(), vec![])),
             },
         )
     }
@@ -119,8 +119,8 @@ fn test_parse_method_3() {
             parse_method(Span::new(content)),
             Method {
                 name: "no_response".to_string(),
-                request: None,
-                response: Some(Type::Named(
+                input: None,
+                output: Some(Type::Named(
                     "Result".to_string(),
                     vec![
                         Type::Named("None".to_string(), vec![]),
@@ -151,8 +151,8 @@ fn test_parse_method_4() {
             parse_method(Span::new(content)),
             Method {
                 name: "hello".to_string(),
-                request: Some(Type::Named("HelloRequest".to_string(), vec![])),
-                response: Some(Type::Named(
+                input: Some(Type::Named("Helloinput".to_string(), vec![])),
+                output: Some(Type::Named(
                     "Result".to_string(),
                     vec![
                         Type::Named("HelloResponse".to_string(), vec![]),

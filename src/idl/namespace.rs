@@ -146,13 +146,13 @@ fn test_parse_namespace() {
                     methods: vec![
                         Method {
                             name: "ping".to_string(),
-                            request: None,
-                            response: None,
+                            input: None,
+                            output: None,
                         },
                         Method {
                             name: "get_version".to_string(),
-                            request: None,
-                            response: Some(Type::Named("String".to_string(), vec![])),
+                            input: None,
+                            output: Some(Type::Named("String".to_string(), vec![])),
                         },
                     ],
                 }),
