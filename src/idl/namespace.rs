@@ -8,6 +8,7 @@ use nom::{
     IResult,
 };
 
+use crate::common::FilePosition;
 use crate::idl::common::{parse_identifier, ws, ws1, Span};
 use crate::idl::fieldset::{parse_fieldset, Fieldset};
 use crate::idl::r#enum::{parse_enum, Enum};
@@ -37,12 +38,22 @@ impl NamespacePart {
         };
         name.as_str()
     }
+    pub fn position(&self) -> &FilePosition {
+        match self {
+            Self::Enum(part) => &part.position,
+            Self::Struct(part) => &part.position,
+            Self::Fieldset(part) => &part.position,
+            Self::Service(part) => &part.position,
+            Self::Namespace(part) => &part.position,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Namespace {
     pub name: String,
     pub parts: Vec<NamespacePart>,
+    pub position: FilePosition,
 }
 
 fn parse_namespace_part(input: Span) -> IResult<Span, NamespacePart> {
@@ -80,6 +91,7 @@ pub fn parse_namespace(input: Span) -> IResult<Span, Namespace> {
         |(name, parts)| Namespace {
             name: name,
             parts: parts,
+            position: input.into(),
         },
     )(input)
 }
@@ -109,14 +121,21 @@ fn test_parse_namespace() {
         parse_namespace(Span::new(content)),
         Namespace {
             name: "test".to_string(),
+            position: FilePosition { line: 1, column: 1 },
             parts: vec![
                 NamespacePart::Struct(Struct {
                     name: "Person".to_string(),
+                    position: FilePosition { line: 3, column: 13 },
                     generics: vec![],
                     fields: vec![
                         Field {
                             name: "name".to_string(),
-                            type_: Type::Named("String".to_string(), vec![]),
+                            type_: Type::Ref {
+                                abs: false,
+                                ns: vec![],
+                                name: "String".to_string(),
+                                generics: vec![],
+                            },
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -125,7 +144,12 @@ fn test_parse_namespace() {
                         },
                         Field {
                             name: "age".to_string(),
-                            type_: Type::Named("Integer".to_string(), vec![]),
+                            type_: Type::Ref {
+                                abs: false,
+                                ns: vec![],
+                                name: "Integer".to_string(),
+                                generics: vec![],
+                            },
                             optional: false,
                             options: vec![],
                         },
@@ -133,16 +157,23 @@ fn test_parse_namespace() {
                 }),
                 NamespacePart::Struct(Struct {
                     name: "Group".to_string(),
+                    position: FilePosition { line: 7, column: 13 },
                     generics: vec![],
                     fields: vec![Field {
                         name: "name".to_string(),
-                        type_: Type::Named("String".to_string(), vec![]),
+                        type_: Type::Ref {
+                            abs: false,
+                            ns: vec![],
+                            name: "String".to_string(),
+                            generics: vec![],
+                        },
                         optional: false,
                         options: vec![],
                     }],
                 }),
                 NamespacePart::Service(Service {
                     name: "Pinger".to_string(),
+                    position: FilePosition { line: 10, column: 13 },
                     methods: vec![
                         Method {
                             name: "ping".to_string(),
@@ -152,7 +183,12 @@ fn test_parse_namespace() {
                         Method {
                             name: "get_version".to_string(),
                             input: None,
-                            output: Some(Type::Named("String".to_string(), vec![])),
+                            output: Some(Type::Ref {
+                                abs: false,
+                                ns: vec![],
+                                name: "String".to_string(),
+                                generics: vec![],
+                            }),
                         },
                     ],
                 }),

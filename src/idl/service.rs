@@ -8,6 +8,7 @@ use nom::{
     IResult,
 };
 
+use crate::common::FilePosition;
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
 use crate::idl::method::{parse_method, Method};
 
@@ -18,6 +19,7 @@ use crate::idl::common::assert_parse;
 pub struct Service {
     pub name: String,
     pub methods: Vec<Method>,
+    pub position: FilePosition,
 }
 
 fn parse_methods(input: Span) -> IResult<Span, Vec<Method>> {
@@ -41,7 +43,11 @@ pub fn parse_service(input: Span) -> IResult<Span, Service> {
                 terminated(tag("service"), ws1),
                 cut(pair(parse_identifier, parse_methods)),
             ),
-            |(name, methods)| Service { name, methods },
+            |(name, methods)| Service {
+                name,
+                methods,
+                position: input.into(),
+            },
         ),
     )(input)
 }
@@ -61,6 +67,7 @@ fn test_parse_service_no_endpoints() {
             Service {
                 name: "Pinger".to_string(),
                 methods: vec![],
+                position: FilePosition { line: 1, column: 1 },
             },
         )
     }
@@ -90,6 +97,7 @@ fn test_parse_service() {
             parse_service(Span::new(content)),
             Service {
                 name: "Pinger".to_string(),
+                position: FilePosition { line: 1, column: 1 },
                 methods: vec![
                     Method {
                         name: "ping".to_string(),
@@ -99,7 +107,12 @@ fn test_parse_service() {
                     Method {
                         name: "get_version".to_string(),
                         input: None,
-                        output: Some(Type::Named("String".to_string(), vec![])),
+                        output: Some(Type::Ref {
+                            abs: false,
+                            ns: vec![],
+                            name: "String".to_string(),
+                            generics: vec![],
+                        }),
                     },
                 ],
             },

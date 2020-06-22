@@ -7,6 +7,7 @@ use nom::{
     IResult,
 };
 
+use crate::common::FilePosition;
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
 
 #[cfg(test)]
@@ -23,6 +24,7 @@ pub struct Fieldset {
     pub name: String,
     pub struct_name: String,
     pub fields: Vec<Field>,
+    pub position: FilePosition,
 }
 
 fn parse_field(input: Span) -> IResult<Span, Field> {
@@ -62,6 +64,7 @@ pub fn parse_fieldset(input: Span) -> IResult<Span, Fieldset> {
             name: name.to_string(),
             struct_name: struct_name.to_string(),
             fields: fields,
+            position: input.into(),
         },
     )(input)
 }
@@ -81,6 +84,7 @@ fn test_parse_fieldset_0() {
             parse_fieldset(Span::new(content)),
             Fieldset {
                 name: "PersonName".to_string(),
+                position: FilePosition { line: 1, column: 1 },
                 struct_name: "Person".to_string(),
                 fields: vec![],
             },
@@ -103,6 +107,7 @@ fn test_parse_fieldset_1() {
             parse_fieldset(Span::new(content)),
             Fieldset {
                 name: "PersonName".to_string(),
+                position: FilePosition { line: 1, column: 1 },
                 struct_name: "Person".to_string(),
                 fields: vec![Field {
                     name: "name".to_string(),
@@ -133,6 +138,7 @@ fn test_parse_fieldset_2() {
             parse_fieldset(Span::new(content)),
             Fieldset {
                 name: "PersonName".to_string(),
+                position: FilePosition { line: 1, column: 1 },
                 struct_name: "Person".to_string(),
                 fields: vec![
                     Field {

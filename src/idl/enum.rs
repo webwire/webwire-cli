@@ -8,6 +8,7 @@ use nom::{
     IResult,
 };
 
+use crate::common::FilePosition;
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
 use crate::idl::r#type::{parse_type, Type};
 
@@ -19,6 +20,7 @@ pub struct Enum {
     pub name: String,
     pub extends: Option<Type>,
     pub variants: Vec<EnumVariant>,
+    pub position: FilePosition,
 }
 
 #[derive(Debug, PartialEq)]
@@ -38,6 +40,7 @@ pub fn parse_enum(input: Span) -> IResult<Span, Enum> {
             name: t.0.to_string(),
             extends: t.1,
             variants: t.2,
+            position: input.into(),
         },
     )(input)
 }
@@ -99,6 +102,7 @@ fn test_parse_enum_0() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Nothing".to_string(),
+                position: FilePosition { line: 1, column: 1 },
                 extends: None,
                 variants: vec![],
             },
@@ -122,6 +126,7 @@ fn test_parse_enum_1() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "OneThing".to_string(),
+                position: FilePosition { line: 1, column: 1 },
                 extends: None,
                 variants: vec![EnumVariant {
                     name: "Thing".to_string(),
@@ -151,6 +156,7 @@ fn test_parse_enum_2() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Direction".to_string(),
+                position: FilePosition { line: 1, column: 1 },
                 extends: None,
                 variants: vec![
                     EnumVariant {
@@ -192,15 +198,26 @@ fn test_parse_enum_with_value() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Value".to_string(),
+                position: FilePosition { line: 1, column: 1 },
                 extends: None,
                 variants: vec![
                     EnumVariant {
                         name: "S".to_string(),
-                        value_type: Some(Type::Named("String".to_string(), vec![])),
+                        value_type: Some(Type::Ref {
+                            abs: false,
+                            ns: vec![],
+                            name: "String".to_string(),
+                            generics: vec![],
+                        }),
                     },
                     EnumVariant {
                         name: "I".to_string(),
-                        value_type: Some(Type::Named("Integer".to_string(), vec![])),
+                        value_type: Some(Type::Ref {
+                            abs: false,
+                            ns: vec![],
+                            name: "Integer".to_string(),
+                            generics: vec![],
+                        }),
                     },
                 ],
             },
@@ -223,7 +240,13 @@ fn test_parse_enum_extends() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "GetError".to_string(),
-                extends: Some(Type::Named("GenericError".to_string(), vec![])),
+                position: FilePosition { line: 1, column: 1 },
+                extends: Some(Type::Ref {
+                    abs: false,
+                    ns: vec![],
+                    name: "GenericError".to_string(),
+                    generics: vec![],
+                }),
                 variants: vec![],
             },
         )

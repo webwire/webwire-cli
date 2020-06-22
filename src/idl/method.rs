@@ -71,7 +71,12 @@ fn test_parse_method_1() {
             parse_method(Span::new(content)),
             Method {
                 name: "notify".to_string(),
-                input: Some(Type::Named("Notification".to_string(), vec![])),
+                input: Some(Type::Ref {
+                    abs: false,
+                    ns: vec![],
+                    name: "Notification".to_string(),
+                    generics: vec![],
+                }),
                 output: None,
             },
         )
@@ -94,7 +99,12 @@ fn test_parse_method_2() {
             Method {
                 name: "get_time".to_string(),
                 input: None,
-                output: Some(Type::Named("Time".to_string(), vec![])),
+                output: Some(Type::Ref {
+                    abs: false,
+                    ns: vec![],
+                    name: "Time".to_string(),
+                    generics: vec![],
+                }),
             },
         )
     }
@@ -120,13 +130,25 @@ fn test_parse_method_3() {
             Method {
                 name: "no_response".to_string(),
                 input: None,
-                output: Some(Type::Named(
-                    "Result".to_string(),
-                    vec![
-                        Type::Named("None".to_string(), vec![]),
-                        Type::Named("SomeError".to_string(), vec![]),
+                output: Some(Type::Ref {
+                    abs: false,
+                    ns: vec![],
+                    name: "Result".to_string(),
+                    generics: vec![
+                        Type::Ref {
+                            abs: false,
+                            ns: vec![],
+                            name: "None".to_string(),
+                            generics: vec![],
+                        },
+                        Type::Ref {
+                            abs: false,
+                            ns: vec![],
+                            name: "SomeError".to_string(),
+                            generics: vec![],
+                        },
                     ],
-                )),
+                }),
             },
         )
     }
@@ -151,14 +173,31 @@ fn test_parse_method_4() {
             parse_method(Span::new(content)),
             Method {
                 name: "hello".to_string(),
-                input: Some(Type::Named("HelloRequest".to_string(), vec![])),
-                output: Some(Type::Named(
-                    "Result".to_string(),
-                    vec![
-                        Type::Named("HelloResponse".to_string(), vec![]),
-                        Type::Named("HelloError".to_string(), vec![]),
+                input: Some(Type::Ref {
+                    abs: false,
+                    ns: vec![],
+                    name: "HelloRequest".to_string(),
+                    generics: vec![],
+                }),
+                output: Some(Type::Ref {
+                    abs: false,
+                    ns: vec![],
+                    name: "Result".to_string(),
+                    generics: vec![
+                        Type::Ref {
+                            abs: false,
+                            ns: vec![],
+                            name: "HelloResponse".to_string(),
+                            generics: vec![],
+                        },
+                        Type::Ref {
+                            abs: false,
+                            ns: vec![],
+                            name: "HelloError".to_string(),
+                            generics: vec![],
+                        },
                     ],
-                )),
+                }),
             },
         )
     }
