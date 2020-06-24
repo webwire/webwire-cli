@@ -14,14 +14,17 @@ use nom::{
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
-    Ref {
-        abs: bool,
-        ns: Vec<String>,
-        name: String,
-        generics: Vec<Type>,
-    },
+    Ref(TypeRef),
     Array(Box<Type>),
     Map(Box<Type>, Box<Type>),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct TypeRef {
+    pub abs: bool,
+    pub ns: Vec<String>,
+    pub name: String,
+    pub generics: Vec<Type>,
 }
 
 pub fn parse_type_ref(input: Span) -> IResult<Span, Type> {
@@ -40,12 +43,12 @@ pub fn parse_type_ref(input: Span) -> IResult<Span, Type> {
                 }
                 None => (path, path_first),
             };
-            Type::Ref {
+            Type::Ref(TypeRef {
                 abs,
                 ns,
                 name,
                 generics,
-            }
+            })
         },
     )(input)
 }
@@ -111,12 +114,12 @@ pub fn parse_type(input: Span) -> IResult<Span, Type> {
 fn test_parse_type_ref_rel_without_ns() {
     assert_parse(
         parse_type(Span::new("T")),
-        Type::Ref {
+        Type::Ref(TypeRef {
             abs: false,
             ns: vec![],
             name: "T".to_string(),
             generics: vec![],
-        },
+        }),
     );
 }
 
@@ -124,12 +127,12 @@ fn test_parse_type_ref_rel_without_ns() {
 fn test_parse_type_ref_abs_without_ns() {
     assert_parse(
         parse_type(Span::new("::T")),
-        Type::Ref {
+        Type::Ref(TypeRef {
             abs: true,
             ns: vec![],
             name: "T".to_string(),
             generics: vec![],
-        },
+        }),
     );
 }
 
@@ -137,12 +140,12 @@ fn test_parse_type_ref_abs_without_ns() {
 fn test_parse_type_ref_rel_with_ns() {
     assert_parse(
         parse_type(Span::new("ns::T")),
-        Type::Ref {
+        Type::Ref(TypeRef {
             abs: false,
             ns: vec!["ns".to_string()],
             name: "T".to_string(),
             generics: vec![],
-        },
+        }),
     );
 }
 
@@ -150,12 +153,12 @@ fn test_parse_type_ref_rel_with_ns() {
 fn test_parse_type_ref_abs_with_ns() {
     assert_parse(
         parse_type(Span::new("::ns::T")),
-        Type::Ref {
+        Type::Ref(TypeRef {
             abs: true,
             ns: vec!["ns".to_string()],
             name: "T".to_string(),
             generics: vec![],
-        },
+        }),
     );
 }
 
@@ -163,12 +166,12 @@ fn test_parse_type_ref_abs_with_ns() {
 fn test_parse_type_ref_rel_with_ns2() {
     assert_parse(
         parse_type(Span::new("ns1::ns2::T")),
-        Type::Ref {
+        Type::Ref(TypeRef {
             abs: false,
             ns: vec!["ns1".to_string(), "ns2".to_string()],
             name: "T".to_string(),
             generics: vec![],
-        },
+        }),
     );
 }
 
@@ -176,12 +179,12 @@ fn test_parse_type_ref_rel_with_ns2() {
 fn test_parse_type_ref_abs_with_ns2() {
     assert_parse(
         parse_type(Span::new("::ns1::ns2::T")),
-        Type::Ref {
+        Type::Ref(TypeRef {
             abs: true,
             ns: vec!["ns1".to_string(), "ns2".to_string()],
             name: "T".to_string(),
             generics: vec![],
-        },
+        }),
     );
 }
 
@@ -197,17 +200,17 @@ fn test_parse_type_ref_with_generic_ref() {
     for content in contents.iter() {
         assert_parse(
             parse_type(Span::new(content)),
-            Type::Ref {
+            Type::Ref(TypeRef {
                 abs: false,
                 ns: vec![],
                 name: "Foo".to_string(),
-                generics: vec![Type::Ref {
+                generics: vec![Type::Ref(TypeRef {
                     abs: false,
                     name: "UUID".to_string(),
                     ns: vec![],
                     generics: vec![],
-                }],
-            },
+                })],
+            }),
         );
     }
 }
@@ -227,22 +230,22 @@ fn test_parse_type_ref_with_generic_generic() {
     for content in contents.iter() {
         assert_parse(
             parse_type(Span::new(content)),
-            Type::Ref {
+            Type::Ref(TypeRef {
                 abs: false,
                 ns: vec![],
                 name: "Foo".to_string(),
-                generics: vec![Type::Ref {
+                generics: vec![Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "Bar".to_string(),
-                    generics: vec![Type::Ref {
+                    generics: vec![Type::Ref(TypeRef {
                         abs: false,
                         ns: vec![],
                         name: "UUID".to_string(),
                         generics: vec![],
-                    }],
-                }],
-            },
+                    })],
+                })],
+            }),
         );
     }
 }
@@ -253,12 +256,12 @@ fn test_parse_type_array() {
     for content in contents.iter() {
         assert_parse(
             parse_type(Span::new(content)),
-            Type::Array(Box::new(Type::Ref {
+            Type::Array(Box::new(Type::Ref(TypeRef {
                 abs: false,
                 ns: vec![],
                 name: "UUID".to_string(),
                 generics: vec![],
-            })),
+            }))),
         );
     }
 }
@@ -277,18 +280,18 @@ fn test_parse_type_map() {
         assert_parse(
             parse_type(Span::new(content)),
             Type::Map(
-                Box::new(Type::Ref {
+                Box::new(Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "UUID".to_string(),
                     generics: vec![],
-                }),
-                Box::new(Type::Ref {
+                })),
+                Box::new(Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "String".to_string(),
                     generics: vec![],
-                }),
+                })),
             ),
         );
     }

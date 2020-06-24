@@ -34,7 +34,7 @@ fn test_parse_document() {
     use crate::idl::method::Method;
     use crate::idl::namespace::{Namespace, NamespacePart};
     use crate::idl::r#struct::{Field, Struct};
-    use crate::idl::r#type::Type;
+    use crate::idl::r#type::{Type, TypeRef};
     use crate::idl::service::Service;
     use crate::idl::value::Value;
     let content = "
@@ -65,12 +65,12 @@ fn test_parse_document() {
                             Field {
                                 name: "name".to_string(),
                                 position: FilePosition { line: 3, column: 13 },
-                                type_: Type::Ref {
+                                type_: Type::Ref(TypeRef {
                                     abs: false,
                                     ns: vec![],
                                     name: "String".to_string(),
                                     generics: vec![]
-                                },
+                                }),
                                 optional: false,
                                 options: vec![FieldOption {
                                     name: "length".to_string(),
@@ -80,12 +80,12 @@ fn test_parse_document() {
                             Field {
                                 name: "age".to_string(),
                                 position: FilePosition { line: 4, column: 13 },
-                                type_: Type::Ref {
+                                type_: Type::Ref(TypeRef {
                                     abs: false,
                                     name: "Integer".to_string(),
                                     ns: vec![],
                                     generics: vec![],
-                                },
+                                }),
                                 optional: false,
                                 options: vec![],
                             },
@@ -98,12 +98,12 @@ fn test_parse_document() {
                         fields: vec![Field {
                             name: "name".to_string(),
                             position: FilePosition { line: 7, column: 13 },
-                            type_: Type::Ref {
+                            type_: Type::Ref(TypeRef {
                                 abs: false,
                                 name: "String".to_string(),
                                 ns: vec![],
                                 generics: vec![]
-                            },
+                            }),
                             optional: false,
                             options: vec![],
                         }],
@@ -120,12 +120,12 @@ fn test_parse_document() {
                             Method {
                                 name: "get_version".to_string(),
                                 input: None,
-                                output: Some(Type::Ref {
+                                output: Some(Type::Ref(TypeRef {
                                     abs: false,
                                     ns: vec![],
                                     name: "String".to_string(),
                                     generics: vec![]
-                                }),
+                                })),
                             },
                         ],
                     }),

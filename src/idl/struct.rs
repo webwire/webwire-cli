@@ -11,7 +11,7 @@ use nom::{
 use crate::common::FilePosition;
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
 use crate::idl::field_option::{parse_field_options, FieldOption};
-use crate::idl::r#type::{parse_type, Type};
+use crate::idl::r#type::{parse_type, Type, TypeRef};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -110,12 +110,12 @@ fn test_parse_field() {
             Field {
                 name: "foo".to_string(),
                 position: FilePosition { line: 1, column: 1 },
-                type_: Type::Ref {
+                type_: Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "FooType".to_string(),
                     generics: vec![],
-                },
+                }),
                 optional: false,
                 options: vec![],
             },
@@ -137,12 +137,12 @@ fn test_parse_field_optional() {
             Field {
                 name: "foo".to_string(),
                 position: FilePosition { line: 1, column: 1 },
-                type_: Type::Ref {
+                type_: Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "FooType".to_string(),
                     generics: vec![],
-                },
+                }),
                 optional: true,
                 options: vec![],
             },
@@ -173,12 +173,12 @@ fn test_parse_field_with_options() {
             Field {
                 name: "name".to_string(),
                 position: FilePosition { line: 1, column: 1 },
-                type_: Type::Ref {
+                type_: Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "String".to_string(),
                     generics: vec![],
-                },
+                }),
                 optional: false,
                 options: vec![FieldOption {
                     name: "length".to_string(),
@@ -208,12 +208,12 @@ fn test_parse_array_field_with_options() {
             Field {
                 name: "items".to_string(),
                 position: FilePosition { line: 1, column: 1 },
-                type_: Type::Array(Box::new(Type::Ref {
+                type_: Type::Array(Box::new(Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "String".to_string(),
                     generics: vec![],
-                })),
+                }))),
                 optional: false,
                 options: vec![FieldOption {
                     name: "length".to_string(),
@@ -240,12 +240,12 @@ fn test_parse_fields_1() {
         vec![Field {
             name: "foo".to_owned(),
             position: FilePosition { line: 1, column: 2 },
-            type_: Type::Ref {
+            type_: Type::Ref(TypeRef {
                 abs: false,
                 ns: vec![],
                 name: "Foo".to_owned(),
                 generics: vec![],
-            },
+            }),
             optional: false,
             options: vec![],
         }],
@@ -275,24 +275,24 @@ fn test_parse_fields_2() {
             Field {
                 name: "foo".to_owned(),
                 position: FilePosition { line: 1, column: 3 },
-                type_: Type::Ref {
+                type_: Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "Foo".to_owned(),
                     generics: vec![],
-                },
+                }),
                 optional: false,
                 options: vec![],
             },
             Field {
                 name: "bar".to_owned(),
                 position: FilePosition { line: 1, column: 13 },
-                type_: Type::Ref {
+                type_: Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "Bar".to_owned(),
                     generics: vec![],
-                },
+                }),
                 optional: false,
                 options: vec![],
             },
@@ -357,12 +357,12 @@ fn test_parse_struct_field_options() {
                 fields: vec![Field {
                     name: "name".to_string(),
                     position: FilePosition { line: 1, column: 17 },
-                    type_: Type::Array(Box::new(Type::Ref {
+                    type_: Type::Array(Box::new(Type::Ref(TypeRef {
                         abs: false,
                         ns: vec![],
                         name: "String".to_string(),
                         generics: vec![],
-                    })),
+                    }))),
                     optional: false,
                     options: vec![FieldOption {
                         name: "length".to_string(),
@@ -401,24 +401,24 @@ fn test_parse_struct_with_fields() {
                     Field {
                         name: "name".to_string(),
                         position: FilePosition { line: 1, column: 17 },
-                        type_: Type::Ref {
+                        type_: Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
                             name: "String".to_string(),
                             generics: vec![],
-                        },
+                        }),
                         optional: false,
                         options: vec![],
                     },
                     Field {
                         name: "age".to_string(),
                         position: FilePosition { line: 1, column: 31 },
-                        type_: Type::Ref {
+                        type_: Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
                             name: "Integer".to_string(),
                             generics: vec![],
-                        },
+                        }),
                         optional: false,
                         options: vec![],
                     },
@@ -461,12 +461,12 @@ fn test_parse_struct_with_generics() {
             fields: vec![Field {
                 name: "value".to_string(),
                 position: FilePosition { line: 1, column: 21 },
-                type_: Type::Ref {
+                type_: Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "T".to_string(),
                     generics: vec![],
-                },
+                }),
                 optional: false,
                 options: vec![],
             }],

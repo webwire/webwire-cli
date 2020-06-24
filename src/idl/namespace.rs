@@ -101,7 +101,7 @@ fn test_parse_namespace() {
     use crate::idl::field_option::FieldOption;
     use crate::idl::method::Method;
     use crate::idl::r#struct::Field;
-    use crate::idl::r#type::Type;
+    use crate::idl::r#type::{Type, TypeRef};
     use crate::idl::value::Value;
     let content = "
         namespace test {
@@ -131,12 +131,12 @@ fn test_parse_namespace() {
                         Field {
                             name: "name".to_string(),
                             position: FilePosition { line: 4, column: 17 },
-                            type_: Type::Ref {
+                            type_: Type::Ref(TypeRef {
                                 abs: false,
                                 ns: vec![],
                                 name: "String".to_string(),
                                 generics: vec![],
-                            },
+                            }),
                             optional: false,
                             options: vec![FieldOption {
                                 name: "length".to_string(),
@@ -146,12 +146,12 @@ fn test_parse_namespace() {
                         Field {
                             name: "age".to_string(),
                             position: FilePosition { line: 5, column: 17 },
-                            type_: Type::Ref {
+                            type_: Type::Ref(TypeRef {
                                 abs: false,
                                 ns: vec![],
                                 name: "Integer".to_string(),
                                 generics: vec![],
-                            },
+                            }),
                             optional: false,
                             options: vec![],
                         },
@@ -164,12 +164,12 @@ fn test_parse_namespace() {
                     fields: vec![Field {
                         name: "name".to_string(),
                         position: FilePosition { line: 8, column: 17 },
-                        type_: Type::Ref {
+                        type_: Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
                             name: "String".to_string(),
                             generics: vec![],
-                        },
+                        }),
                         optional: false,
                         options: vec![],
                     }],
@@ -186,12 +186,12 @@ fn test_parse_namespace() {
                         Method {
                             name: "get_version".to_string(),
                             input: None,
-                            output: Some(Type::Ref {
+                            output: Some(Type::Ref(TypeRef {
                                 abs: false,
                                 ns: vec![],
                                 name: "String".to_string(),
                                 generics: vec![],
-                            }),
+                            })),
                         },
                     ],
                 }),

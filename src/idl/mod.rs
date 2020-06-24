@@ -18,6 +18,6 @@ pub use method::Method;
 pub use namespace::{Namespace, NamespacePart};
 pub use r#enum::{Enum, EnumVariant};
 pub use r#struct::{Field, Struct};
-pub use r#type::Type;
+pub use r#type::{Type, TypeRef};
 pub use service::Service;
 pub use value::Value;

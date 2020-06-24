@@ -234,12 +234,12 @@ impl TypeRef {
     }
     pub fn from_idl(itype: &idl::Type) -> Self {
         match itype {
-            idl::Type::Ref {
+            idl::Type::Ref(idl::TypeRef {
                 abs,
                 ns,
                 name,
                 generics,
-            } => Self::from_name(name),
+            }) => Self::from_name(name),
             idl::Type::Array(item_type) => Self::Array(Box::new(Array {
                 item_type: Self::from_idl(item_type),
                 length: Range { start: None, end: None }, // FIXME

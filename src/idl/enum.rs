@@ -10,7 +10,7 @@ use nom::{
 
 use crate::common::FilePosition;
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
-use crate::idl::r#type::{parse_type, Type};
+use crate::idl::r#type::{parse_type, Type, TypeRef};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -203,21 +203,21 @@ fn test_parse_enum_with_value() {
                 variants: vec![
                     EnumVariant {
                         name: "S".to_string(),
-                        value_type: Some(Type::Ref {
+                        value_type: Some(Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
                             name: "String".to_string(),
                             generics: vec![],
-                        }),
+                        })),
                     },
                     EnumVariant {
                         name: "I".to_string(),
-                        value_type: Some(Type::Ref {
+                        value_type: Some(Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
                             name: "Integer".to_string(),
                             generics: vec![],
-                        }),
+                        })),
                     },
                 ],
             },
@@ -241,12 +241,12 @@ fn test_parse_enum_extends() {
             Enum {
                 name: "GetError".to_string(),
                 position: FilePosition { line: 1, column: 1 },
-                extends: Some(Type::Ref {
+                extends: Some(Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "GenericError".to_string(),
                     generics: vec![],
-                }),
+                })),
                 variants: vec![],
             },
         )

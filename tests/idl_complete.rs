@@ -43,12 +43,12 @@ fn test_schema_loader() {
                             fields: vec![Field {
                                 name: "email".to_string(),
                                 position: FilePosition { line: 10, column: 9 },
-                                type_: Type::Ref {
+                                type_: Type::Ref(TypeRef {
                                     abs: false,
                                     ns: vec![],
                                     name: "Email".to_string(),
                                     generics: vec![]
-                                },
+                                }),
                                 optional: false,
                                 options: vec![]
                             }]
@@ -61,12 +61,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "prefix".to_string(),
                                     position: FilePosition { line: 14, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "String".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![FieldOption {
                                         name: "length".to_string(),
@@ -76,12 +76,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "first_name".to_string(),
                                     position: FilePosition { line: 15, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "String".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![FieldOption {
                                         name: "length".to_string(),
@@ -91,12 +91,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "middle_name".to_string(),
                                     position: FilePosition { line: 16, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "String".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![FieldOption {
                                         name: "length".to_string(),
@@ -106,12 +106,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "last_name".to_string(),
                                     position: FilePosition { line: 17, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "String".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![
                                         FieldOption {
@@ -127,12 +127,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "suffix".to_string(),
                                     position: FilePosition { line: 18, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "String".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![FieldOption {
                                         name: "length".to_string(),
@@ -142,12 +142,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "full_name".to_string(),
                                     position: FilePosition { line: 19, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "String".to_string(),
                                         generics: vec![],
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![]
                                 }
@@ -188,48 +188,48 @@ fn test_schema_loader() {
                                 Field {
                                     name: "id".to_string(),
                                     position: FilePosition { line: 31, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "UUID".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![]
                                 },
                                 Field {
                                     name: "email".to_string(),
                                     position: FilePosition { line: 32, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "Email".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![]
                                 },
                                 Field {
                                     name: "name".to_string(),
                                     position: FilePosition { line: 33, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "Name".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![]
                                 },
                                 Field {
                                     name: "password".to_string(),
                                     position: FilePosition { line: 34, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "String".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![FieldOption {
                                         name: "length".to_string(),
@@ -239,12 +239,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "is_admin".to_string(),
                                     position: FilePosition { line: 35, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "Boolean".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![]
                                 }
@@ -308,12 +308,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "offset".to_string(),
                                     position: FilePosition { line: 54, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "Integer".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: true,
                                     options: vec![
                                         FieldOption {
@@ -329,12 +329,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "limit".to_string(),
                                     position: FilePosition { line: 55, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "Integer".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: true,
                                     options: vec![FieldOption {
                                         name: "range".to_string(),
@@ -351,12 +351,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "count".to_string(),
                                     position: FilePosition { line: 59, column: 9 },
-                                    type_: Type::Ref {
+                                    type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "Integer".to_string(),
                                         generics: vec![]
-                                    },
+                                    }),
                                     optional: false,
                                     options: vec![
                                         FieldOption {
@@ -374,12 +374,12 @@ fn test_schema_loader() {
                                 Field {
                                     name: "users".to_string(),
                                     position: FilePosition { line: 63, column: 9 },
-                                    type_: Type::Array(Box::new(Type::Ref {
+                                    type_: Type::Array(Box::new(Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "User".to_string(),
                                         generics: vec![],
-                                    })),
+                                    }))),
                                     optional: false,
                                     options: vec![FieldOption {
                                         name: "length".to_string(),
@@ -390,18 +390,18 @@ fn test_schema_loader() {
                                     name: "permissions".to_string(),
                                     position: FilePosition { line: 64, column: 9 },
                                     type_: Type::Map(
-                                        Box::new(Type::Ref {
+                                        Box::new(Type::Ref(TypeRef {
                                             abs: false,
                                             ns: vec![],
                                             name: "UUID".to_string(),
                                             generics: vec![]
-                                        }),
-                                        Box::new(Type::Ref {
+                                        })),
+                                        Box::new(Type::Ref(TypeRef {
                                             abs: false,
                                             ns: vec![],
                                             name: "String".to_string(),
                                             generics: vec![]
-                                        }),
+                                        })),
                                     ),
                                     optional: false,
                                     options: vec![]
@@ -439,68 +439,68 @@ fn test_schema_loader() {
                                 Method {
                                     name: "get_version".to_string(),
                                     input: None,
-                                    output: Some(Type::Ref {
+                                    output: Some(Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "String".to_string(),
                                         generics: vec![]
-                                    }),
+                                    })),
                                 },
                                 Method {
                                     name: "user_get".to_string(),
-                                    input: Some(Type::Ref {
+                                    input: Some(Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "UserRequest".to_string(),
                                         generics: vec![],
-                                    }),
-                                    output: Some(Type::Ref {
+                                    })),
+                                    output: Some(Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "Result".to_string(),
                                         generics: vec![
-                                            Type::Ref {
+                                            Type::Ref(TypeRef {
                                                 abs: false,
                                                 ns: vec![],
                                                 name: "UserRead".to_string(),
                                                 generics: vec![]
-                                            },
-                                            Type::Ref {
+                                            }),
+                                            Type::Ref(TypeRef {
                                                 abs: false,
                                                 ns: vec![],
                                                 name: "GetError".to_string(),
                                                 generics: vec![],
-                                            }
+                                            })
                                         ]
-                                    })
+                                    }))
                                 },
                                 Method {
                                     name: "user_list".to_string(),
-                                    input: Some(Type::Ref {
+                                    input: Some(Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "UserListRequest".to_string(),
                                         generics: vec![],
-                                    }),
-                                    output: Some(Type::Ref {
+                                    })),
+                                    output: Some(Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
                                         name: "Result".to_string(),
                                         generics: vec![
-                                            Type::Ref {
+                                            Type::Ref(TypeRef {
                                                 abs: false,
                                                 ns: vec![],
                                                 name: "UserList".to_string(),
                                                 generics: vec![],
-                                            },
-                                            Type::Ref {
+                                            }),
+                                            Type::Ref(TypeRef {
                                                 abs: false,
                                                 ns: vec![],
                                                 name: "ListError".to_string(),
                                                 generics: vec![],
-                                            }
+                                            })
                                         ]
-                                    })
+                                    }))
                                 },
                             ]
                         }),

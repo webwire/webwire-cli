@@ -75,7 +75,7 @@ fn test_parse_service_no_endpoints() {
 
 #[test]
 fn test_parse_service() {
-    use crate::idl::r#type::Type;
+    use crate::idl::r#type::{ Type, TypeRef };
     let contents = [
         // normal whitespaces
         "service Pinger { ping(), get_version() -> String }",
@@ -107,12 +107,12 @@ fn test_parse_service() {
                     Method {
                         name: "get_version".to_string(),
                         input: None,
-                        output: Some(Type::Ref {
+                        output: Some(Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
                             name: "String".to_string(),
                             generics: vec![],
-                        }),
+                        })),
                     },
                 ],
             },
