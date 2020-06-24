@@ -42,6 +42,7 @@ fn test_schema_loader() {
                             generics: vec![],
                             fields: vec![Field {
                                 name: "email".to_string(),
+                                position: FilePosition { line: 10, column: 9 },
                                 type_: Type::Ref {
                                     abs: false,
                                     ns: vec![],
@@ -59,6 +60,7 @@ fn test_schema_loader() {
                             fields: vec![
                                 Field {
                                     name: "prefix".to_string(),
+                                    position: FilePosition { line: 14, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -73,6 +75,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "first_name".to_string(),
+                                    position: FilePosition { line: 15, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -87,6 +90,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "middle_name".to_string(),
+                                    position: FilePosition { line: 16, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -101,6 +105,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "last_name".to_string(),
+                                    position: FilePosition { line: 17, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -121,6 +126,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "suffix".to_string(),
+                                    position: FilePosition { line: 18, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -135,6 +141,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "full_name".to_string(),
+                                    position: FilePosition { line: 19, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -180,6 +187,7 @@ fn test_schema_loader() {
                             fields: vec![
                                 Field {
                                     name: "id".to_string(),
+                                    position: FilePosition { line: 31, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -191,6 +199,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "email".to_string(),
+                                    position: FilePosition { line: 32, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -202,6 +211,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "name".to_string(),
+                                    position: FilePosition { line: 33, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -213,6 +223,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "password".to_string(),
+                                    position: FilePosition { line: 34, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -227,6 +238,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "is_admin".to_string(),
+                                    position: FilePosition { line: 35, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -295,6 +307,7 @@ fn test_schema_loader() {
                             fields: vec![
                                 Field {
                                     name: "offset".to_string(),
+                                    position: FilePosition { line: 54, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -315,6 +328,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "limit".to_string(),
+                                    position: FilePosition { line: 55, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -336,6 +350,7 @@ fn test_schema_loader() {
                             fields: vec![
                                 Field {
                                     name: "count".to_string(),
+                                    position: FilePosition { line: 59, column: 9 },
                                     type_: Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -358,6 +373,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "users".to_string(),
+                                    position: FilePosition { line: 63, column: 9 },
                                     type_: Type::Array(Box::new(Type::Ref {
                                         abs: false,
                                         ns: vec![],
@@ -372,6 +388,7 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "permissions".to_string(),
+                                    position: FilePosition { line: 64, column: 9 },
                                     type_: Type::Map(
                                         Box::new(Type::Ref {
                                             abs: false,

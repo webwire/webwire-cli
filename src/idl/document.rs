@@ -64,6 +64,7 @@ fn test_parse_document() {
                         fields: vec![
                             Field {
                                 name: "name".to_string(),
+                                position: FilePosition { line: 3, column: 13 },
                                 type_: Type::Ref {
                                     abs: false,
                                     ns: vec![],
@@ -78,6 +79,7 @@ fn test_parse_document() {
                             },
                             Field {
                                 name: "age".to_string(),
+                                position: FilePosition { line: 4, column: 13 },
                                 type_: Type::Ref {
                                     abs: false,
                                     name: "Integer".to_string(),
@@ -95,6 +97,7 @@ fn test_parse_document() {
                         generics: vec![],
                         fields: vec![Field {
                             name: "name".to_string(),
+                            position: FilePosition { line: 7, column: 13 },
                             type_: Type::Ref {
                                 abs: false,
                                 name: "String".to_string(),

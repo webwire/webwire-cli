@@ -130,6 +130,7 @@ fn test_parse_namespace() {
                     fields: vec![
                         Field {
                             name: "name".to_string(),
+                            position: FilePosition { line: 4, column: 17 },
                             type_: Type::Ref {
                                 abs: false,
                                 ns: vec![],
@@ -144,6 +145,7 @@ fn test_parse_namespace() {
                         },
                         Field {
                             name: "age".to_string(),
+                            position: FilePosition { line: 5, column: 17 },
                             type_: Type::Ref {
                                 abs: false,
                                 ns: vec![],
@@ -161,6 +163,7 @@ fn test_parse_namespace() {
                     generics: vec![],
                     fields: vec![Field {
                         name: "name".to_string(),
+                        position: FilePosition { line: 8, column: 17 },
                         type_: Type::Ref {
                             abs: false,
                             ns: vec![],
