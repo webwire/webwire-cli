@@ -13,8 +13,9 @@ pub enum ParseError<'a> {
     TrailingGarbage(Span<'a>),
 }
 
-pub fn parse_document(input: Span) -> Result<Document, ParseError> {
-    let result = parse_namespace_content(input);
+pub fn parse_document(input: &str) -> Result<Document, ParseError> {
+    let span = Span::new(input);
+    let result = parse_namespace_content(span);
     match result {
         Ok((span, parts)) if span.fragment() == &"" => Ok(Document {
             ns: Namespace {
@@ -51,7 +52,7 @@ fn test_parse_document() {
         }
     ";
     assert_eq!(
-        parse_document(Span::new(content)),
+        parse_document(content),
         Ok(Document {
             ns: Namespace {
                 name: "".to_string(),

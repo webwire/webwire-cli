@@ -1,11 +1,14 @@
+use std::fmt;
 use std::cell::RefCell;
 use std::collections::hash_map::Entry as HashMapEntry;
 use std::collections::HashMap;
+use std::error::Error;
 use std::rc::{Rc, Weak};
 
 use crate::common::FilePosition;
 use crate::idl;
 
+#[derive(Debug)]
 pub enum ValidationError {
     DuplicateIdentifier {
         position: FilePosition,
@@ -21,17 +24,26 @@ pub enum ValidationError {
     },
 }
 
+impl fmt::Display for ValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // FIXME Replace this by a proper implementation of Display
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for ValidationError {}
+
 #[derive(Default)]
 pub struct Document {
-    ns: Namespace,
+    pub ns: Namespace,
 }
 
 #[derive(Default)]
 pub struct Namespace {
-    path: Vec<String>,
-    types: HashMap<String, Rc<RefCell<UserDefinedType>>>,
-    services: HashMap<String, Service>,
-    namespaces: HashMap<String, Namespace>,
+    pub path: Vec<String>,
+    pub types: HashMap<String, Rc<RefCell<UserDefinedType>>>,
+    pub services: HashMap<String, Service>,
+    pub namespaces: HashMap<String, Namespace>,
 }
 
 pub enum UserDefinedType {
@@ -58,9 +70,9 @@ pub enum Type {
 }
 
 pub struct TypeRef {
-    fqtn: FQTN,
-    type_: Weak<RefCell<UserDefinedType>>,
-    generics: Vec<Type>,
+    pub fqtn: FQTN,
+    pub type_: Weak<RefCell<UserDefinedType>>,
+    pub generics: Vec<Type>,
 }
 
 impl TypeRef {
@@ -101,61 +113,62 @@ impl TypeRef {
 }
 
 /// Fully qualified type name
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FQTN {
-    ns: Vec<String>,
-    name: String,
+    pub ns: Vec<String>,
+    pub name: String,
 }
 
 pub struct Enum {
-    fqtn: FQTN,
-    generics: Vec<String>,
-    variants: Vec<EnumVariant>,
+    pub fqtn: FQTN,
+    pub generics: Vec<String>,
+    pub variants: Vec<EnumVariant>,
 }
 
 pub struct EnumVariant {
-    name: String,
-    value_type: Option<Type>,
+    pub name: String,
+    pub value_type: Option<Type>,
 }
 
 pub struct Struct {
-    fqtn: FQTN,
-    generics: Vec<String>,
-    fields: Vec<Field>,
-    field_by_name: HashMap<String, Rc<Field>>,
+    pub fqtn: FQTN,
+    pub generics: Vec<String>,
+    pub fields: Vec<Field>,
+    pub field_by_name: HashMap<String, Rc<Field>>,
 }
 
 pub struct Field {
-    name: String,
-    type_: Type,
-    required: bool,
+    pub name: String,
+    pub type_: Type,
+    pub required: bool,
     // FIXME add options
 }
 
 pub struct Array {
-    length: Range,
-    item_type: Type,
+    pub length: Range,
+    pub item_type: Type,
 }
 
 pub struct Map {
-    length: Range,
-    key_type: Type,
-    value_type: Type,
+    pub length: Range,
+    pub key_type: Type,
+    pub value_type: Type,
 }
 
 pub struct Range {
-    start: Option<i32>,
-    end: Option<i32>,
+    pub start: Option<i32>,
+    pub end: Option<i32>,
 }
 
 pub struct Service {
-    methods: Vec<Method>,
+    pub name: String,
+    pub methods: Vec<Method>,
 }
 
 pub struct Method {
-    name: String,
-    input: Type,
-    output: Type,
+    pub name: String,
+    pub input: Type,
+    pub output: Type,
 }
 
 impl FQTN {
@@ -419,10 +432,10 @@ impl Type {
 }
 
 pub struct Fieldset {
-    fqtn: FQTN,
-    generics: Vec<String>,
-    r#struct: TypeRef,
-    fields: Vec<FieldsetField>,
+    pub fqtn: FQTN,
+    pub generics: Vec<String>,
+    pub r#struct: TypeRef,
+    pub fields: Vec<FieldsetField>,
 }
 
 type FieldsetField = idl::FieldsetField;
