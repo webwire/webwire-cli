@@ -9,7 +9,10 @@ use nom::{
 };
 
 use crate::common::FilePosition;
-use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
+use crate::idl::common::{
+    parse_field_separator, parse_identifier, parse_identifier_with_generics, trailing_comma, ws,
+    ws1, Span,
+};
 use crate::idl::r#type::{parse_type, Type};
 
 #[cfg(test)]
@@ -18,6 +21,7 @@ use crate::idl::common::assert_parse;
 #[derive(Debug, PartialEq)]
 pub struct Enum {
     pub name: String,
+    pub generics: Vec<String>,
     pub extends: Option<Type>,
     pub variants: Vec<EnumVariant>,
     pub position: FilePosition,
@@ -32,14 +36,15 @@ pub struct EnumVariant {
 pub fn parse_enum(input: Span) -> IResult<Span, Enum> {
     map(
         tuple((
-            preceded(terminated(tag("enum"), ws1), parse_identifier),
+            preceded(terminated(tag("enum"), ws1), parse_identifier_with_generics),
             parse_enum_extends,
             parse_enum_variants,
         )),
-        |t| Enum {
-            name: t.0.to_string(),
-            extends: t.1,
-            variants: t.2,
+        |((name, generics), extends, variants)| Enum {
+            name,
+            generics,
+            extends,
+            variants,
             position: input.into(),
         },
     )(input)
@@ -102,6 +107,7 @@ fn test_parse_enum_0() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Nothing".to_string(),
+                generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
                 extends: None,
                 variants: vec![],
@@ -126,6 +132,7 @@ fn test_parse_enum_1() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "OneThing".to_string(),
+                generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
                 extends: None,
                 variants: vec![EnumVariant {
@@ -156,6 +163,7 @@ fn test_parse_enum_2() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Direction".to_string(),
+                generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
                 extends: None,
                 variants: vec![
@@ -199,6 +207,7 @@ fn test_parse_enum_with_value() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "Value".to_string(),
+                generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
                 extends: None,
                 variants: vec![
@@ -242,6 +251,7 @@ fn test_parse_enum_extends() {
             parse_enum(Span::new(content)),
             Enum {
                 name: "GetError".to_string(),
+                generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
                 extends: Some(Type::Ref(TypeRef {
                     abs: false,

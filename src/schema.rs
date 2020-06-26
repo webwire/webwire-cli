@@ -304,7 +304,7 @@ impl Enum {
             .collect();
         Self {
             fqtn: FQTN::new(&ienum.name, ns),
-            generics: vec![], // FIXME the IDL parser does not support this at the moment
+            generics: ienum.generics.clone(),
             variants,
         }
     }
@@ -431,7 +431,7 @@ impl Fieldset {
     fn from_idl(ifieldset: &idl::Fieldset, ns: &Namespace) -> Self {
         Self {
             fqtn: FQTN::new(&ifieldset.name, ns),
-            generics: vec![], // FIXME the idl parser does not support this at the moment
+            generics: ifieldset.generics.clone(),
             r#struct: TypeRef::from_idl(&ifieldset.r#struct, ns),
             fields: ifieldset.fields.clone(),
         }

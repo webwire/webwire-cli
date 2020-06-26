@@ -1,8 +1,9 @@
 use nom::{
     bytes::complete::{take_while, take_while1},
     character::complete::char,
-    combinator::{map, opt},
-    sequence::{pair, preceded},
+    combinator::{cut, map, opt},
+    multi::separated_list,
+    sequence::{pair, preceded, terminated},
     IResult,
 };
 use nom_locate::LocatedSpan;
@@ -32,6 +33,26 @@ pub fn parse_identifier(input: Span) -> IResult<Span, String> {
         ),
         |t| format!("{}{}", t.0, t.1),
     )(input)
+}
+
+fn parse_generics(input: Span) -> IResult<Span, Vec<String>> {
+    map(
+        opt(preceded(
+            preceded(ws, char('<')),
+            cut(terminated(
+                separated_list(parse_field_separator, preceded(ws, parse_identifier)),
+                preceded(trailing_comma, preceded(ws, char('>'))),
+            )),
+        )),
+        |v| match v {
+            Some(v) => v,
+            None => Vec::with_capacity(0),
+        },
+    )(input)
+}
+
+pub fn parse_identifier_with_generics(input: Span) -> IResult<Span, (String, Vec<String>)> {
+    pair(parse_identifier, parse_generics)(input)
 }
 
 #[cfg(test)]

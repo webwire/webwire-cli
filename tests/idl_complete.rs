@@ -19,6 +19,7 @@ fn test_schema_loader() {
                     parts: vec![
                         NamespacePart::Enum(Enum {
                             name: "UserState".to_string(),
+                            generics: vec![],
                             position: FilePosition { line: 3, column: 5 },
                             extends: None,
                             variants: vec![
@@ -179,6 +180,7 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Fieldset(Fieldset {
                             name: "NameUpdate".to_string(),
+                            generics: vec![],
                             position: FilePosition {
                                 line: 22,
                                 column: 5
@@ -302,6 +304,7 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Fieldset(Fieldset {
                             name: "UserRead".to_string(),
+                            generics: vec![],
                             position: FilePosition {
                                 line: 38,
                                 column: 5
@@ -333,6 +336,7 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Fieldset(Fieldset {
                             name: "UserWrite".to_string(),
+                            generics: vec![],
                             position: FilePosition {
                                 line: 45,
                                 column: 5
@@ -497,6 +501,7 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Enum(Enum {
                             name: "GetError".to_string(),
+                            generics: vec![],
                             position: FilePosition {
                                 line: 67,
                                 column: 5
@@ -515,6 +520,7 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Enum(Enum {
                             name: "ListError".to_string(),
+                            generics: vec![],
                             position: FilePosition {
                                 line: 72,
                                 column: 5

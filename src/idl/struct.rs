@@ -4,12 +4,15 @@ use nom::{
     combinator::{cut, map, opt},
     error::context,
     multi::separated_list,
-    sequence::{pair, preceded, separated_pair, terminated, tuple},
+    sequence::{pair, preceded, separated_pair, terminated},
     IResult,
 };
 
 use crate::common::FilePosition;
-use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
+use crate::idl::common::{
+    parse_field_separator, parse_identifier, parse_identifier_with_generics, trailing_comma, ws,
+    ws1, Span,
+};
 use crate::idl::field_option::{parse_field_options, FieldOption};
 use crate::idl::r#type::{parse_type, Type};
 
@@ -37,32 +40,15 @@ pub struct Field {
 
 pub fn parse_struct(input: Span) -> IResult<Span, Struct> {
     map(
-        tuple((
-            preceded(tag("struct"), preceded(ws1, parse_identifier)),
-            parse_generics,
+        pair(
+            preceded(tag("struct"), preceded(ws1, parse_identifier_with_generics)),
             parse_fields,
-        )),
-        |t| Struct {
-            name: t.0.to_string(),
-            generics: t.1,
-            fields: t.2,
+        ),
+        |((name, generics), fields)| Struct {
+            name,
+            generics,
+            fields,
             position: input.into(),
-        },
-    )(input)
-}
-
-fn parse_generics(input: Span) -> IResult<Span, Vec<String>> {
-    map(
-        opt(preceded(
-            preceded(ws, char('<')),
-            cut(terminated(
-                separated_list(parse_field_separator, preceded(ws, parse_identifier)),
-                preceded(trailing_comma, preceded(ws, char('>'))),
-            )),
-        )),
-        |v| match v {
-            Some(v) => v,
-            None => Vec::with_capacity(0),
         },
     )(input)
 }

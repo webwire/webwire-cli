@@ -8,7 +8,10 @@ use nom::{
 };
 
 use crate::common::FilePosition;
-use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
+use crate::idl::common::{
+    parse_field_separator, parse_identifier, parse_identifier_with_generics, trailing_comma, ws,
+    ws1, Span,
+};
 use crate::idl::r#type::{parse_type_ref, TypeRef};
 
 #[cfg(test)]
@@ -23,6 +26,7 @@ pub struct Field {
 #[derive(Debug, PartialEq)]
 pub struct Fieldset {
     pub name: String,
+    pub generics: Vec<String>,
     pub r#struct: TypeRef,
     pub fields: Vec<Field>,
     pub position: FilePosition,
@@ -54,16 +58,17 @@ pub fn parse_fieldset(input: Span) -> IResult<Span, Fieldset> {
             terminated(tag("fieldset"), ws1),
             cut(pair(
                 separated_pair(
-                    preceded(ws, parse_identifier),
+                    preceded(ws, parse_identifier_with_generics),
                     preceded(ws, tag("for")),
                     preceded(ws1, parse_type_ref),
                 ),
                 parse_fields,
             )),
         ),
-        |((name, struct_), fields)| Fieldset {
+        |(((name, generics), r#struct), fields)| Fieldset {
             name,
-            r#struct: struct_,
+            generics,
+            r#struct,
             fields,
             position: input.into(),
         },
@@ -85,6 +90,7 @@ fn test_parse_fieldset_0() {
             parse_fieldset(Span::new(content)),
             Fieldset {
                 name: "PersonName".to_string(),
+                generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
                 r#struct: TypeRef {
                     abs: false,
@@ -113,6 +119,7 @@ fn test_parse_fieldset_1() {
             parse_fieldset(Span::new(content)),
             Fieldset {
                 name: "PersonName".to_string(),
+                generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
                 r#struct: TypeRef {
                     abs: false,
@@ -149,6 +156,7 @@ fn test_parse_fieldset_2() {
             parse_fieldset(Span::new(content)),
             Fieldset {
                 name: "PersonName".to_string(),
+                generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
                 r#struct: TypeRef {
                     abs: false,
