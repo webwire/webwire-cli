@@ -10,7 +10,7 @@ use nom::{
 
 use crate::common::FilePosition;
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
-use crate::idl::r#type::{parse_type, Type, TypeRef};
+use crate::idl::r#type::{parse_type, Type};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -175,6 +175,7 @@ fn test_parse_enum_2() {
 
 #[test]
 fn test_parse_enum_with_value() {
+    use crate::idl::r#type::TypeRef;
     let contents = [
         // minimal whitespace
         "enum Value{S(String),I(Integer)}",
@@ -227,6 +228,7 @@ fn test_parse_enum_with_value() {
 
 #[test]
 fn test_parse_enum_extends() {
+    use crate::idl::r#type::TypeRef;
     let contents = [
         // minimal whitespace
         "enum GetError extends GenericError{}",

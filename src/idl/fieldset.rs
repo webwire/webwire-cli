@@ -32,7 +32,7 @@ fn parse_field(input: Span) -> IResult<Span, Field> {
     map(
         pair(preceded(ws, parse_identifier), preceded(ws, opt(char('?')))),
         |(name, optional)| Field {
-            name: name.to_string(),
+            name,
             optional: optional != None,
         },
     )(input)
@@ -62,7 +62,7 @@ pub fn parse_fieldset(input: Span) -> IResult<Span, Fieldset> {
             )),
         ),
         |((name, struct_), fields)| Fieldset {
-            name: name.to_string(),
+            name,
             r#struct: struct_,
             fields,
             position: input.into(),

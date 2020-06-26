@@ -11,7 +11,7 @@ use nom::{
 use crate::common::FilePosition;
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
 use crate::idl::field_option::{parse_field_options, FieldOption};
-use crate::idl::r#type::{parse_type, Type, TypeRef};
+use crate::idl::r#type::{parse_type, Type};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -88,10 +88,10 @@ fn parse_field(input: Span) -> IResult<Span, Field> {
             pair(parse_type, opt(parse_field_options)),
         ),
         |((name, optional), (type_, options))| Field {
-            name: name,
+            name,
             position: input.into(),
             optional: optional != None,
-            type_: type_,
+            type_,
             options: if let Some(options) = options {
                 options
             } else {
@@ -103,6 +103,7 @@ fn parse_field(input: Span) -> IResult<Span, Field> {
 
 #[test]
 fn test_parse_field() {
+    use crate::idl::r#type::TypeRef;
     let contents = ["foo:FooType", "foo: FooType", "foo : FooType"];
     for content in contents.iter() {
         assert_parse(
@@ -125,6 +126,7 @@ fn test_parse_field() {
 
 #[test]
 fn test_parse_field_optional() {
+    use crate::idl::r#type::TypeRef;
     let contents = [
         "foo?:FooType",
         "foo? :FooType",
@@ -152,6 +154,7 @@ fn test_parse_field_optional() {
 
 #[test]
 fn test_parse_field_with_options() {
+    use crate::idl::r#type::TypeRef;
     use crate::idl::value::Value;
     let contents = [
         "name:String(length=2..50)",
@@ -191,6 +194,7 @@ fn test_parse_field_with_options() {
 
 #[test]
 fn test_parse_array_field_with_options() {
+    use crate::idl::r#type::TypeRef;
     use crate::idl::value::Value;
     let contents = [
         "items:[String](length=0..32)",
@@ -234,6 +238,7 @@ fn test_parse_fields_0() {
 
 #[test]
 fn test_parse_fields_1() {
+    use crate::idl::r#type::TypeRef;
     let content = "{foo: Foo}";
     assert_parse(
         parse_fields(Span::new(content)),
@@ -254,12 +259,7 @@ fn test_parse_fields_1() {
 
 #[test]
 fn test_parse_fields_1_ws_variants() {
-    let contents = [
-        "{foo: Foo}",
-        "{foo:Foo }",
-        "{ foo:Foo}",
-        "{foo:Foo,}",
-    ];
+    let contents = ["{foo: Foo}", "{foo:Foo }", "{ foo:Foo}", "{foo:Foo,}"];
     for content in contents.iter() {
         let (_, f) = parse_fields(Span::new(content)).unwrap();
         assert_eq!(f.len(), 1);
@@ -268,6 +268,7 @@ fn test_parse_fields_1_ws_variants() {
 
 #[test]
 fn test_parse_fields_2() {
+    use crate::idl::r#type::TypeRef;
     let content = "{ foo: Foo, bar: Bar }";
     assert_parse(
         parse_fields(Span::new(content)),
@@ -286,7 +287,10 @@ fn test_parse_fields_2() {
             },
             Field {
                 name: "bar".to_owned(),
-                position: FilePosition { line: 1, column: 13 },
+                position: FilePosition {
+                    line: 1,
+                    column: 13,
+                },
                 type_: Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],
@@ -299,7 +303,6 @@ fn test_parse_fields_2() {
         ],
     );
 }
-
 
 #[test]
 fn test_parse_fields_2_ws_variants() {
@@ -345,6 +348,7 @@ fn test_parse_struct() {
 
 #[test]
 fn test_parse_struct_field_options() {
+    use crate::idl::r#type::TypeRef;
     use crate::idl::value::Value;
     let contents = ["struct Person { name: [String] (length=1..50) }"];
     for content in contents.iter() {
@@ -356,7 +360,10 @@ fn test_parse_struct_field_options() {
                 generics: vec![],
                 fields: vec![Field {
                     name: "name".to_string(),
-                    position: FilePosition { line: 1, column: 17 },
+                    position: FilePosition {
+                        line: 1,
+                        column: 17,
+                    },
                     type_: Type::Array(Box::new(Type::Ref(TypeRef {
                         abs: false,
                         ns: vec![],
@@ -387,9 +394,8 @@ fn test_parse_struct_invalid() {
 
 #[test]
 fn test_parse_struct_with_fields() {
-    let contents = [
-        "struct Person { name: String, age: Integer }",
-    ];
+    use crate::idl::r#type::TypeRef;
+    let contents = ["struct Person { name: String, age: Integer }"];
     for content in contents.iter() {
         assert_parse(
             parse_struct(Span::new(content)),
@@ -400,7 +406,10 @@ fn test_parse_struct_with_fields() {
                 fields: vec![
                     Field {
                         name: "name".to_string(),
-                        position: FilePosition { line: 1, column: 17 },
+                        position: FilePosition {
+                            line: 1,
+                            column: 17,
+                        },
                         type_: Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
@@ -412,7 +421,10 @@ fn test_parse_struct_with_fields() {
                     },
                     Field {
                         name: "age".to_string(),
-                        position: FilePosition { line: 1, column: 31 },
+                        position: FilePosition {
+                            line: 1,
+                            column: 31,
+                        },
                         type_: Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
@@ -451,6 +463,7 @@ fn test_parse_struct_with_fields_ws_variants() {
 
 #[test]
 fn test_parse_struct_with_generics() {
+    use crate::idl::r#type::TypeRef;
     let content = "struct Wrapper<T> { value:T }";
     assert_parse(
         parse_struct(Span::new(content)),
@@ -460,7 +473,10 @@ fn test_parse_struct_with_generics() {
             generics: vec!["T".to_string()],
             fields: vec![Field {
                 name: "value".to_string(),
-                position: FilePosition { line: 1, column: 21 },
+                position: FilePosition {
+                    line: 1,
+                    column: 21,
+                },
                 type_: Type::Ref(TypeRef {
                     abs: false,
                     ns: vec![],

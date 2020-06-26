@@ -7,7 +7,7 @@ use nom::{
 };
 
 use crate::idl::common::{parse_identifier, ws, Span};
-use crate::idl::r#type::{parse_type, Type, TypeRef};
+use crate::idl::r#type::{parse_type, Type};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -58,6 +58,7 @@ fn test_parse_method_0() {
 
 #[test]
 fn test_parse_method_1() {
+    use crate::idl::r#type::TypeRef;
     let contents = [
         // normal whitespace
         "notify(Notification)",
@@ -85,6 +86,7 @@ fn test_parse_method_1() {
 
 #[test]
 fn test_parse_method_2() {
+    use crate::idl::r#type::TypeRef;
     let contents = [
         // normal whitespace
         "get_time() -> Time",
@@ -112,6 +114,7 @@ fn test_parse_method_2() {
 
 #[test]
 fn test_parse_method_3() {
+    use crate::idl::r#type::TypeRef;
     let contents = [
         // normal whitespace
         "no_response() -> Result<None, SomeError>",
@@ -156,6 +159,7 @@ fn test_parse_method_3() {
 
 #[test]
 fn test_parse_method_4() {
+    use crate::idl::r#type::TypeRef;
     let contents = [
         // normal whitespace
         "hello(HelloRequest) -> Result<HelloResponse, HelloError>",

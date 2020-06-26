@@ -1,6 +1,6 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::collections::hash_map::Entry as HashMapEntry;
+use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
 use crate::common::FilePosition;
@@ -13,12 +13,12 @@ pub enum ValidationError {
     },
     NoSuchType {
         position: FilePosition,
-        fqtn: FQTN
+        fqtn: FQTN,
     },
     GenericsMissmatch {
         position: FilePosition,
         fqtn: FQTN,
-    }
+    },
 }
 
 #[derive(Default)]
@@ -68,7 +68,8 @@ impl TypeRef {
         Self {
             fqtn: FQTN::from_idl(ityperef, ns),
             type_: Weak::new(),
-            generics: ityperef.generics
+            generics: ityperef
+                .generics
                 .iter()
                 .map(|itype| Type::from_idl(itype, ns))
                 .collect(),
@@ -84,14 +85,16 @@ impl TypeRef {
                     return Err(ValidationError::GenericsMissmatch {
                         fqtn: self.fqtn.clone(),
                         position,
-                    })
+                    });
                 }
                 type_
-            },
-            None => return Err(ValidationError::NoSuchType {
-                fqtn: self.fqtn.clone(),
-                position,
-            })
+            }
+            None => {
+                return Err(ValidationError::NoSuchType {
+                    fqtn: self.fqtn.clone(),
+                    position,
+                })
+            }
         };
         Ok(())
     }
@@ -200,10 +203,8 @@ impl TypeMap {
         }
     }
     fn insert(&mut self, type_rc: &Rc<RefCell<UserDefinedType>>) {
-        self.map.insert(
-            type_rc.borrow().fqtn().clone(),
-            Rc::downgrade(type_rc),
-        );
+        self.map
+            .insert(type_rc.borrow().fqtn().clone(), Rc::downgrade(type_rc));
     }
     fn get(&self, fqtn: &FQTN) -> Option<Weak<RefCell<UserDefinedType>>> {
         match self.map.get(fqtn) {
@@ -227,7 +228,11 @@ impl Namespace {
         let name = type_rc.borrow().name().to_owned();
         self.types.insert(name, type_rc);
     }
-    fn idl_convert(&mut self, ins: &crate::idl::Namespace, type_map: &mut TypeMap) -> Result<(), ValidationError> {
+    fn idl_convert(
+        &mut self,
+        ins: &crate::idl::Namespace,
+        type_map: &mut TypeMap,
+    ) -> Result<(), ValidationError> {
         let mut names: HashMap<String, FilePosition> = HashMap::new();
         for ipart in ins.parts.iter() {
             match names.entry(ipart.name().to_owned()) {
@@ -243,13 +248,22 @@ impl Namespace {
             }
             match ipart {
                 idl::NamespacePart::Enum(ienum) => {
-                    self.add_type(UserDefinedType::Enum(Enum::from_idl(&ienum, self)), type_map);
+                    self.add_type(
+                        UserDefinedType::Enum(Enum::from_idl(&ienum, self)),
+                        type_map,
+                    );
                 }
                 idl::NamespacePart::Struct(istruct) => {
-                    self.add_type(UserDefinedType::Struct(Struct::from_idl(&istruct, self)), type_map);
+                    self.add_type(
+                        UserDefinedType::Struct(Struct::from_idl(&istruct, self)),
+                        type_map,
+                    );
                 }
                 idl::NamespacePart::Fieldset(ifieldset) => {
-                    self.add_type(UserDefinedType::Fieldset(Fieldset::from_idl(&ifieldset, self)), type_map);
+                    self.add_type(
+                        UserDefinedType::Fieldset(Fieldset::from_idl(&ifieldset, self)),
+                        type_map,
+                    );
                 }
                 idl::NamespacePart::Service(_) => {
                     // This is done in the next step. Since services do not
@@ -261,10 +275,7 @@ impl Namespace {
                     child_ns.path = self.path.clone();
                     child_ns.path.push(ipart.name().to_owned());
                     child_ns.idl_convert(&inamespace, type_map)?;
-                    self.namespaces.insert(
-                        inamespace.name.to_owned(),
-                        child_ns,
-                    );
+                    self.namespaces.insert(inamespace.name.to_owned(), child_ns);
                 }
             };
         }
@@ -376,7 +387,7 @@ impl Type {
             "Date" => Self::Date,
             "Time" => Self::Time,
             "DateTime" => Self::DateTime,
-            name => Self::Ref(TypeRef::from_idl(ityperef, ns)),
+            _ => Self::Ref(TypeRef::from_idl(ityperef, ns)),
         }
     }
     pub fn from_idl(itype: &idl::Type, ns: &Namespace) -> Self {
@@ -384,12 +395,18 @@ impl Type {
             idl::Type::Ref(ityperef) => Self::from_idl_ref(&ityperef, &ns),
             idl::Type::Array(item_type) => Self::Array(Box::new(Array {
                 item_type: Self::from_idl(item_type, ns),
-                length: Range { start: None, end: None }, // FIXME
+                length: Range {
+                    start: None,
+                    end: None,
+                }, // FIXME
             })),
             idl::Type::Map(key_type, value_type) => Self::Map(Box::new(Map {
                 key_type: Self::from_idl(key_type, ns),
                 value_type: Self::from_idl(value_type, ns),
-                length: Range { start: None, end: None }, // FIXME
+                length: Range {
+                    start: None,
+                    end: None,
+                }, // FIXME
             })),
         }
     }

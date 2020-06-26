@@ -107,10 +107,13 @@ fn parse_type_map(input: Span) -> IResult<Span, Type> {
 }
 
 pub fn parse_type(input: Span) -> IResult<Span, Type> {
-    preceded(ws, alt((
-        map(parse_type_ref, |t| Type::Ref(t)),
-        parse_type_array,
-        parse_type_map))
+    preceded(
+        ws,
+        alt((
+            map(parse_type_ref, Type::Ref),
+            parse_type_array,
+            parse_type_map,
+        )),
     )(input)
 }
 

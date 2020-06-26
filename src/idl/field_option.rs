@@ -39,8 +39,8 @@ fn parse_field_option(input: Span) -> IResult<Span, FieldOption> {
             preceded(ws, parse_value),
         ),
         |(name, value)| FieldOption {
-            name: name,
-            value: value,
+            name,
+            value,
         },
     )(input)
 }

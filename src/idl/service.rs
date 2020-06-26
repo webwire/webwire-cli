@@ -75,7 +75,7 @@ fn test_parse_service_no_endpoints() {
 
 #[test]
 fn test_parse_service() {
-    use crate::idl::r#type::{ Type, TypeRef };
+    use crate::idl::r#type::{Type, TypeRef};
     let contents = [
         // normal whitespaces
         "service Pinger { ping(), get_version() -> String }",

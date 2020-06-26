@@ -42,7 +42,10 @@ fn test_schema_loader() {
                             generics: vec![],
                             fields: vec![Field {
                                 name: "email".to_string(),
-                                position: FilePosition { line: 10, column: 9 },
+                                position: FilePosition {
+                                    line: 10,
+                                    column: 9
+                                },
                                 type_: Type::Ref(TypeRef {
                                     abs: false,
                                     ns: vec![],
@@ -55,12 +58,18 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Struct(Struct {
                             name: "Name".to_string(),
-                            position: FilePosition { line: 13, column: 5 },
+                            position: FilePosition {
+                                line: 13,
+                                column: 5
+                            },
                             generics: vec![],
                             fields: vec![
                                 Field {
                                     name: "prefix".to_string(),
-                                    position: FilePosition { line: 14, column: 9 },
+                                    position: FilePosition {
+                                        line: 14,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -75,7 +84,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "first_name".to_string(),
-                                    position: FilePosition { line: 15, column: 9 },
+                                    position: FilePosition {
+                                        line: 15,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -90,7 +102,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "middle_name".to_string(),
-                                    position: FilePosition { line: 16, column: 9 },
+                                    position: FilePosition {
+                                        line: 16,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -105,7 +120,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "last_name".to_string(),
-                                    position: FilePosition { line: 17, column: 9 },
+                                    position: FilePosition {
+                                        line: 17,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -126,7 +144,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "suffix".to_string(),
-                                    position: FilePosition { line: 18, column: 9 },
+                                    position: FilePosition {
+                                        line: 18,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -141,7 +162,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "full_name".to_string(),
-                                    position: FilePosition { line: 19, column: 9 },
+                                    position: FilePosition {
+                                        line: 19,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -155,7 +179,10 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Fieldset(Fieldset {
                             name: "NameUpdate".to_string(),
-                            position: FilePosition { line: 22, column: 5 },
+                            position: FilePosition {
+                                line: 22,
+                                column: 5
+                            },
                             r#struct: TypeRef {
                                 abs: false,
                                 ns: vec![],
@@ -187,12 +214,18 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Struct(Struct {
                             name: "User".to_string(),
-                            position: FilePosition { line: 30, column: 5 },
+                            position: FilePosition {
+                                line: 30,
+                                column: 5
+                            },
                             generics: vec![],
                             fields: vec![
                                 Field {
                                     name: "id".to_string(),
-                                    position: FilePosition { line: 31, column: 9 },
+                                    position: FilePosition {
+                                        line: 31,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -204,7 +237,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "email".to_string(),
-                                    position: FilePosition { line: 32, column: 9 },
+                                    position: FilePosition {
+                                        line: 32,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -216,7 +252,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "name".to_string(),
-                                    position: FilePosition { line: 33, column: 9 },
+                                    position: FilePosition {
+                                        line: 33,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -228,7 +267,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "password".to_string(),
-                                    position: FilePosition { line: 34, column: 9 },
+                                    position: FilePosition {
+                                        line: 34,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -243,7 +285,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "is_admin".to_string(),
-                                    position: FilePosition { line: 35, column: 9 },
+                                    position: FilePosition {
+                                        line: 35,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -257,7 +302,10 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Fieldset(Fieldset {
                             name: "UserRead".to_string(),
-                            position: FilePosition { line: 38, column: 5 },
+                            position: FilePosition {
+                                line: 38,
+                                column: 5
+                            },
                             r#struct: TypeRef {
                                 abs: false,
                                 ns: vec![],
@@ -285,7 +333,10 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Fieldset(Fieldset {
                             name: "UserWrite".to_string(),
-                            position: FilePosition { line: 45, column: 5 },
+                            position: FilePosition {
+                                line: 45,
+                                column: 5
+                            },
                             r#struct: TypeRef {
                                 abs: false,
                                 ns: vec![],
@@ -317,12 +368,18 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Struct(Struct {
                             name: "UserListRequest".to_string(),
-                            position: FilePosition { line: 53, column: 5 },
+                            position: FilePosition {
+                                line: 53,
+                                column: 5
+                            },
                             generics: vec![],
                             fields: vec![
                                 Field {
                                     name: "offset".to_string(),
-                                    position: FilePosition { line: 54, column: 9 },
+                                    position: FilePosition {
+                                        line: 54,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -343,7 +400,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "limit".to_string(),
-                                    position: FilePosition { line: 55, column: 9 },
+                                    position: FilePosition {
+                                        line: 55,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -360,12 +420,18 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Struct(Struct {
                             name: "UserList".to_string(),
-                            position: FilePosition { line: 58, column: 5 },
+                            position: FilePosition {
+                                line: 58,
+                                column: 5
+                            },
                             generics: vec![],
                             fields: vec![
                                 Field {
                                     name: "count".to_string(),
-                                    position: FilePosition { line: 59, column: 9 },
+                                    position: FilePosition {
+                                        line: 59,
+                                        column: 9
+                                    },
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -388,7 +454,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "users".to_string(),
-                                    position: FilePosition { line: 63, column: 9 },
+                                    position: FilePosition {
+                                        line: 63,
+                                        column: 9
+                                    },
                                     type_: Type::Array(Box::new(Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
@@ -403,7 +472,10 @@ fn test_schema_loader() {
                                 },
                                 Field {
                                     name: "permissions".to_string(),
-                                    position: FilePosition { line: 64, column: 9 },
+                                    position: FilePosition {
+                                        line: 64,
+                                        column: 9
+                                    },
                                     type_: Type::Map(
                                         Box::new(Type::Ref(TypeRef {
                                             abs: false,
@@ -425,7 +497,10 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Enum(Enum {
                             name: "GetError".to_string(),
-                            position: FilePosition { line: 67, column: 5 },
+                            position: FilePosition {
+                                line: 67,
+                                column: 5
+                            },
                             extends: None,
                             variants: vec![
                                 EnumVariant {
@@ -440,7 +515,10 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Enum(Enum {
                             name: "ListError".to_string(),
-                            position: FilePosition { line: 72, column: 5 },
+                            position: FilePosition {
+                                line: 72,
+                                column: 5
+                            },
                             extends: None,
                             variants: vec![EnumVariant {
                                 name: "PermissionDenied".to_string(),
@@ -449,7 +527,10 @@ fn test_schema_loader() {
                         }),
                         NamespacePart::Service(Service {
                             name: "ExampleService".to_string(),
-                            position: FilePosition { line: 76, column: 5 },
+                            position: FilePosition {
+                                line: 76,
+                                column: 5
+                            },
                             methods: vec![
                                 Method {
                                     name: "get_version".to_string(),

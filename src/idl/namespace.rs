@@ -28,7 +28,7 @@ pub enum NamespacePart {
 }
 
 impl NamespacePart {
-    pub fn name<'a>(&'a self) -> &'a str {
+    pub fn name(&self) -> &str {
         let name = match self {
             Self::Enum(part) => &part.name,
             Self::Struct(part) => &part.name,
@@ -89,8 +89,8 @@ pub fn parse_namespace(input: Span) -> IResult<Span, Namespace> {
             ),
         ),
         |(name, parts)| Namespace {
-            name: name,
-            parts: parts,
+            name,
+            parts,
             position: input.into(),
         },
     )(input)
@@ -125,12 +125,18 @@ fn test_parse_namespace() {
             parts: vec![
                 NamespacePart::Struct(Struct {
                     name: "Person".to_string(),
-                    position: FilePosition { line: 3, column: 13 },
+                    position: FilePosition {
+                        line: 3,
+                        column: 13,
+                    },
                     generics: vec![],
                     fields: vec![
                         Field {
                             name: "name".to_string(),
-                            position: FilePosition { line: 4, column: 17 },
+                            position: FilePosition {
+                                line: 4,
+                                column: 17,
+                            },
                             type_: Type::Ref(TypeRef {
                                 abs: false,
                                 ns: vec![],
@@ -145,7 +151,10 @@ fn test_parse_namespace() {
                         },
                         Field {
                             name: "age".to_string(),
-                            position: FilePosition { line: 5, column: 17 },
+                            position: FilePosition {
+                                line: 5,
+                                column: 17,
+                            },
                             type_: Type::Ref(TypeRef {
                                 abs: false,
                                 ns: vec![],
@@ -159,11 +168,17 @@ fn test_parse_namespace() {
                 }),
                 NamespacePart::Struct(Struct {
                     name: "Group".to_string(),
-                    position: FilePosition { line: 7, column: 13 },
+                    position: FilePosition {
+                        line: 7,
+                        column: 13,
+                    },
                     generics: vec![],
                     fields: vec![Field {
                         name: "name".to_string(),
-                        position: FilePosition { line: 8, column: 17 },
+                        position: FilePosition {
+                            line: 8,
+                            column: 17,
+                        },
                         type_: Type::Ref(TypeRef {
                             abs: false,
                             ns: vec![],
@@ -176,7 +191,10 @@ fn test_parse_namespace() {
                 }),
                 NamespacePart::Service(Service {
                     name: "Pinger".to_string(),
-                    position: FilePosition { line: 10, column: 13 },
+                    position: FilePosition {
+                        line: 10,
+                        column: 13,
+                    },
                     methods: vec![
                         Method {
                             name: "ping".to_string(),
