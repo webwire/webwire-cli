@@ -83,7 +83,7 @@ pub fn parse_namespace(input: Span) -> IResult<Span, Namespace> {
                     parse_identifier,
                     preceded(
                         preceded(ws, char('{')),
-                        cut(terminated(parse_namespace_content, preceded(ws, char('}')))),
+                        terminated(parse_namespace_content, preceded(ws, char('}'))),
                     ),
                 )),
             ),
