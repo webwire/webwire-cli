@@ -1,10 +1,9 @@
-use ::codegen::Scope;
 use ::codegen;
 
 use crate::schema;
 
 pub fn gen(doc: &schema::Document) -> String {
-    let mut scope = Scope::new();
+    let mut scope = codegen::Scope::new();
     convert_ns(&doc.ns, &mut scope);
     scope.to_string()
 }
@@ -37,6 +36,26 @@ fn convert_ns(ns: &schema::Namespace, scope: &mut codegen::Scope) {
             schema::UserDefinedType::Fieldset(fieldset_) => {
                 // FIXME
             }
+        }
+    }
+    for service in ns.services.values() {
+        let code_trait = scope.new_trait(&service.name);
+        code_trait.vis("pub");
+        for method in service.methods.iter() {
+            let code_fn = code_trait.new_fn(&method.name);
+            code_fn.set_async(true);
+            code_fn.arg_mut_self();
+            if let Some(input) = &method.input {
+                code_fn.arg("input", &convert_type(input));
+            }
+            let output_inner = if let Some(output) = &method.output {
+                convert_type(output)
+            } else {
+                codegen::Type::new("()")
+            };
+            let mut output = codegen::Type::new("Response");
+            output.generic(output_inner);
+            code_fn.ret(output);
         }
     }
     for ns in ns.namespaces.values() {

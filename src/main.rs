@@ -1,8 +1,8 @@
 use std::fs::read;
 
+use webwire::codegen::rust::gen;
 use webwire::idl;
 use webwire::schema;
-use webwire::codegen::rust::gen;
 
 fn main() {
     let content = read("tests/idl_complete.ww").unwrap();

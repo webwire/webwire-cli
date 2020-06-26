@@ -1,8 +1,8 @@
-use std::fmt;
 use std::cell::RefCell;
 use std::collections::hash_map::Entry as HashMapEntry;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt;
 use std::rc::{Rc, Weak};
 
 use crate::common::FilePosition;
@@ -167,8 +167,8 @@ pub struct Service {
 
 pub struct Method {
     pub name: String,
-    pub input: Type,
-    pub output: Type,
+    pub input: Option<Type>,
+    pub output: Option<Type>,
 }
 
 impl FQTN {
@@ -278,7 +278,9 @@ impl Namespace {
                         type_map,
                     );
                 }
-                idl::NamespacePart::Service(_) => {
+                idl::NamespacePart::Service(iservice) => {
+                    self.services
+                        .insert(iservice.name.clone(), Service::from_idl(iservice, self));
                     // This is done in the next step. Since services do not
                     // define any types we can ignore the merging and just
                     // delay processing of the service to the resolve step.
@@ -297,6 +299,10 @@ impl Namespace {
     fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
         for type_rc in self.types.values() {
             type_rc.borrow_mut().resolve(type_map)?;
+        }
+        // FIXME check services
+        for service in self.services.values_mut() {
+            service.resolve(type_map)?;
         }
         Ok(())
     }
@@ -452,6 +458,42 @@ impl Fieldset {
     fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
         self.r#struct.resolve(type_map)?;
         // FIXME fields need to be resolved, too.
+        Ok(())
+    }
+}
+
+impl Service {
+    fn from_idl(iservice: &idl::Service, ns: &Namespace) -> Self {
+        Self {
+            name: iservice.name.clone(),
+            methods: iservice
+                .methods
+                .iter()
+                .map(|imethod| Method {
+                    name: imethod.name.clone(),
+                    input: if let Some(x) = &imethod.input {
+                        Some(Type::from_idl(x, ns))
+                    } else {
+                        None
+                    },
+                    output: if let Some(x) = &imethod.output {
+                        Some(Type::from_idl(x, ns))
+                    } else {
+                        None
+                    },
+                })
+                .collect(),
+        }
+    }
+    fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
+        for method in self.methods.iter_mut() {
+            if let Some(input) = &mut method.input {
+                input.resolve(type_map)?;
+            }
+            if let Some(output) = &mut method.input {
+                output.resolve(type_map)?;
+            }
+        }
         Ok(())
     }
 }
