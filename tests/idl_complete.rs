@@ -156,7 +156,12 @@ fn test_schema_loader() {
                         NamespacePart::Fieldset(Fieldset {
                             name: "NameUpdate".to_string(),
                             position: FilePosition { line: 22, column: 5 },
-                            struct_name: "Name".to_string(),
+                            r#struct: TypeRef {
+                                abs: false,
+                                ns: vec![],
+                                name: "Name".to_string(),
+                                generics: vec![],
+                            },
                             fields: vec![
                                 FieldsetField {
                                     name: "prefix".to_string(),
@@ -253,7 +258,12 @@ fn test_schema_loader() {
                         NamespacePart::Fieldset(Fieldset {
                             name: "UserRead".to_string(),
                             position: FilePosition { line: 38, column: 5 },
-                            struct_name: "User".to_string(),
+                            r#struct: TypeRef {
+                                abs: false,
+                                ns: vec![],
+                                name: "User".to_string(),
+                                generics: vec![],
+                            },
                             fields: vec![
                                 FieldsetField {
                                     name: "id".to_string(),
@@ -276,7 +286,12 @@ fn test_schema_loader() {
                         NamespacePart::Fieldset(Fieldset {
                             name: "UserWrite".to_string(),
                             position: FilePosition { line: 45, column: 5 },
-                            struct_name: "User".to_string(),
+                            r#struct: TypeRef {
+                                abs: false,
+                                ns: vec![],
+                                name: "User".to_string(),
+                                generics: vec![],
+                            },
                             fields: vec![
                                 FieldsetField {
                                     name: "id".to_string(),

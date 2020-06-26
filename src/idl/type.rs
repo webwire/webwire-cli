@@ -27,7 +27,7 @@ pub struct TypeRef {
     pub generics: Vec<Type>,
 }
 
-pub fn parse_type_ref(input: Span) -> IResult<Span, Type> {
+pub fn parse_type_ref(input: Span) -> IResult<Span, TypeRef> {
     map(
         tuple((
             map(opt(tag("::")), |r| r.is_some()),
@@ -43,12 +43,12 @@ pub fn parse_type_ref(input: Span) -> IResult<Span, Type> {
                 }
                 None => (path, path_first),
             };
-            Type::Ref(TypeRef {
+            TypeRef {
                 abs,
                 ns,
                 name,
                 generics,
-            })
+            }
         },
     )(input)
 }
@@ -107,7 +107,11 @@ fn parse_type_map(input: Span) -> IResult<Span, Type> {
 }
 
 pub fn parse_type(input: Span) -> IResult<Span, Type> {
-    preceded(ws, alt((parse_type_ref, parse_type_array, parse_type_map)))(input)
+    preceded(ws, alt((
+        map(parse_type_ref, |t| Type::Ref(t)),
+        parse_type_array,
+        parse_type_map))
+    )(input)
 }
 
 #[test]

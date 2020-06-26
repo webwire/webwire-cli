@@ -9,6 +9,7 @@ use nom::{
 
 use crate::common::FilePosition;
 use crate::idl::common::{parse_field_separator, parse_identifier, trailing_comma, ws, ws1, Span};
+use crate::idl::r#type::{parse_type_ref, TypeRef};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -22,7 +23,7 @@ pub struct Field {
 #[derive(Debug, PartialEq)]
 pub struct Fieldset {
     pub name: String,
-    pub struct_name: String,
+    pub r#struct: TypeRef,
     pub fields: Vec<Field>,
     pub position: FilePosition,
 }
@@ -55,15 +56,15 @@ pub fn parse_fieldset(input: Span) -> IResult<Span, Fieldset> {
                 separated_pair(
                     preceded(ws, parse_identifier),
                     preceded(ws, tag("for")),
-                    preceded(ws1, parse_identifier),
+                    preceded(ws1, parse_type_ref),
                 ),
                 parse_fields,
             )),
         ),
-        |((name, struct_name), fields)| Fieldset {
+        |((name, struct_), fields)| Fieldset {
             name: name.to_string(),
-            struct_name: struct_name.to_string(),
-            fields: fields,
+            r#struct: struct_,
+            fields,
             position: input.into(),
         },
     )(input)
@@ -85,7 +86,12 @@ fn test_parse_fieldset_0() {
             Fieldset {
                 name: "PersonName".to_string(),
                 position: FilePosition { line: 1, column: 1 },
-                struct_name: "Person".to_string(),
+                r#struct: TypeRef {
+                    abs: false,
+                    ns: vec![],
+                    name: "Person".to_string(),
+                    generics: vec![],
+                },
                 fields: vec![],
             },
         )
@@ -108,7 +114,12 @@ fn test_parse_fieldset_1() {
             Fieldset {
                 name: "PersonName".to_string(),
                 position: FilePosition { line: 1, column: 1 },
-                struct_name: "Person".to_string(),
+                r#struct: TypeRef {
+                    abs: false,
+                    ns: vec![],
+                    name: "Person".to_string(),
+                    generics: vec![],
+                },
                 fields: vec![Field {
                     name: "name".to_string(),
                     optional: false,
@@ -139,7 +150,12 @@ fn test_parse_fieldset_2() {
             Fieldset {
                 name: "PersonName".to_string(),
                 position: FilePosition { line: 1, column: 1 },
-                struct_name: "Person".to_string(),
+                r#struct: TypeRef {
+                    abs: false,
+                    ns: vec![],
+                    name: "Person".to_string(),
+                    generics: vec![],
+                },
                 fields: vec![
                     Field {
                         name: "name".to_string(),
