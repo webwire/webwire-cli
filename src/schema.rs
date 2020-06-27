@@ -306,6 +306,9 @@ impl Namespace {
         }
         Ok(())
     }
+    pub fn name(&self) -> &str {
+        self.path.last().unwrap()
+    }
 }
 
 impl Enum {

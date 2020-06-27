@@ -1,114 +1,199 @@
-use ::codegen;
+use quote::quote;
+use proc_macro2::TokenStream;
 
 use crate::schema;
 
 pub fn gen(doc: &schema::Document) -> String {
-    let mut scope = codegen::Scope::new();
-    convert_ns(&doc.ns, &mut scope);
-    scope.to_string()
+    let stream = generate(doc);
+    let code = format!("{}", stream);
+    code
 }
 
-fn convert_ns(ns: &schema::Namespace, scope: &mut codegen::Scope) {
+pub fn generate(doc: &schema::Document) -> TokenStream {
+    let namespace = generate_namespace(&doc.ns);
+    quote! {
+        use async_trait::async_trait;
+
+        use webwire;
+
+        #namespace
+    }
+}
+
+pub fn generate_namespace(ns: &schema::Namespace) -> TokenStream {
+    let mut stream = TokenStream::new();
     for type_ in ns.types.values() {
-        match &*type_.borrow() {
-            schema::UserDefinedType::Enum(enum_) => {
-                let code_enum = scope.new_enum(&enum_.fqtn.name);
-                code_enum.vis("pub");
-                for variant in enum_.variants.iter() {
-                    let code_variant = code_enum.new_variant(&variant.name);
-                    if let Some(value_type) = &variant.value_type {
-                        code_variant.tuple(&s(&convert_type(&value_type)));
-                    }
-                }
-            }
-            schema::UserDefinedType::Struct(struct_) => {
-                let code_struct = scope.new_struct(&struct_.fqtn.name);
-                code_struct.vis("pub");
-                for generic in struct_.generics.iter() {
-                    code_struct.generic(&generic);
-                }
-                for field in struct_.fields.iter() {
-                    // FIXME add support for optional fields
-                    let code_field = code_struct.field(&field.name, convert_type(&field.type_));
-                    // FIXME change visibilty to pub
-                }
-            }
-            schema::UserDefinedType::Fieldset(fieldset_) => {
-                // FIXME
-            }
-        }
+        let type_stream = generate_type(&*type_.borrow());
+        stream.extend(type_stream);
     }
     for service in ns.services.values() {
-        let code_trait = scope.new_trait(&service.name);
-        code_trait.vis("pub");
-        for method in service.methods.iter() {
-            let code_fn = code_trait.new_fn(&method.name);
-            code_fn.set_async(true);
-            code_fn.arg_mut_self();
-            if let Some(input) = &method.input {
-                code_fn.arg("input", &convert_type(input));
+        let service_stream = generate_service(service);
+        stream.extend(service_stream);
+    }
+    for child_ns in ns.namespaces.values() {
+        let child_ns_name = quote::format_ident!("{}", child_ns.name());
+        let child_ns_stream = generate_namespace(child_ns);
+        stream.extend(quote! {
+            mod #child_ns_name {
+                #child_ns_stream
             }
-            let output_inner = if let Some(output) = &method.output {
-                convert_type(output)
-            } else {
-                codegen::Type::new("()")
-            };
-            let mut output = codegen::Type::new("Response");
-            output.generic(output_inner);
-            code_fn.ret(output);
+        });
+    }
+    stream
+}
+
+pub fn generate_type(type_: &schema::UserDefinedType) -> TokenStream {
+    match type_ {
+        schema::UserDefinedType::Enum(enum_) => {
+            generate_enum(enum_)
+        }
+        schema::UserDefinedType::Struct(struct_) => {
+            generate_struct(struct_)
+        }
+        schema::UserDefinedType::Fieldset(fieldset) => {
+            generate_fieldset(fieldset)
         }
     }
-    for ns in ns.namespaces.values() {
-        let ns_name = ns.path.last().unwrap();
-        let module = scope.new_module(ns_name);
-        convert_ns(&ns, module.scope());
+}
+
+pub fn generate_enum(enum_: &schema::Enum) -> TokenStream {
+    let name = quote::format_ident!("{}", &enum_.fqtn.name);
+    let variants = generate_enum_variants(enum_);
+    quote! {
+        enum #name {
+            #variants
+        }
     }
 }
 
-fn s(ty: &codegen::Type) -> String {
-    let mut s = String::new();
-    let mut fmt = codegen::Formatter::new(&mut s);
-    ty.fmt(&mut fmt).unwrap();
-    s
+pub fn generate_enum_variants(enum_: &schema::Enum) -> TokenStream {
+    let mut stream = TokenStream::new();
+    for variant in enum_.variants.iter() {
+        stream.extend(generate_enum_variant(variant));
+    }
+    stream
 }
 
-fn convert_type(type_: &schema::Type) -> codegen::Type {
+pub fn generate_enum_variant(variant: &schema::EnumVariant) -> TokenStream {
+    let name = quote::format_ident!("{}", variant.name);
+    if let Some(value_type) = &variant.value_type {
+        let value_type = generate_typeref(value_type);
+        quote! {
+            #name(#value_type),
+        }
+    } else {
+        quote! {
+            #name,
+        }
+    }
+}
+
+pub fn generate_struct(struct_: &schema::Struct) -> TokenStream {
+    let name = quote::format_ident!("{}", &struct_.fqtn.name);
+    let fields = generate_struct_fields(struct_);
+    quote! {
+        pub struct #name {
+            #fields
+        }
+    }
+}
+
+pub fn generate_struct_fields(struct_: &schema::Struct) -> TokenStream {
+    let mut stream = TokenStream::new();
+    for field in struct_.fields.iter() {
+        stream.extend(generate_struct_field(field))
+    }
+    stream
+}
+
+pub fn generate_struct_field(field: &schema::Field) -> TokenStream {
+    let name = quote::format_ident!("{}", field.name);
+    let type_ = generate_typeref(&field.type_);
+    // FIXME add support for required modifier
+    quote! {
+        pub #name: #type_,
+    }
+}
+
+pub fn generate_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
+    // FIXME implement
+    quote! {
+    }
+}
+
+pub fn generate_service(service: &schema::Service) -> TokenStream {
+    let name = quote::format_ident!("{}", &service.name);
+    let methods = generate_service_methods(&service);
+    quote! {
+        #[async_trait]
+        pub trait #name {
+            #methods
+        }
+    }
+}
+
+pub fn generate_service_methods(service: &schema::Service) -> TokenStream {
+    let mut stream = TokenStream::new();
+    for method in service.methods.iter() {
+        let name = quote::format_ident!("{}", method.name);
+        let input = match &method.input {
+            Some(type_) => generate_typeref(type_),
+            None => quote! {}
+        };
+        let output = match &method.output {
+            Some(type_) => generate_typeref(type_),
+            None => quote! { () }
+        };
+        stream.extend(quote! {
+            async fn #name(&self, request: &webwire::Request<#input>) -> webwire::Response<#output>;
+        })
+    }
+    stream
+}
+
+pub fn generate_typeref(type_: &schema::Type) -> TokenStream {
     match type_ {
-        schema::Type::Boolean => codegen::Type::new("bool"),
-        schema::Type::Integer => codegen::Type::new("i64"),
-        schema::Type::Float => codegen::Type::new("f64"),
-        schema::Type::String => codegen::Type::new("String"),
-        schema::Type::UUID => codegen::Type::new("UUID"),
-        schema::Type::Date => codegen::Type::new("Date"),
-        schema::Type::Time => codegen::Type::new("Time"),
-        schema::Type::DateTime => codegen::Type::new("DateTime"),
+        schema::Type::Boolean => quote! { bool },
+        schema::Type::Integer => quote! { i64 },
+        schema::Type::Float => quote! { f64 },
+        schema::Type::String => quote! { String },
+        schema::Type::UUID => quote! { UUID },
+        schema::Type::Date => quote! { Date },
+        schema::Type::Time => quote! { Time },
+        schema::Type::DateTime => quote! { DateTime },
         // complex types
         schema::Type::Array(array) => {
-            let mut code_type = codegen::Type::new("Vec");
-            code_type.generic(convert_type(&array.item_type));
-            code_type
+            let item_type = generate_typeref(&array.item_type);
+            quote! {
+                Vec<#item_type>
+            }
         }
         schema::Type::Map(map) => {
-            let mut code_type = codegen::Type::new("HashMap");
-            code_type.generic(convert_type(&map.key_type));
-            code_type.generic(convert_type(&map.value_type));
-            code_type
+            let key_type = generate_typeref(&map.key_type);
+            let value_type = generate_typeref(&map.value_type);
+            quote! {
+                Map<#key_type, #value_type>
+            }
         }
         // named
         schema::Type::Ref(typeref) => {
-            let mut code_type = codegen::Type::new(&convert_fqtn(&typeref.fqtn));
-            for generic in typeref.generics.iter() {
-                code_type.generic(convert_type(generic));
+            let mut generics_stream = TokenStream::new();
+            if !typeref.generics.is_empty() {
+                for generic in typeref.generics.iter() {
+                    let type_ = generate_typeref(generic);
+                    generics_stream.extend(quote! {
+                        #type_,
+                    })
+                }
+                generics_stream = quote! {
+                    < #generics_stream >
+                }
             }
-            code_type
+            // FIXME fqtn
+            let name = quote::format_ident!("{}", &typeref.fqtn.name);
+            quote! {
+                #name #generics_stream
+            }
         }
-    }
-}
-
-fn convert_fqtn(fqtn: &schema::FQTN) -> String {
-    if fqtn.ns.is_empty() {
-        fqtn.name.clone()
-    } else {
-        format!("::{}::{}", fqtn.ns.join("::"), fqtn.name)
     }
 }
