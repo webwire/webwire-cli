@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(args) = matches.subcommand_matches("gen") {
         cmd_gen(args)
     } else {
-        matches.usage();
+        println!("{}", matches.usage());
         Ok(())
     }
 }
