@@ -2,9 +2,12 @@
 authors = ["Michael P. Jung <michael.jung@terreon.de>"]
 edition = "2018"
 name = "webwire"
+description = "Contract-First API System"
+homepage = "https://webwire.dev/"
 version = "0.1.0"
 [dependencies]
 chrono = "0.4.9"
+clap = "2.33"
 nom = "5.0"
 nom_locate = "2.0"
 proc-macro2 = "1.0"
