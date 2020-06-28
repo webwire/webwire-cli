@@ -1,5 +1,5 @@
-use quote::quote;
 use proc_macro2::TokenStream;
+use quote::quote;
 
 use crate::schema;
 
@@ -44,15 +44,9 @@ pub fn generate_namespace(ns: &schema::Namespace) -> TokenStream {
 
 pub fn generate_type(type_: &schema::UserDefinedType) -> TokenStream {
     match type_ {
-        schema::UserDefinedType::Enum(enum_) => {
-            generate_enum(enum_)
-        }
-        schema::UserDefinedType::Struct(struct_) => {
-            generate_struct(struct_)
-        }
-        schema::UserDefinedType::Fieldset(fieldset) => {
-            generate_fieldset(fieldset)
-        }
+        schema::UserDefinedType::Enum(enum_) => generate_enum(enum_),
+        schema::UserDefinedType::Struct(struct_) => generate_struct(struct_),
+        schema::UserDefinedType::Fieldset(fieldset) => generate_fieldset(fieldset),
     }
 }
 
@@ -117,8 +111,7 @@ pub fn generate_struct_field(field: &schema::Field) -> TokenStream {
 
 pub fn generate_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
     // FIXME implement
-    quote! {
-    }
+    quote! {}
 }
 
 pub fn generate_service(service: &schema::Service) -> TokenStream {
@@ -138,11 +131,11 @@ pub fn generate_service_methods(service: &schema::Service) -> TokenStream {
         let name = quote::format_ident!("{}", method.name);
         let input = match &method.input {
             Some(type_) => generate_typeref(type_),
-            None => quote! {}
+            None => quote! {},
         };
         let output = match &method.output {
             Some(type_) => generate_typeref(type_),
-            None => quote! { () }
+            None => quote! { () },
         };
         stream.extend(quote! {
             async fn #name(&self, request: &webwire::Request<#input>) -> webwire::Response<#output>;
