@@ -9,6 +9,12 @@ pub fn gen(doc: &schema::Document) -> String {
     code
 }
 
+fn optional(stream: TokenStream) -> TokenStream {
+    quote! {
+        Option<#stream>
+    }
+}
+
 pub fn generate(doc: &schema::Document) -> TokenStream {
     let namespace = generate_namespace(&doc.ns);
     quote! {
@@ -102,16 +108,42 @@ pub fn generate_struct_fields(struct_: &schema::Struct) -> TokenStream {
 
 pub fn generate_struct_field(field: &schema::Field) -> TokenStream {
     let name = quote::format_ident!("{}", field.name);
-    let type_ = generate_typeref(&field.type_);
-    // FIXME add support for required modifier
+    let mut type_ = generate_typeref(&field.type_);
+    if field.optional {
+        type_ = optional(type_);
+    }
     quote! {
         pub #name: #type_,
     }
 }
 
 pub fn generate_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
-    // FIXME implement
-    quote! {}
+    let name = quote::format_ident!("{}", &fieldset.fqtn.name);
+    let fields = generate_fieldset_fields(fieldset);
+    quote! {
+        pub struct #name {
+            #fields
+        }
+    }
+}
+
+pub fn generate_fieldset_fields(struct_: &schema::Fieldset) -> TokenStream {
+    let mut stream = TokenStream::new();
+    for field in struct_.fields.iter() {
+        stream.extend(generate_fieldset_field(field))
+    }
+    stream
+}
+
+pub fn generate_fieldset_field(field: &schema::FieldsetField) -> TokenStream {
+    let name = quote::format_ident!("{}", field.name);
+    let mut type_ = generate_typeref(&field.field.as_ref().unwrap().type_);
+    if field.optional {
+        type_ = optional(type_);
+    }
+    quote! {
+        pub #name: #type_,
+    }
 }
 
 pub fn generate_service(service: &schema::Service) -> TokenStream {
