@@ -18,7 +18,7 @@ pub struct Struct {
 pub struct Field {
     pub name: String,
     pub type_: Type,
-    pub required: bool,
+    pub optional: bool,
     // FIXME add options
     pub position: FilePosition,
 }
@@ -50,7 +50,7 @@ impl Field {
         Field {
             name: ifield.name.clone(),
             type_: Type::from_idl(&ifield.type_, ns),
-            required: ifield.optional,
+            optional: ifield.optional,
             // FIXME add options
             //options: ifield.options
             position: ifield.position.clone(),

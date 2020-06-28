@@ -94,7 +94,7 @@ fn gen_struct(struct_: &schema::Struct, gen: &mut Generator) {
         struct_.fqtn.name, generics
     ));
     for field in struct_.fields.iter() {
-        let opt = if field.required { "" } else { "?" };
+        let opt = if field.optional { "?" } else { "" };
         gen.line(&format!(
             "{}{}: {},",
             field.name,
