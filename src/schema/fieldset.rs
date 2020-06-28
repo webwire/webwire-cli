@@ -51,7 +51,7 @@ impl Fieldset {
                 .collect::<HashMap<_, _>>();
             for field in self.fields.iter_mut() {
                 if let Some(&struct_field) = field_map.get(&field.name) {
-                    field.field = Some(struct_field.clone());
+                    field.field.replace(struct_field.clone());
                 } else {
                     return Err(ValidationError::NoSuchField {
                         position: FilePosition { line: 0, column: 0 },
