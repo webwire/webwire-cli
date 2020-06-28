@@ -9,7 +9,10 @@ use webwire::schema;
 
 type GenFn = fn(&schema::Document) -> String;
 
-const LANGUAGES: &[(&str, &str, GenFn)] = &[("rust", "Rust", codegen::rust::gen)];
+const LANGUAGES: &[(&str, &str, GenFn)] = &[
+    ("rust", "Rust", codegen::rust::gen),
+    ("ts", "TypeScript", codegen::ts::gen),
+];
 
 fn get_gen_fn(lang: &str) -> Option<GenFn> {
     LANGUAGES
