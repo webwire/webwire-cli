@@ -94,9 +94,11 @@ impl Namespace {
         for type_rc in self.types.values() {
             type_rc.borrow_mut().resolve(type_map)?;
         }
-        // FIXME check services
         for service in self.services.values_mut() {
             service.resolve(type_map)?;
+        }
+        for child_ns in self.namespaces.values_mut() {
+            child_ns.resolve(type_map)?;
         }
         Ok(())
     }
