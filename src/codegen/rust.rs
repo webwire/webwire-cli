@@ -16,7 +16,7 @@ fn optional(stream: TokenStream) -> TokenStream {
 }
 
 pub fn generate(doc: &schema::Document) -> TokenStream {
-    let namespace = generate_namespace(&doc.ns);
+    let namespace = gen_namespace(&doc.ns);
     quote! {
         use async_trait::async_trait;
 
@@ -26,19 +26,19 @@ pub fn generate(doc: &schema::Document) -> TokenStream {
     }
 }
 
-pub fn generate_namespace(ns: &schema::Namespace) -> TokenStream {
+fn gen_namespace(ns: &schema::Namespace) -> TokenStream {
     let mut stream = TokenStream::new();
     for type_ in ns.types.values() {
-        let type_stream = generate_type(&*type_.borrow());
+        let type_stream = gen_type(&*type_.borrow());
         stream.extend(type_stream);
     }
     for service in ns.services.values() {
-        let service_stream = generate_service(service);
+        let service_stream = gen_service(service);
         stream.extend(service_stream);
     }
     for child_ns in ns.namespaces.values() {
         let child_ns_name = quote::format_ident!("{}", child_ns.name());
-        let child_ns_stream = generate_namespace(child_ns);
+        let child_ns_stream = gen_namespace(child_ns);
         stream.extend(quote! {
             mod #child_ns_name {
                 #child_ns_stream
@@ -48,17 +48,17 @@ pub fn generate_namespace(ns: &schema::Namespace) -> TokenStream {
     stream
 }
 
-pub fn generate_type(type_: &schema::UserDefinedType) -> TokenStream {
+fn gen_type(type_: &schema::UserDefinedType) -> TokenStream {
     match type_ {
-        schema::UserDefinedType::Enum(enum_) => generate_enum(enum_),
-        schema::UserDefinedType::Struct(struct_) => generate_struct(struct_),
-        schema::UserDefinedType::Fieldset(fieldset) => generate_fieldset(fieldset),
+        schema::UserDefinedType::Enum(enum_) => gen_enum(enum_),
+        schema::UserDefinedType::Struct(struct_) => gen_struct(struct_),
+        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(fieldset),
     }
 }
 
-pub fn generate_enum(enum_: &schema::Enum) -> TokenStream {
+fn gen_enum(enum_: &schema::Enum) -> TokenStream {
     let name = quote::format_ident!("{}", &enum_.fqtn.name);
-    let variants = generate_enum_variants(enum_);
+    let variants = gen_enum_variants(enum_);
     quote! {
         enum #name {
             #variants
@@ -66,18 +66,18 @@ pub fn generate_enum(enum_: &schema::Enum) -> TokenStream {
     }
 }
 
-pub fn generate_enum_variants(enum_: &schema::Enum) -> TokenStream {
+fn gen_enum_variants(enum_: &schema::Enum) -> TokenStream {
     let mut stream = TokenStream::new();
     for variant in enum_.variants.iter() {
-        stream.extend(generate_enum_variant(variant));
+        stream.extend(gen_enum_variant(variant));
     }
     stream
 }
 
-pub fn generate_enum_variant(variant: &schema::EnumVariant) -> TokenStream {
+fn gen_enum_variant(variant: &schema::EnumVariant) -> TokenStream {
     let name = quote::format_ident!("{}", variant.name);
     if let Some(value_type) = &variant.value_type {
-        let value_type = generate_typeref(value_type);
+        let value_type = gen_typeref(value_type);
         quote! {
             #name(#value_type),
         }
@@ -88,9 +88,9 @@ pub fn generate_enum_variant(variant: &schema::EnumVariant) -> TokenStream {
     }
 }
 
-pub fn generate_struct(struct_: &schema::Struct) -> TokenStream {
+fn gen_struct(struct_: &schema::Struct) -> TokenStream {
     let name = quote::format_ident!("{}", &struct_.fqtn.name);
-    let fields = generate_struct_fields(struct_);
+    let fields = gen_struct_fields(struct_);
     quote! {
         pub struct #name {
             #fields
@@ -98,17 +98,17 @@ pub fn generate_struct(struct_: &schema::Struct) -> TokenStream {
     }
 }
 
-pub fn generate_struct_fields(struct_: &schema::Struct) -> TokenStream {
+fn gen_struct_fields(struct_: &schema::Struct) -> TokenStream {
     let mut stream = TokenStream::new();
     for field in struct_.fields.iter() {
-        stream.extend(generate_struct_field(field))
+        stream.extend(gen_struct_field(field))
     }
     stream
 }
 
-pub fn generate_struct_field(field: &schema::Field) -> TokenStream {
+fn gen_struct_field(field: &schema::Field) -> TokenStream {
     let name = quote::format_ident!("{}", field.name);
-    let mut type_ = generate_typeref(&field.type_);
+    let mut type_ = gen_typeref(&field.type_);
     if field.optional {
         type_ = optional(type_);
     }
@@ -117,9 +117,9 @@ pub fn generate_struct_field(field: &schema::Field) -> TokenStream {
     }
 }
 
-pub fn generate_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
+fn gen_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
     let name = quote::format_ident!("{}", &fieldset.fqtn.name);
-    let fields = generate_fieldset_fields(fieldset);
+    let fields = gen_fieldset_fields(fieldset);
     quote! {
         pub struct #name {
             #fields
@@ -127,17 +127,17 @@ pub fn generate_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
     }
 }
 
-pub fn generate_fieldset_fields(struct_: &schema::Fieldset) -> TokenStream {
+fn gen_fieldset_fields(struct_: &schema::Fieldset) -> TokenStream {
     let mut stream = TokenStream::new();
     for field in struct_.fields.iter() {
-        stream.extend(generate_fieldset_field(field))
+        stream.extend(gen_fieldset_field(field))
     }
     stream
 }
 
-pub fn generate_fieldset_field(field: &schema::FieldsetField) -> TokenStream {
+fn gen_fieldset_field(field: &schema::FieldsetField) -> TokenStream {
     let name = quote::format_ident!("{}", field.name);
-    let mut type_ = generate_typeref(&field.field.as_ref().unwrap().type_);
+    let mut type_ = gen_typeref(&field.field.as_ref().unwrap().type_);
     if field.optional {
         type_ = optional(type_);
     }
@@ -146,9 +146,9 @@ pub fn generate_fieldset_field(field: &schema::FieldsetField) -> TokenStream {
     }
 }
 
-pub fn generate_service(service: &schema::Service) -> TokenStream {
+fn gen_service(service: &schema::Service) -> TokenStream {
     let name = quote::format_ident!("{}", &service.name);
-    let methods = generate_service_methods(&service);
+    let methods = gen_service_methods(&service);
     quote! {
         #[async_trait]
         pub trait #name {
@@ -157,16 +157,16 @@ pub fn generate_service(service: &schema::Service) -> TokenStream {
     }
 }
 
-pub fn generate_service_methods(service: &schema::Service) -> TokenStream {
+fn gen_service_methods(service: &schema::Service) -> TokenStream {
     let mut stream = TokenStream::new();
     for method in service.methods.iter() {
         let name = quote::format_ident!("{}", method.name);
         let input = match &method.input {
-            Some(type_) => generate_typeref(type_),
+            Some(type_) => gen_typeref(type_),
             None => quote! {},
         };
         let output = match &method.output {
-            Some(type_) => generate_typeref(type_),
+            Some(type_) => gen_typeref(type_),
             None => quote! { () },
         };
         stream.extend(quote! {
@@ -176,7 +176,7 @@ pub fn generate_service_methods(service: &schema::Service) -> TokenStream {
     stream
 }
 
-pub fn generate_typeref(type_: &schema::Type) -> TokenStream {
+fn gen_typeref(type_: &schema::Type) -> TokenStream {
     match type_ {
         schema::Type::Boolean => quote! { bool },
         schema::Type::Integer => quote! { i64 },
@@ -188,14 +188,14 @@ pub fn generate_typeref(type_: &schema::Type) -> TokenStream {
         schema::Type::DateTime => quote! { DateTime },
         // complex types
         schema::Type::Array(array) => {
-            let item_type = generate_typeref(&array.item_type);
+            let item_type = gen_typeref(&array.item_type);
             quote! {
                 Vec<#item_type>
             }
         }
         schema::Type::Map(map) => {
-            let key_type = generate_typeref(&map.key_type);
-            let value_type = generate_typeref(&map.value_type);
+            let key_type = gen_typeref(&map.key_type);
+            let value_type = gen_typeref(&map.value_type);
             quote! {
                 Map<#key_type, #value_type>
             }
@@ -205,7 +205,7 @@ pub fn generate_typeref(type_: &schema::Type) -> TokenStream {
             let mut generics_stream = TokenStream::new();
             if !typeref.generics.is_empty() {
                 for generic in typeref.generics.iter() {
-                    let type_ = generate_typeref(generic);
+                    let type_ = gen_typeref(generic);
                     generics_stream.extend(quote! {
                         #type_,
                     })
