@@ -89,10 +89,18 @@ fn gen_struct(struct_: &schema::Struct, gen: &mut Generator) {
     } else {
         format!("<{}>", struct_.generics.join(", "))
     };
-    gen.begin(&format!("export interface {}{} {{", struct_.fqtn.name, generics));
+    gen.begin(&format!(
+        "export interface {}{} {{",
+        struct_.fqtn.name, generics
+    ));
     for field in struct_.fields.iter() {
         let opt = if field.required { "" } else { "?" };
-        gen.line(&format!("{}{}: {},", field.name, opt, gen_typeref(&field.type_)));
+        gen.line(&format!(
+            "{}{}: {},",
+            field.name,
+            opt,
+            gen_typeref(&field.type_)
+        ));
     }
     gen.end("}");
 }
@@ -103,7 +111,10 @@ fn gen_fieldset(fieldset: &schema::Fieldset, gen: &mut Generator) {
     } else {
         format!("<{}>", fieldset.generics.join(", "))
     };
-    gen.begin(&format!("export interface {}{} {{", fieldset.fqtn.name, generics));
+    gen.begin(&format!(
+        "export interface {}{} {{",
+        fieldset.fqtn.name, generics
+    ));
     for field in fieldset.fields.iter() {
         // FIXME add support for optional fields
         let opt = if field.optional { "?" } else { "" };
