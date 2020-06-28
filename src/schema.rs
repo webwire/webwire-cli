@@ -22,6 +22,17 @@ pub enum ValidationError {
         position: FilePosition,
         fqtn: FQTN,
     },
+    FieldsetExtendsNonStruct {
+        position: FilePosition,
+        fieldset: FQTN,
+        r#struct: FQTN,
+    },
+    NoSuchField {
+        position: FilePosition,
+        fieldset: FQTN,
+        r#struct: FQTN,
+        field: String,
+    },
 }
 
 impl fmt::Display for ValidationError {
@@ -52,6 +63,7 @@ pub enum UserDefinedType {
     Fieldset(Fieldset),
 }
 
+#[derive(Clone)]
 pub enum Type {
     // builtin types
     Boolean,
@@ -69,6 +81,7 @@ pub enum Type {
     Ref(TypeRef),
 }
 
+#[derive(Clone)]
 pub struct TypeRef {
     pub fqtn: FQTN,
     pub type_: Weak<RefCell<UserDefinedType>>,
@@ -134,27 +147,32 @@ pub struct Struct {
     pub fqtn: FQTN,
     pub generics: Vec<String>,
     pub fields: Vec<Field>,
-    pub field_by_name: HashMap<String, Rc<Field>>,
+    pub position: FilePosition,
 }
 
+#[derive(Clone)]
 pub struct Field {
     pub name: String,
     pub type_: Type,
     pub required: bool,
     // FIXME add options
+    pub position: FilePosition,
 }
 
+#[derive(Clone)]
 pub struct Array {
     pub length: Range,
     pub item_type: Type,
 }
 
+#[derive(Clone)]
 pub struct Map {
     pub length: Range,
     pub key_type: Type,
     pub value_type: Type,
 }
 
+#[derive(Clone)]
 pub struct Range {
     pub start: Option<i32>,
     pub end: Option<i32>,
@@ -344,21 +362,13 @@ impl Struct {
         let fields = istruct
             .fields
             .iter()
-            .map(|ifield| {
-                Field {
-                    name: ifield.name.clone(),
-                    type_: Type::from_idl(&ifield.type_, ns),
-                    required: ifield.optional,
-                    // FIXME add options
-                    //options: ifield.options
-                }
-            })
+            .map(|ifield| Field::from_idl(ifield, ns))
             .collect();
         Self {
             fqtn: FQTN::new(&istruct.name, ns),
             generics: istruct.generics.clone(),
             fields,
-            field_by_name: HashMap::default(),
+            position: istruct.position.clone(),
         }
     }
     fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
@@ -366,6 +376,19 @@ impl Struct {
             field.type_.resolve(type_map)?;
         }
         Ok(())
+    }
+}
+
+impl Field {
+    pub fn from_idl(ifield: &idl::Field, ns: &Namespace) -> Self {
+        Field {
+            name: ifield.name.clone(),
+            type_: Type::from_idl(&ifield.type_, ns),
+            required: ifield.optional,
+            // FIXME add options
+            //options: ifield.options
+            position: ifield.position.clone(),
+        }
     }
 }
 
@@ -446,7 +469,11 @@ pub struct Fieldset {
     pub fields: Vec<FieldsetField>,
 }
 
-type FieldsetField = idl::FieldsetField;
+pub struct FieldsetField {
+    pub name: String,
+    pub optional: bool,
+    pub field: Option<Field>,
+}
 
 impl Fieldset {
     fn from_idl(ifieldset: &idl::Fieldset, ns: &Namespace) -> Self {
@@ -454,11 +481,45 @@ impl Fieldset {
             fqtn: FQTN::new(&ifieldset.name, ns),
             generics: ifieldset.generics.clone(),
             r#struct: TypeRef::from_idl(&ifieldset.r#struct, ns),
-            fields: ifieldset.fields.clone(),
+            fields: ifieldset
+                .fields
+                .iter()
+                .map(|ifield| FieldsetField {
+                    name: ifield.name.clone(),
+                    optional: ifield.optional,
+                    field: None,
+                })
+                .collect(),
         }
     }
     fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
         self.r#struct.resolve(type_map)?;
+        let struct_ = self.r#struct.type_.upgrade().unwrap();
+        if let UserDefinedType::Struct(struct_) = &*struct_.borrow() {
+            let field_map = struct_
+                .fields
+                .iter()
+                .map(|f| (f.name.clone(), f))
+                .collect::<HashMap<_, _>>();
+            for field in self.fields.iter_mut() {
+                if let Some(&struct_field) = field_map.get(&field.name) {
+                    field.field = Some(struct_field.clone());
+                } else {
+                    return Err(ValidationError::NoSuchField {
+                        position: FilePosition { line: 0, column: 0 },
+                        fieldset: self.fqtn.clone(),
+                        r#struct: struct_.fqtn.clone(),
+                        field: field.name.clone(),
+                    })
+                }
+           }
+        } else {
+            return Err(ValidationError::FieldsetExtendsNonStruct {
+                position: FilePosition { line: 0, column: 0 },
+                fieldset: self.fqtn.clone(),
+                r#struct: struct_.borrow().fqtn().clone(),
+            })
+        }
         // FIXME fields need to be resolved, too.
         Ok(())
     }
