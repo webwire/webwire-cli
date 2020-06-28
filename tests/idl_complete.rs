@@ -24,15 +24,15 @@ fn test_schema_loader() {
                             extends: None,
                             variants: vec![
                                 EnumVariant {
-                                    name: "ACTIVE".to_string(),
+                                    name: "Active".to_string(),
                                     value_type: None,
                                 },
                                 EnumVariant {
-                                    name: "INACTIVE".to_string(),
+                                    name: "Inactive".to_string(),
                                     value_type: None,
                                 },
                                 EnumVariant {
-                                    name: "BANNED".to_string(),
+                                    name: "Banned".to_string(),
                                     value_type: None,
                                 },
                             ]

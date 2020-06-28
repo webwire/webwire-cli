@@ -1,9 +1,9 @@
 namespace user {
 
     enum UserState {
-        ACTIVE,
-        INACTIVE,
-        BANNED
+        Active,
+        Inactive,
+        Banned
     }
 
     struct UserRequest {
