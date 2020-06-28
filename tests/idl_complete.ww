@@ -7,7 +7,7 @@ namespace user {
     }
 
     struct UserRequest {
-        email: Email
+        email: String,
     }
 
     struct Name {
@@ -29,7 +29,7 @@ namespace user {
 
     struct User {
         id: UUID,
-        email: Email,
+        email: String,
         name: Name,
         password: String (length=5..64),
         is_admin: Boolean,
@@ -39,7 +39,7 @@ namespace user {
         id,
         email,
         is_admin,
-        full_name
+        name
     }
 
     fieldset UserWrite for User {

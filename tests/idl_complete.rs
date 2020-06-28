@@ -50,7 +50,7 @@ fn test_schema_loader() {
                                 type_: Type::Ref(TypeRef {
                                     abs: false,
                                     ns: vec![],
-                                    name: "Email".to_string(),
+                                    name: "String".to_string(),
                                     generics: vec![]
                                 }),
                                 optional: false,
@@ -246,7 +246,7 @@ fn test_schema_loader() {
                                     type_: Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
-                                        name: "Email".to_string(),
+                                        name: "String".to_string(),
                                         generics: vec![]
                                     }),
                                     optional: false,
@@ -329,7 +329,7 @@ fn test_schema_loader() {
                                     optional: false
                                 },
                                 FieldsetField {
-                                    name: "full_name".to_string(),
+                                    name: "name".to_string(),
                                     optional: false
                                 }
                             ]
