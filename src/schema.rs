@@ -227,7 +227,7 @@ impl TypeMap {
 }
 
 impl Namespace {
-    pub fn from_idl(ins: &crate::idl::Namespace) -> Result<Self, ValidationError> {
+    fn from_idl(ins: &crate::idl::Namespace) -> Result<Self, ValidationError> {
         let mut ns = Self::default();
         let mut type_map = TypeMap::new();
         ns.idl_convert(ins, &mut type_map)?;
