@@ -186,7 +186,6 @@ impl FQTN {
             }
         } else {
             let mut ns = ns.path.clone();
-            // XXX why does `ns.extend` not work
             ns.extend_from_slice(&ityperef.ns);
             Self {
                 ns,
