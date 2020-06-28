@@ -1,6 +1,7 @@
 mod common;
 mod document;
 mod r#enum;
+mod errors;
 mod field_option;
 mod fieldset;
 mod method;
@@ -12,6 +13,7 @@ mod value;
 
 pub use common::Span;
 pub use document::{parse_document, Document};
+pub use errors::ParseError;
 pub use field_option::FieldOption;
 pub use fieldset::{Field as FieldsetField, Fieldset};
 pub use method::Method;

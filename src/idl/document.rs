@@ -1,16 +1,11 @@
 use crate::common::FilePosition;
 use crate::idl::common::Span;
+use crate::idl::errors::ParseError;
 use crate::idl::namespace::{parse_namespace_content, Namespace};
 
 #[derive(Debug, PartialEq)]
 pub struct Document {
     pub ns: Namespace,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum ParseError<'a> {
-    Nom(nom::Err<(Span<'a>, nom::error::ErrorKind)>),
-    TrailingGarbage(Span<'a>),
 }
 
 pub fn parse_document(input: &str) -> Result<Document, ParseError> {
