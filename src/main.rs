@@ -18,7 +18,7 @@ fn get_gen_fn(lang: &str) -> Option<GenFn> {
         .map(|(_, _, fn_)| *fn_)
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -55,9 +55,10 @@ fn main() {
         .get_matches();
 
     if let Some(args) = matches.subcommand_matches("gen") {
-        cmd_gen(args);
+        cmd_gen(args)
     } else {
         matches.usage();
+        Ok(())
     }
 }
 
