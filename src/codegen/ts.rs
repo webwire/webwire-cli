@@ -18,13 +18,17 @@ impl Generator {
     }
     fn end(&mut self, line: &str) {
         self.level -= 1;
-        self.line(line);
+        if !line.is_empty() {
+            self.line(line);
+        }
     }
     fn line(&mut self, line: &str) {
-        for _ in 0..self.level {
-            self.output += "    ";
+        if !line.is_empty() {
+            for _ in 0..self.level {
+                self.output += "    ";
+            }
+            self.output += line;
         }
-        self.output += line;
         self.output += "\n";
     }
 }
@@ -41,22 +45,25 @@ pub fn gen(doc: &schema::Document) -> String {
     gen.line("");
     // XXX those types should be moved into a webwire npm package
     gen.line("export type UUID = string;");
+    gen.line("");
     gen.line("export type Result<T, E> =");
     gen.line("    | { Ok: T, Error?: never }");
     gen.line("    | { Ok?: never, Error: E }");
-    gen.line("");
     gen_namespace(&doc.ns, &mut gen);
     gen.into()
 }
 
 fn gen_namespace(ns: &schema::Namespace, gen: &mut Generator) {
     for type_ in ns.types.values() {
+        gen.line("");
         gen_type(&*type_.borrow(), gen);
     }
     for service in ns.services.values() {
+        gen.line("");
         gen_service(service, gen);
     }
     for child_ns in ns.namespaces.values() {
+        gen.line("");
         gen.begin(&format!("namespace {} {{", child_ns.name()));
         gen_namespace(child_ns, gen);
         gen.end("}");
