@@ -41,7 +41,9 @@ pub fn gen(doc: &schema::Document) -> String {
     gen.line("");
     // XXX those types should be moved into a webwire npm package
     gen.line("export type UUID = string;");
-    gen.line("export type Result<T, E> = { Ok: T } | { Error: E }");
+    gen.line("export type Result<T, E> =");
+    gen.line("    | { Ok: T, Error?: never }");
+    gen.line("    | { Ok?: never, Error: E }");
     gen.line("");
     gen_namespace(&doc.ns, &mut gen);
     gen.into()
@@ -70,17 +72,33 @@ fn gen_type(type_: &schema::UserDefinedType, gen: &mut Generator) {
 }
 
 fn gen_enum(enum_: &schema::Enum, gen: &mut Generator) {
-    gen.begin(&format!("export interface {} {{", enum_.fqtn.name));
+    let enum_name = &enum_.fqtn.name;
+    gen.line(&format!(
+        "export type _{}Variants = {}",
+        enum_name,
+        enum_
+            .variants
+            .iter()
+            .map(|v| format!("\"{}\"", v.name))
+            .collect::<Vec<_>>()
+            .join(" | ")
+    ));
+    gen.begin(&format!("type {} =", enum_.fqtn.name));
     for variant in &enum_.variants {
-        let value_type = match &variant.value_type {
-            Some(value_type) => gen_typeref(value_type),
-            None => "null".to_string(),
-        };
+        gen.line(&match &variant.value_type {
+            Some(value_type) => format!(
+                "| {{ [P in Exclude<_{}Variants, \"{}\">]?: never }} & {{ {}: {} }}",
+                enum_name,
+                variant.name,
+                variant.name,
+                gen_typeref(value_type)
+            ),
+            None => format!("| \"{}\"", variant.name),
+        });
         // FIXME this is not the way enum variants should be generated. Actually
         // a pattern matching where one value is required would be better.
-        gen.line(&format!("{}?: {},", variant.name, value_type));
     }
-    gen.end("}");
+    gen.end("");
 }
 
 fn gen_struct(struct_: &schema::Struct, gen: &mut Generator) {
