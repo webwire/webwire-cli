@@ -2,8 +2,8 @@ const EXAMPLE_SCHEMA: &str = include_str!("./idl_complete.ww");
 
 #[test]
 fn test_schema_loader() {
-    use webwire::common::FilePosition;
-    use webwire::idl::*;
+    use webwire_cli::common::FilePosition;
+    use webwire_cli::idl::*;
     let result = parse_document(EXAMPLE_SCHEMA);
     assert!(result.is_ok(), "{:?}", result);
     let result = result.unwrap();

@@ -3,9 +3,9 @@ use std::io::{stdin, stdout, Read, Write};
 
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use webwire::codegen;
-use webwire::idl;
-use webwire::schema;
+use webwire_cli::codegen;
+use webwire_cli::idl;
+use webwire_cli::schema;
 
 type GenFn = fn(&schema::Document) -> String;
 
