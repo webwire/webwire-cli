@@ -7,6 +7,9 @@ Webwire is a **contract-first API** system which features an
 a network [protocol](https://github.com/webwire/webwire-docs/blob/master/docs/protocol.md) and
 [code generator](https://github.com/webwire/webwire-docs/blob/master/docs/code_generator.md) for both servers and clients.
 
+This repository contains the command line interface used to validate
+Webwire IDL files and generate code and documentation.
+
 ## WORK IN PROGRESS
 
 **Webwire is not ready to use! All the documentation and code in this
