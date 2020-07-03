@@ -1,23 +1,30 @@
-# webwire
+# Webwire Command-line Interface
+[![Crates.io](https://img.shields.io/crates/v/webwire-cli)](https://crates.io/crates/webwire-cli)
+[![GitHub](https://img.shields.io/github/license/webwire/webwire-cli)](https://github.com/webwire/webwire-cli/blob/master/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/webwire/webwire-cli/Rust)](https://github.com/webwire/webwire-cli/actions)
 
-![webwire logo](https://raw.githubusercontent.com/webwire/webwire-docs/master/logo.svg)
+[![Discord Chat](https://img.shields.io/discord/726922033039933472?label=Discord+Chat&color=%23677bc4&logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/jjD6aWG)
 
-Webwire is a **contract-first API** system which features an
-[interface description language](https://github.com/webwire/webwire-docs/blob/master/docs/interface_description_language.md),
-a network [protocol](https://github.com/webwire/webwire-docs/blob/master/docs/protocol.md) and
-[code generator](https://github.com/webwire/webwire-docs/blob/master/docs/code_generator.md) for both servers and clients.
+![webwire logo](https://raw.githubusercontent.com/webwire/webwire-docs/master/docs/logo.svg)
 
-This repository contains the command line interface used to validate
-Webwire IDL files and generate code and documentation.
+Webwire is a **contract-first API system** which features an
+interface description language a network protocol and
+code generator for both servers and clients.
 
-## WORK IN PROGRESS
+This repository contains the the **command-line interface** used
+to validate Webwire IDL files and generate code and documentation.
 
-**Webwire is not ready to use! All the documentation and code in this
+To learn more about webwire in general please visit the documentation
+repository [webwire/webwire-docs](https://github.com/webwire/webwire-docs).
+
+# WORK IN PROGRESS
+
+> **Webwire is not ready to use! All the documentation and code in this
 repository is either incomplete or non functional. Don't expect anything
 to work, yet. Right now this repository is just a collection of ideas and
 preliminary implementations.**
 
-## Example
+# Example
 
 The following example assumes a Rust server and a TypeScript client. Webwire
 is by no means limited to those two but those languages show the potential of
@@ -44,8 +51,8 @@ service Hello {
 The server and client files can be generated using the code generator:
 
 ```bash
-$ webwire generate rust server api/hello.ww server/src/api.rs
-$ webwire generate ts client api/hello.ww client/src/api.ts
+$ webwire gen rust server api/hello.ww server/src/api.rs
+$ webwire gen ts client api/hello.ww client/src/api.ts
 ```
 
 A Rust server implementation for the given code would look like this:
@@ -86,50 +93,3 @@ client = new Client('http://localhost:8000/')
 const response = await client.hello({ name: 'World' })
 assert(response.message === 'Hello World!')
 ```
-
-## Building blocks
-
-- The [webwire interface description language](https://github.com/webwire/webwire-docs/blob/master/docs/interface_description_language.md)
-  describes service endpoints and how they are called.
-
-- The [webwire protocol](https://github.com/webwire/webwire-docs/blob/master/docs/protocol.md) is the actual representation
-  how data is transferred between client and server.
-
-- The [webwire code generator](https://github.com/webwire/webwire-docs/blob/master/docs/code_generator.md) uses the schema
-  language to generate client and server stubs.
-
-
-## Unique selling points
-
-- Webwire generates client and server code which is ready to run. The
-  generated code contains everything to make requests and
-
-- Webwire supports both **stateless unidirectional** communication and and
-  **stateful bidirectional** communication. This makes it a perfect fit for
-  application that require some kind of real-time update from the server
-  without the client having to poll for updates.
-
-- Webwire validates requests and responses. If data does not match the
-  given schema an error is raised an the data is not processed any
-  further.
-
-- Webwire is modelled after programming languages and not after a
-  serialization format. Therefore types like `UUID`, `Date` and `Time`
-  are part of the specification even if the used serialization format
-  does not support them. When using a serialization format which does
-  not support those types natively (e.g. JSON) they are encoded as
-  string. This is transparent to the users of webwire.
-
-- Webwire has a special type called `fieldset`. Fieldsets can be used to
-  construct a struct out of another struct by picking a subset of fields.
-  This is especially useful when designing APIs where multiple endpoints
-  use almost the same structure which just differs in a few fields.
-
-
-## Non goals
-
-- Webwire can not be used to describe existing APIs. Webwire only makes
-  sense as a whole package. The IDL, protocol and code generator all make
-  a complete package and leaving out one or the other just doesn't make
-  any sense. If you need to document an existing API have a look at
-  [OpenAPI](https://swagger.io/docs/specification/about/).
