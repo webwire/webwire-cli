@@ -465,7 +465,7 @@ fn test_schema_loader() {
                                     type_: Type::Array(Box::new(Type::Ref(TypeRef {
                                         abs: false,
                                         ns: vec![],
-                                        name: "User".to_string(),
+                                        name: "UserRead".to_string(),
                                         generics: vec![],
                                     }))),
                                     optional: false,

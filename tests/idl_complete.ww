@@ -60,7 +60,7 @@ namespace user {
             range=0..0xFFFF,
             help="Count of objects returned"
         ),
-        users: [User] (length=0..128),
+        users: [UserRead] (length=0..128),
         permissions: {UUID: String}
     }
 
