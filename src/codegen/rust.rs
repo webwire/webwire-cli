@@ -32,6 +32,8 @@ fn gen_namespace(ns: &schema::Namespace) -> TokenStream {
     for service in ns.services.values() {
         let service_stream = gen_service(service);
         stream.extend(service_stream);
+        let adapter_stream = gen_adapter(service);
+        stream.extend(adapter_stream);
     }
     for child_ns in ns.namespaces.values() {
         let child_ns_name = quote::format_ident!("{}", child_ns.name());
@@ -147,12 +149,16 @@ fn gen_fieldset_field(field: &schema::FieldsetField) -> TokenStream {
 }
 
 fn gen_service(service: &schema::Service) -> TokenStream {
-    let name = quote::format_ident!("{}", &service.name);
+    let service_name = quote::format_ident!("{}", &service.name);
+    let adapter_name = quote::format_ident!("_{}Adapter", service.name);
     let methods = gen_service_methods(&service);
     quote! {
         #[async_trait::async_trait]
-        pub trait #name {
+        pub trait #service_name {
             #methods
+            fn service<T: #service_name>(service: T) -> #adapter_name<T> {
+                #adapter_name(service)
+            }
         }
     }
 }
@@ -172,6 +178,59 @@ fn gen_service_methods(service: &schema::Service) -> TokenStream {
         stream.extend(quote! {
             async fn #name(&self, request: &::webwire::Request<#input>) -> ::webwire::Response<#output>;
         })
+    }
+    stream
+}
+
+fn gen_adapter(service: &schema::Service) -> TokenStream {
+    let service_name = quote::format_ident!("{}", service.name);
+    let service_name_str = &service.name;
+    let adapter_name = quote::format_ident!("_{}Adapter", service.name);
+    let matches = gen_adapter_matches(&service);
+    quote! {
+        pub struct #adapter_name<T: #service_name>(pub T);
+        #[async_trait::async_trait]
+        impl<T: #service_name + Sync + Send> ::webwire::Service for #adapter_name<T> {
+            fn name(&self) -> &'static str {
+                #service_name_str
+            }
+            async fn call(&self, request: ::webwire::Request<Vec<u8>>) -> ::webwire::Response<Vec<u8>> {
+                match request.method.as_str() {
+                    #matches
+                    _ => Err(::webwire::ErrorResponse::MethodNotFound),
+                }
+            }
+        }
+    }
+}
+
+fn gen_adapter_matches(service: &schema::Service) -> TokenStream {
+    let mut stream = TokenStream::new();
+    for method in service.methods.iter() {
+        let name = quote::format_ident!("{}", method.name);
+        let name_str = &method.name;
+        let input = match &method.input {
+            Some(type_) => gen_typeref(type_),
+            None => quote! { () },
+        };
+        /*
+        let output = match &method.output {
+            Some(type_) => gen_typeref(type_),
+            None => quote! { () },
+        };
+        */
+        let deserialize_request = if method.input.is_none() {
+            quote! { request.replace_data(()) }
+        } else {
+            quote! { request.deserialize::< #input >()? }
+        };
+        stream.extend(quote! {
+            #name_str => {
+                let request = #deserialize_request;
+                let response = (self.0).#name(&request).await?;
+                Ok(serde_json::to_vec(&response)?)
+            }
+        });
     }
     stream
 }
