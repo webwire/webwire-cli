@@ -1,11 +1,11 @@
 # webwire
 
-![webwire logo](docs/logo.svg)
+![webwire logo](https://raw.githubusercontent.com/webwire/webwire-docs/master/logo.svg)
 
 Webwire is a **contract-first API** system which features an
-[interface description language](docs/interface_description_language.md),
-a network [protocol](doc/protocol.md) and
-[code generator](docs/code_generator.md) for both servers and clients.
+[interface description language](https://github.com/webwire/webwire-docs/blob/master/docs/interface_description_language.md),
+a network [protocol](https://github.com/webwire/webwire-docs/blob/master/docs/protocol.md) and
+[code generator](https://github.com/webwire/webwire-docs/blob/master/docs/code_generator.md) for both servers and clients.
 
 ## WORK IN PROGRESS
 
@@ -86,13 +86,13 @@ assert(response.message === 'Hello World!')
 
 ## Building blocks
 
-- The [webwire interface description language](docs/interface_description_language.md)
+- The [webwire interface description language](https://github.com/webwire/webwire-docs/blob/master/docs/interface_description_language.md)
   describes service endpoints and how they are called.
 
-- The [webwire protocol](doc/protocol.md) is the actual representation
+- The [webwire protocol](https://github.com/webwire/webwire-docs/blob/master/docs/protocol.md) is the actual representation
   how data is transferred between client and server.
 
-- The [webwire code generator](docs/code_generator.md) uses the schema
+- The [webwire code generator](https://github.com/webwire/webwire-docs/blob/master/docs/code_generator.md) uses the schema
   language to generate client and server stubs.
 
 
