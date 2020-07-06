@@ -1,0 +1,14 @@
+namespace chat {
+    struct Message {
+        text: String (length=1..2048),
+    }
+    enum SendError {
+        PermissionDenied
+    }
+    service Server {
+        send(Message) -> Result<None, SendError>,
+    }
+    service Client {
+        on_message(Message),
+    }
+}
