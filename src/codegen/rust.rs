@@ -32,8 +32,10 @@ fn gen_namespace(ns: &schema::Namespace) -> TokenStream {
     for service in ns.services.values() {
         let service_stream = gen_service(service);
         stream.extend(service_stream);
-        let adapter_stream = gen_adapter(service);
-        stream.extend(adapter_stream);
+        let provider_stream = gen_provider(service);
+        stream.extend(provider_stream);
+        let consumer_stream = gen_consumer(service);
+        stream.extend(consumer_stream);
     }
     for child_ns in ns.namespaces.values() {
         let child_ns_name = quote::format_ident!("{}", child_ns.name());
@@ -150,15 +152,11 @@ fn gen_fieldset_field(field: &schema::FieldsetField) -> TokenStream {
 
 fn gen_service(service: &schema::Service) -> TokenStream {
     let service_name = quote::format_ident!("{}", &service.name);
-    let adapter_name = quote::format_ident!("_{}Adapter", service.name);
     let methods = gen_service_methods(&service);
     quote! {
-        #[async_trait::async_trait]
-        pub trait #service_name {
+        #[::async_trait::async_trait]
+        pub trait #service_name<E> {
             #methods
-            fn service<T: #service_name>(service: T) -> #adapter_name<T> {
-                #adapter_name(service)
-            }
         }
     }
 }
@@ -166,45 +164,58 @@ fn gen_service(service: &schema::Service) -> TokenStream {
 fn gen_service_methods(service: &schema::Service) -> TokenStream {
     let mut stream = TokenStream::new();
     for method in service.methods.iter() {
-        let name = quote::format_ident!("{}", method.name);
-        let input = match &method.input {
-            Some(type_) => gen_typeref(type_),
-            None => quote! { () },
-        };
-        let output = match &method.output {
-            Some(type_) => gen_typeref(type_),
-            None => quote! { () },
-        };
+        let signature = gen_method_signature(method, quote! { E });
         stream.extend(quote! {
-            async fn #name(&self, request: &::webwire::Request<#input>) -> ::webwire::Response<#output>;
+            #signature;
         })
     }
     stream
 }
 
-fn gen_adapter(service: &schema::Service) -> TokenStream {
+fn gen_method_signature(method: &schema::Method, e: TokenStream) -> TokenStream {
+    let name = quote::format_ident!("{}", method.name);
+    let input = match &method.input {
+        Some(type_) => gen_typeref(type_),
+        None => quote! { () },
+    };
+    let output = match &method.output {
+        Some(type_) => gen_typeref(type_),
+        None => quote! { () },
+    };
+    quote! {
+        async fn #name(&self, input: &#input) -> Result<#output, #e>
+    }
+}
+
+fn gen_provider(service: &schema::Service) -> TokenStream {
     let service_name = quote::format_ident!("{}", service.name);
     let service_name_str = &service.name;
-    let adapter_name = quote::format_ident!("_{}Adapter", service.name);
-    let matches = gen_adapter_matches(&service);
+    let provider_name = quote::format_ident!("{}Provider", service.name);
+    let matches = gen_provider_matches(&service);
     quote! {
-        pub struct #adapter_name<T: #service_name>(pub T);
-        #[async_trait::async_trait]
-        impl<T: #service_name + Sync + Send> ::webwire::Service for #adapter_name<T> {
+        pub struct #provider_name<T: #service_name<::webwire::ProviderError> + ::std::marker::Sync + ::std::marker::Send>(pub T);
+        #[::async_trait::async_trait]
+        impl<T: #service_name<::webwire::ProviderError> + ::std::marker::Sync + ::std::marker::Send> ::webwire::Provider for #provider_name<T> {
             fn name(&self) -> &'static str {
                 #service_name_str
             }
-            async fn call(&self, request: ::webwire::Request<Vec<u8>>) -> ::webwire::Response<Vec<u8>> {
-                match request.method.as_str() {
+            async fn call(&self, request: &::webwire::Request) -> ::webwire::Response<::webwire::ProviderError> {
+                match &*request.method {
                     #matches
-                    _ => Err(::webwire::ErrorResponse::MethodNotFound),
+                    _ => Err(::webwire::ProviderError::MethodNotFound),
                 }
+            }
+            async fn notify(
+                &self,
+                request: &::webwire::Request,
+            ) -> Result<(), ::webwire::ProviderError> {
+                self.call(request).await.map(|_| ())
             }
         }
     }
 }
 
-fn gen_adapter_matches(service: &schema::Service) -> TokenStream {
+fn gen_provider_matches(service: &schema::Service) -> TokenStream {
     let mut stream = TokenStream::new();
     for method in service.methods.iter() {
         let name = quote::format_ident!("{}", method.name);
@@ -222,15 +233,67 @@ fn gen_adapter_matches(service: &schema::Service) -> TokenStream {
         let deserialize_request = if method.input.is_none() {
             quote! { request.replace_data(()) }
         } else {
-            quote! { request.deserialize::< #input >()? }
+            quote! {
+                serde_json::from_slice(&request.data)
+                    .map_err(|e| ::webwire::ProviderError::DeserializerError(e))?
+            }
         };
         stream.extend(quote! {
             #name_str => {
                 let request = #deserialize_request;
                 let response = (self.0).#name(&request).await?;
-                Ok(serde_json::to_vec(&response)?)
+                let output = serde_json::to_vec(&response)
+                    .map_err(|e| ::webwire::ProviderError::SerializerError(e))?;
+                Ok(output)
             }
         });
+    }
+    stream
+}
+
+fn gen_consumer(service: &schema::Service) -> TokenStream {
+    let service_name = quote::format_ident!("{}", service.name);
+    let service_name_str = &service.name;
+    let consumer_name = quote::format_ident!("{}Consumer", service.name);
+    let consumer_methods = gen_consumer_methods(&service);
+    quote! {
+        pub struct #consumer_name<'a>(pub &'a (dyn ::webwire::Consumer + ::std::marker::Sync + ::std::marker::Send));
+        /*
+        #[::async_trait::async_trait]
+        impl<'a> ::webwire::Consumer for #consumer_name<'a> {
+            fn name(&self) -> &'static str {
+                #service_name_str
+            }
+        }
+        */
+        #[::async_trait::async_trait]
+        impl<'a> #service_name<::webwire::ConsumerError> for #consumer_name<'a> {
+            #consumer_methods
+        }
+    }
+}
+
+fn gen_consumer_methods(service: &schema::Service) -> TokenStream {
+    let mut stream = TokenStream::new();
+    let service_name_str = &service.name;
+    for method in service.methods.iter() {
+        let signature = gen_method_signature(method, quote! { ::webwire::ConsumerError });
+        let method_name_str = &method.name;
+        stream.extend(quote! {
+            #signature {
+                let input = serde_json::to_vec(input)
+                    .map_err(|e| ::webwire::ConsumerError::SerializerError(e))?;
+                let request = ::webwire::Request {
+                    service: #service_name_str.to_owned(),
+                    method: #method_name_str.to_owned(),
+                    data: input,
+                };
+                let output = self.0.call(&request).await?;
+                let response = serde_json::from_slice(&output)
+                    .map_err(|e| ::webwire::ConsumerError::DeserializerError(e))?;
+                Ok(response)
+            }
+        })
     }
     stream
 }
@@ -274,9 +337,15 @@ fn gen_typeref(type_: &schema::Type) -> TokenStream {
                 }
             }
             // FIXME fqtn
-            let name = quote::format_ident!("{}", &typeref.fqtn.name);
-            quote! {
-                #name #generics_stream
+            match &*typeref.fqtn.name {
+                // FIXME `None` should be made into a buitlin type
+                "None" => quote! { () },
+                name => {
+                    let name = quote::format_ident!("{}", name);
+                    quote! {
+                        #name #generics_stream
+                    }
+                }
             }
         }
     }
