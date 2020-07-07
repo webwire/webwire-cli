@@ -78,19 +78,22 @@ fn test_parse_service() {
     use crate::idl::r#type::{Type, TypeRef};
     let contents = [
         // normal whitespaces
-        "service Pinger { ping(), get_version() -> String }",
+        "service Pinger { ping: None -> None, get_version: None -> String }",
         // whitespace variants
-        "service Pinger{ping(),get_version()->String}",
-        "service Pinger {ping(),get_version()->String}",
-        "service Pinger{ping (),get_version()->String}",
-        "service Pinger{ping( ),get_version()->String}",
-        "service Pinger{ping() ,get_version()->String}",
-        "service Pinger{ping(), get_version()->String}",
-        "service Pinger{ping(),get_version ()->String}",
-        "service Pinger{ping(),get_version( )->String}",
-        "service Pinger{ping(),get_version() ->String}",
-        "service Pinger{ping(),get_version()-> String}",
-        "service Pinger{ping(),get_version()->String }",
+        "service Pinger{ping:None->None,get_version:None->String}",
+        "service Pinger {ping:None->None,get_version:None->String}",
+        "service Pinger{ ping:None->None,get_version:None->String}",
+        "service Pinger{ping :None->None,get_version:None->String}",
+        "service Pinger{ping: None->None,get_version:None->String}",
+        "service Pinger{ping:None ->None,get_version:None->String}",
+        "service Pinger{ping:None-> None,get_version:None->String}",
+        "service Pinger{ping:None->None ,get_version:None->String}",
+        "service Pinger{ping:None->None, get_version:None->String}",
+        "service Pinger{ping:None->None,get_version :None->String}",
+        "service Pinger{ping:None->None,get_version: None->String}",
+        "service Pinger{ping:None->None,get_version:None ->String}",
+        "service Pinger{ping:None->None,get_version:None-> String}",
+        "service Pinger{ping:None->None,get_version:None->String }",
     ];
     for content in contents.iter() {
         assert_parse(

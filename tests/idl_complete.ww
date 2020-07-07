@@ -74,9 +74,9 @@ namespace user {
     }
 
     service ExampleService {
-        get_version() -> String,
-        user_get(UserRequest) -> Result<UserRead, GetError>,
-        user_list(UserListRequest) -> Result<UserList, ListError>,
+        get_version: None -> String,
+        user_get: UserRequest -> Result<UserRead, GetError>,
+        user_list: UserListRequest -> Result<UserList, ListError>,
     }
 
 }

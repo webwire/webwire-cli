@@ -1,13 +1,13 @@
 use nom::{
     bytes::complete::tag,
     character::complete::char,
-    combinator::{map, opt},
-    sequence::{preceded, terminated, tuple},
+    combinator::map,
+    sequence::{preceded, tuple},
     IResult,
 };
 
 use crate::idl::common::{parse_identifier, ws, Span};
-use crate::idl::r#type::{parse_type, Type};
+use crate::idl::r#type::{parse_opt_type, Type};
 
 #[cfg(test)]
 use crate::idl::common::assert_parse;
@@ -23,11 +23,8 @@ pub fn parse_method(input: Span) -> IResult<Span, Method> {
     map(
         tuple((
             parse_identifier,
-            preceded(
-                preceded(ws, char('(')),
-                terminated(opt(preceded(ws, parse_type)), preceded(ws, char(')'))),
-            ),
-            opt(preceded(preceded(ws, tag("->")), preceded(ws, parse_type))),
+            preceded(ws, preceded(char(':'), preceded(ws, parse_opt_type))),
+            preceded(ws, preceded(tag("->"), preceded(ws, parse_opt_type))),
         )),
         |(name, input, output)| Method {
             name,
@@ -41,8 +38,13 @@ pub fn parse_method(input: Span) -> IResult<Span, Method> {
 fn test_parse_method_0() {
     let contents = [
         // normal whitespace
-        "ping()", // whitespace variants
-        "ping ()", "ping( )",
+        "ping: None -> None",
+        // whitespace variants
+        "ping:None->None",
+        "ping :None->None",
+        "ping: None->None",
+        "ping:None ->None",
+        "ping:None-> None",
     ];
     for content in contents.iter() {
         assert_parse(
@@ -61,11 +63,13 @@ fn test_parse_method_1() {
     use crate::idl::r#type::TypeRef;
     let contents = [
         // normal whitespace
-        "notify(Notification)",
+        "notify: Notification -> None",
         // whitespace variants
-        "notify (Notification)",
-        "notify( Notification)",
-        "notify(Notification )",
+        "notify:Notification->None",
+        "notify :Notification->None",
+        "notify: Notification->None",
+        "notify:Notification ->None",
+        "notify:Notification-> None",
     ];
     for content in contents.iter() {
         assert_parse(
@@ -89,11 +93,13 @@ fn test_parse_method_2() {
     use crate::idl::r#type::TypeRef;
     let contents = [
         // normal whitespace
-        "get_time() -> Time",
+        "get_time: None -> Time",
         // whitespace variants
-        "get_time()->Time",
-        "get_time() ->Time",
-        "get_time()-> Time",
+        "get_time:None->Time",
+        "get_time :None->Time",
+        "get_time: None->Time",
+        "get_time:None ->Time",
+        "get_time:None-> Time",
     ];
     for content in contents.iter() {
         assert_parse(
@@ -117,15 +123,18 @@ fn test_parse_method_3() {
     use crate::idl::r#type::TypeRef;
     let contents = [
         // normal whitespace
-        "no_response() -> Result<None, SomeError>",
+        "no_response: None -> Result<None, SomeError>",
         // whitespace variants
-        "no_response() ->Result<None,SomeError>",
-        "no_response()-> Result<None,SomeError>",
-        "no_response()->Result <None,SomeError>",
-        "no_response()->Result< None,SomeError>",
-        "no_response()->Result<None ,SomeError>",
-        "no_response()->Result<None, SomeError>",
-        "no_response()->Result<None,SomeError >",
+        "no_response:None->Result<None,SomeError>",
+        "no_response :None->Result<None,SomeError>",
+        "no_response: None->Result<None,SomeError>",
+        "no_response:None ->Result<None,SomeError>",
+        "no_response:None-> Result<None,SomeError>",
+        "no_response:None->Result <None,SomeError>",
+        "no_response:None->Result< None,SomeError>",
+        "no_response:None->Result<None ,SomeError>",
+        "no_response:None->Result<None, SomeError>",
+        "no_response:None->Result<None,SomeError >",
     ];
     for content in contents.iter() {
         assert_parse(
@@ -162,15 +171,18 @@ fn test_parse_method_4() {
     use crate::idl::r#type::TypeRef;
     let contents = [
         // normal whitespace
-        "hello(HelloRequest) -> Result<HelloResponse, HelloError>",
+        "hello: HelloRequest -> Result<HelloResponse, HelloError>",
         // whitespace variants
-        "hello(HelloRequest) ->Result<HelloResponse,HelloError>",
-        "hello(HelloRequest)-> Result<HelloResponse,HelloError>",
-        "hello(HelloRequest)->Result <HelloResponse,HelloError>",
-        "hello(HelloRequest)->Result< HelloResponse,HelloError>",
-        "hello(HelloRequest)->Result<HelloResponse ,HelloError>",
-        "hello(HelloRequest)->Result<HelloResponse, HelloError>",
-        "hello(HelloRequest)->Result<HelloResponse,HelloError >",
+        "hello:HelloRequest->Result<HelloResponse,HelloError>",
+        "hello :HelloRequest->Result<HelloResponse,HelloError>",
+        "hello: HelloRequest->Result<HelloResponse,HelloError>",
+        "hello:HelloRequest ->Result<HelloResponse,HelloError>",
+        "hello:HelloRequest-> Result<HelloResponse,HelloError>",
+        "hello:HelloRequest->Result <HelloResponse,HelloError>",
+        "hello:HelloRequest->Result< HelloResponse,HelloError>",
+        "hello:HelloRequest->Result<HelloResponse ,HelloError>",
+        "hello:HelloRequest->Result<HelloResponse, HelloError>",
+        "hello:HelloRequest->Result<HelloResponse,HelloError >",
     ];
     for content in contents.iter() {
         assert_parse(

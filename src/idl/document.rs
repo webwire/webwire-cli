@@ -42,8 +42,8 @@ fn test_parse_document() {
             name: String,
         }
         service Pinger {
-            ping(),
-            get_version() -> String,
+            ping: None -> None,
+            get_version: None -> String,
         }
     ";
     assert_eq!(

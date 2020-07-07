@@ -27,6 +27,10 @@ pub struct TypeRef {
     pub generics: Vec<Type>,
 }
 
+pub fn parse_none(input: Span) -> IResult<Span, Option<Type>> {
+    map(tag("None"), |_| None)(input)
+}
+
 pub fn parse_type_ref(input: Span) -> IResult<Span, TypeRef> {
     map(
         tuple((
@@ -106,6 +110,10 @@ fn parse_type_map(input: Span) -> IResult<Span, Type> {
     )(input)
 }
 
+pub fn parse_opt_type(input: Span) -> IResult<Span, Option<Type>> {
+    preceded(ws, alt((parse_none, map(parse_type, Some))))(input)
+}
+
 pub fn parse_type(input: Span) -> IResult<Span, Type> {
     preceded(
         ws,
@@ -115,6 +123,11 @@ pub fn parse_type(input: Span) -> IResult<Span, Type> {
             parse_type_map,
         )),
     )(input)
+}
+
+#[test]
+fn test_parse_none() {
+    assert_parse(parse_opt_type(Span::new("None")), None);
 }
 
 #[test]

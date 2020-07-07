@@ -113,8 +113,8 @@ fn test_parse_namespace() {
                 name: String
             }
             service Pinger {
-                ping(),
-                get_version() -> String
+                ping: None -> None,
+                get_version: None -> String
             }
         }";
     assert_parse(

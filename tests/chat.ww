@@ -6,9 +6,9 @@ namespace chat {
         PermissionDenied
     }
     service Server {
-        send(Message) -> Result<None, SendError>,
+        send: Message -> Result<None, SendError>,
     }
     service Client {
-        on_message(Message),
+        on_message: Message -> None,
     }
 }
