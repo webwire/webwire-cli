@@ -5,7 +5,7 @@
 
 [![Discord Chat](https://img.shields.io/discord/726922033039933472?label=Discord+Chat&color=%23677bc4&logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/jjD6aWG)
 
-![webwire logo](https://raw.githubusercontent.com/webwire/webwire-docs/master/docs/logo.svg)
+![webwire logo](https://webwire.dev/logo.svg)
 
 Webwire is a **contract-first API system** which features an
 interface description language a network protocol and
