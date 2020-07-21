@@ -5,6 +5,7 @@ name = "webwire-cli"
 description = "Contract-First API System - Command Line Interface"
 homepage = "https://webwire.dev/"
 version = "0.1.0"
+
 [dependencies]
 clap = "2.33"
 nom = "5.0"
