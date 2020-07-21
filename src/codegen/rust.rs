@@ -155,7 +155,7 @@ fn gen_service(service: &schema::Service) -> TokenStream {
     let methods = gen_service_methods(&service);
     quote! {
         #[::async_trait::async_trait]
-        pub trait #service_name<E> {
+        pub trait #service_name<S: ::std::marker::Sync + ::std::marker::Send> {
             #methods
         }
     }
@@ -164,7 +164,7 @@ fn gen_service(service: &schema::Service) -> TokenStream {
 fn gen_service_methods(service: &schema::Service) -> TokenStream {
     let mut stream = TokenStream::new();
     for method in service.methods.iter() {
-        let signature = gen_method_signature(method, quote! { E });
+        let signature = gen_service_method_signature(method);
         stream.extend(quote! {
             #signature;
         })
@@ -172,7 +172,7 @@ fn gen_service_methods(service: &schema::Service) -> TokenStream {
     stream
 }
 
-fn gen_method_signature(method: &schema::Method, e: TokenStream) -> TokenStream {
+fn gen_service_method_signature(method: &schema::Method) -> TokenStream {
     let name = quote::format_ident!("{}", method.name);
     let input = match &method.input {
         Some(type_) => gen_typeref(type_),
@@ -183,7 +183,7 @@ fn gen_method_signature(method: &schema::Method, e: TokenStream) -> TokenStream 
         None => quote! { () },
     };
     quote! {
-        async fn #name(&self, input: &#input) -> Result<#output, #e>
+        async fn #name(&self, request: &::webwire::Request<S>, input: &#input) -> Result<#output, ::webwire::ProviderError>
     }
 }
 
@@ -193,24 +193,39 @@ fn gen_provider(service: &schema::Service) -> TokenStream {
     let provider_name = quote::format_ident!("{}Provider", service.name);
     let matches = gen_provider_matches(&service);
     quote! {
-        pub struct #provider_name<T: #service_name<::webwire::ProviderError> + ::std::marker::Sync + ::std::marker::Send>(pub T);
+        pub struct #provider_name<S, T>(pub T, ::std::marker::PhantomData<S>) where
+            S: ::std::marker::Sync + ::std::marker::Send,
+            T: #service_name<S> + ::std::marker::Sync + ::std::marker::Send;
+        impl<
+            S: ::std::marker::Sync + ::std::marker::Send,
+            T: #service_name<S> + ::std::marker::Sync + ::std::marker::Send
+        > #provider_name<S, T> {
+            pub fn new(service: T) -> Self {
+                Self(service, ::std::marker::PhantomData::<S>::default())
+            }
+        }
         #[::async_trait::async_trait]
-        impl<T: #service_name<::webwire::ProviderError> + ::std::marker::Sync + ::std::marker::Send> ::webwire::Provider for #provider_name<T> {
+        impl<
+            S: ::std::marker::Sync + ::std::marker::Send,
+            T: #service_name<S> + ::std::marker::Sync + ::std::marker::Send
+        > ::webwire::Provider<S> for #provider_name<S, T> {
             fn name(&self) -> &'static str {
                 #service_name_str
             }
-            async fn call(&self, request: &::webwire::Request) -> ::webwire::Response<::webwire::ProviderError> {
+            async fn call(&self, request: &::webwire::Request<S>, data: ::bytes::Bytes) -> ::webwire::Response<::bytes::Bytes> {
                 match &*request.method {
                     #matches
                     _ => Err(::webwire::ProviderError::MethodNotFound),
                 }
             }
+            /*
             async fn notify(
                 &self,
-                request: &::webwire::Request,
+                request: ::webwire::Request,
             ) -> Result<(), ::webwire::ProviderError> {
                 self.call(request).await.map(|_| ())
             }
+            */
         }
     }
 }
@@ -234,17 +249,17 @@ fn gen_provider_matches(service: &schema::Service) -> TokenStream {
             quote! { request.replace_data(()) }
         } else {
             quote! {
-                serde_json::from_slice(&request.data)
+                serde_json::from_slice(&data)
                     .map_err(|e| ::webwire::ProviderError::DeserializerError(e))?
             }
         };
         stream.extend(quote! {
             #name_str => {
-                let request = #deserialize_request;
-                let response = (self.0).#name(&request).await?;
+                let input = #deserialize_request;
+                let response = (self.0).#name(request, &input).await?;
                 let output = serde_json::to_vec(&response)
                     .map_err(|e| ::webwire::ProviderError::SerializerError(e))?;
-                Ok(output)
+                Ok(output.into())
             }
         });
     }
@@ -266,8 +281,7 @@ fn gen_consumer(service: &schema::Service) -> TokenStream {
             }
         }
         */
-        #[::async_trait::async_trait]
-        impl<'a> #service_name<::webwire::ConsumerError> for #consumer_name<'a> {
+        impl<'a> #consumer_name<'a> {
             #consumer_methods
         }
     }
@@ -277,18 +291,13 @@ fn gen_consumer_methods(service: &schema::Service) -> TokenStream {
     let mut stream = TokenStream::new();
     let service_name_str = &service.name;
     for method in service.methods.iter() {
-        let signature = gen_method_signature(method, quote! { ::webwire::ConsumerError });
+        let signature = gen_consumer_method_signature(method);
         let method_name_str = &method.name;
         stream.extend(quote! {
             #signature {
-                let input = serde_json::to_vec(input)
+                let data = serde_json::to_vec(input)
                     .map_err(|e| ::webwire::ConsumerError::SerializerError(e))?;
-                let request = ::webwire::Request {
-                    service: #service_name_str.to_owned(),
-                    method: #method_name_str.to_owned(),
-                    data: input,
-                };
-                let output = self.0.call(&request).await?;
+                let output = self.0.call(#service_name_str, #method_name_str, data.into()).await?;
                 let response = serde_json::from_slice(&output)
                     .map_err(|e| ::webwire::ConsumerError::DeserializerError(e))?;
                 Ok(response)
@@ -296,6 +305,21 @@ fn gen_consumer_methods(service: &schema::Service) -> TokenStream {
         })
     }
     stream
+}
+
+fn gen_consumer_method_signature(method: &schema::Method) -> TokenStream {
+    let name = quote::format_ident!("{}", method.name);
+    let input = match &method.input {
+        Some(type_) => gen_typeref(type_),
+        None => quote! { () },
+    };
+    let output = match &method.output {
+        Some(type_) => gen_typeref(type_),
+        None => quote! { () },
+    };
+    quote! {
+        pub async fn #name(&self, input: &#input) -> Result<#output, ::webwire::ConsumerError>
+    }
 }
 
 fn gen_typeref(type_: &schema::Type) -> TokenStream {
