@@ -213,7 +213,7 @@ fn gen_provider(service: &schema::Service) -> TokenStream {
                 session: &::std::sync::Arc<S>,
                 method: &str,
                 input: ::bytes::Bytes,
-            ) -> ::futures::future::BoxFuture<Result<::bytes::Bytes, ::webwire::ProviderError>> {
+            ) -> ::futures::future::BoxFuture<'static, Result<::bytes::Bytes, ::webwire::ProviderError>> {
                 let service = self.0(session.clone());
                 match method {
                     #matches
