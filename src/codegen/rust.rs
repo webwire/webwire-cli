@@ -211,6 +211,7 @@ fn gen_provider(service: &schema::Service) -> TokenStream {
             fn call(
                 &self,
                 session: &::std::sync::Arc<S>,
+                _service: &str,
                 method: &str,
                 input: ::bytes::Bytes,
             ) -> ::futures::future::BoxFuture<'static, Result<::bytes::Bytes, ::webwire::ProviderError>> {
@@ -284,6 +285,7 @@ fn gen_consumer(service: &schema::Service) -> TokenStream {
 
 fn gen_consumer_methods(service: &schema::Service) -> TokenStream {
     let mut stream = TokenStream::new();
+    let service_name_str = &service.name;
     for method in service.methods.iter() {
         let signature = gen_consumer_method_signature(method);
         let method_name_str = &method.name;
@@ -291,7 +293,7 @@ fn gen_consumer_methods(service: &schema::Service) -> TokenStream {
             #signature {
                 let data = serde_json::to_vec(input)
                     .map_err(|e| ::webwire::ConsumerError::SerializerError(e))?;
-                let output = self.0.call(#method_name_str, data.into()).await?;
+                let output = self.0.call(#service_name_str, #method_name_str, data.into()).await?;
                 let response = serde_json::from_slice(&output)
                     .map_err(|e| ::webwire::ConsumerError::DeserializerError(e))?;
                 Ok(response)
