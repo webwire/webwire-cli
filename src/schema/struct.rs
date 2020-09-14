@@ -20,6 +20,7 @@ pub struct Field {
     pub type_: Type,
     pub optional: bool,
     // FIXME add options
+    pub length: (Option<i64>, Option<i64>),
     pub position: FilePosition,
 }
 
@@ -47,12 +48,20 @@ impl Struct {
 
 impl Field {
     pub fn from_idl(ifield: &idl::Field, ns: &Namespace) -> Self {
+        let mut length: (Option<i64>, Option<i64>) = (None, None);
+        for option in &ifield.options {
+            match (option.name.as_str(), &option.value) {
+                ("length", idl::Value::Range(min, max)) => length = (*min, *max),
+                (name, _) => panic!("Unsupported option: {}", name),
+            }
+        }
         Field {
             name: ifield.name.clone(),
             type_: Type::from_idl(&ifield.type_, ns),
             optional: ifield.optional,
             // FIXME add options
             //options: ifield.options
+            length,
             position: ifield.position.clone(),
         }
     }

@@ -94,7 +94,7 @@ fn gen_struct(struct_: &schema::Struct) -> TokenStream {
     let name = quote::format_ident!("{}", &struct_.fqtn.name);
     let fields = gen_struct_fields(struct_);
     quote! {
-        #[derive(Clone, Debug, Eq, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+        #[derive(Clone, Debug, Eq, PartialEq, ::serde::Serialize, ::serde::Deserialize, ::validator::Validate)]
         pub struct #name {
             #fields
         }
@@ -115,8 +115,27 @@ fn gen_struct_field(field: &schema::Field) -> TokenStream {
     if field.optional {
         type_ = optional(type_);
     }
+    let validation_macros = gen_validation_macros(field);
     quote! {
+        #validation_macros
         pub #name: #type_,
+    }
+}
+
+fn gen_validation_macros(field: &schema::Field) -> TokenStream {
+    let mut rules = TokenStream::new();
+    match field.length {
+        (Some(min), Some(max)) => rules.extend(quote! { length(min=#min, max=#max) }),
+        (Some(min), None) => rules.extend(quote! { length(min=#min) }),
+        (None, Some(max)) => rules.extend(quote! { length(max=#max) }),
+        (None, None) => {}
+    }
+    if rules.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            #[validate(#rules)]
+        }
     }
 }
 
@@ -240,18 +259,21 @@ fn gen_provider_matches(service: &schema::Service) -> TokenStream {
             None => quote! { () },
         };
         */
-        let deserialize_request = if method.input.is_none() {
-            quote! { ::bytes::Bytes::new() }
+        let method_call = if method.input.is_none() {
+            quote! {
+                let output = service.#name().await?;
+            }
         } else {
             quote! {
-                serde_json::from_slice::<#input>(&input)
-                    .map_err(|e| ::webwire::ProviderError::DeserializerError(e))?;
+                let input = serde_json::from_slice::<#input>(&input)
+                        .map_err(::webwire::ProviderError::DeserializerError)?;
+                ::validator::Validate::validate(&input).map_err(::webwire::ProviderError::ValidationError)?;
+                let output = service.#name(&input).await?;
             }
         };
         stream.extend(quote! {
             #name_str => Box::pin(async move {
-                let input = #deserialize_request;
-                let output = service.#name(&input).await?;
+                #method_call
                 let response = serde_json::to_vec(&output)
                     .map_err(|e| ::webwire::ProviderError::SerializerError(e))
                     .map(::bytes::Bytes::from)?;
