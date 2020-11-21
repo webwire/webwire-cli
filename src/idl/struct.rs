@@ -3,7 +3,7 @@ use nom::{
     character::complete::char,
     combinator::{cut, map, opt},
     error::context,
-    multi::separated_list,
+    multi::separated_list0,
     sequence::{pair, preceded, separated_pair, terminated},
     IResult,
 };
@@ -59,7 +59,7 @@ fn parse_fields(input: Span) -> IResult<Span, Vec<Field>> {
         preceded(
             preceded(ws, char('{')),
             cut(terminated(
-                separated_list(parse_field_separator, preceded(ws, parse_field)),
+                separated_list0(parse_field_separator, preceded(ws, parse_field)),
                 preceded(trailing_comma, preceded(ws, char('}'))),
             )),
         ),
@@ -374,7 +374,7 @@ fn test_parse_struct_invalid() {
     assert_eq!(
         parse_struct(input),
         // FIXME the error position is probably incorrect
-        Err(nom::Err::Error((input.slice(7..), ErrorKind::TakeWhile1)))
+        Err(nom::Err::Error(nom::error::Error { input: input.slice(7..), code: ErrorKind::TakeWhile1 }))
     )
 }
 

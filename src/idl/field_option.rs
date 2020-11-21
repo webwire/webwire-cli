@@ -2,7 +2,7 @@ use nom::{
     character::complete::char,
     combinator::{cut, map},
     error::context,
-    multi::separated_list,
+    multi::separated_list0,
     sequence::{preceded, separated_pair, terminated},
     IResult,
 };
@@ -24,7 +24,7 @@ pub fn parse_field_options(input: Span) -> IResult<Span, Vec<FieldOption>> {
         preceded(
             preceded(ws, char('(')),
             cut(terminated(
-                separated_list(parse_field_separator, parse_field_option),
+                separated_list0(parse_field_separator, parse_field_option),
                 preceded(trailing_comma, preceded(ws, char(')'))),
             )),
         ),

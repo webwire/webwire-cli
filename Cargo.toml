@@ -8,7 +8,7 @@ version = "0.1.0"
 
 [dependencies]
 clap = "2.33"
-nom = "5.0"
-nom_locate = "2.0"
+nom = "6.0"
+nom_locate = { git = "https://github.com/fflorent/nom_locate", commit = "164fd443e266c7d681b7010341a3f3eef344fcb9" }
 proc-macro2 = "1.0"
 quote = "1.0"

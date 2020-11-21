@@ -3,7 +3,7 @@ use nom::{
     character::complete::char,
     combinator::{cut, map, opt},
     error::context,
-    multi::separated_list,
+    multi::separated_list0,
     sequence::{pair, preceded, terminated, tuple},
     IResult,
 };
@@ -66,7 +66,7 @@ fn parse_enum_variants(input: Span) -> IResult<Span, Vec<EnumVariant>> {
         preceded(
             preceded(ws, char('{')),
             cut(terminated(
-                separated_list(parse_field_separator, preceded(ws, parse_enum_variant)),
+                separated_list0(parse_field_separator, preceded(ws, parse_enum_variant)),
                 preceded(trailing_comma, preceded(ws, char('}'))),
             )),
         ),

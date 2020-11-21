@@ -3,7 +3,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::char,
     combinator::{cut, map},
-    multi::separated_list,
+    multi::separated_list0,
     sequence::{pair, preceded, terminated},
     IResult,
 };
@@ -69,7 +69,7 @@ fn parse_namespace_part(input: Span) -> IResult<Span, NamespacePart> {
 pub fn parse_namespace_content(input: Span) -> IResult<Span, Vec<NamespacePart>> {
     preceded(
         ws,
-        terminated(separated_list(ws1, parse_namespace_part), ws),
+        terminated(separated_list0(ws1, parse_namespace_part), ws),
     )(input)
 }
 
