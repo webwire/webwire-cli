@@ -7,7 +7,7 @@ use nom::{
     character::complete::char,
     combinator::{cut, map, opt},
     error::context,
-    multi::{many0, separated_list},
+    multi::{many0, separated_list0},
     sequence::{preceded, separated_pair, terminated, tuple},
     IResult,
 };
@@ -62,7 +62,7 @@ fn parse_generics(input: Span) -> IResult<Span, Vec<Type>> {
         opt(preceded(
             preceded(ws, char('<')),
             cut(terminated(
-                separated_list(parse_field_separator, preceded(ws, parse_type)),
+                separated_list0(parse_field_separator, preceded(ws, parse_type)),
                 preceded(trailing_comma, preceded(ws, char('>'))),
             )),
         )),

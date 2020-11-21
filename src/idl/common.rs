@@ -2,7 +2,7 @@ use nom::{
     bytes::complete::{take_while, take_while1},
     character::complete::char,
     combinator::{cut, map, opt},
-    multi::separated_list,
+    multi::separated_list0,
     sequence::{pair, preceded, terminated},
     IResult,
 };
@@ -40,7 +40,7 @@ fn parse_generics(input: Span) -> IResult<Span, Vec<String>> {
         opt(preceded(
             preceded(ws, char('<')),
             cut(terminated(
-                separated_list(parse_field_separator, preceded(ws, parse_identifier)),
+                separated_list0(parse_field_separator, preceded(ws, parse_identifier)),
                 preceded(trailing_comma, preceded(ws, char('>'))),
             )),
         )),
@@ -80,14 +80,17 @@ fn test_parse_identifier_invalid() {
     use nom::error::ErrorKind;
     assert_eq!(
         parse_identifier(Span::new("123test")),
-        Err(nom::Err::Error((
-            Span::new("123test"),
-            ErrorKind::TakeWhile1
-        )))
+        Err(nom::Err::Error(nom::error::Error {
+            input: Span::new("123test"),
+            code: ErrorKind::TakeWhile1
+        }))
     );
     assert_eq!(
         parse_identifier(Span::new("_test")),
-        Err(nom::Err::Error((Span::new("_test"), ErrorKind::TakeWhile1)))
+        Err(nom::Err::Error(nom::error::Error {
+            input: Span::new("_test"),
+            code: ErrorKind::TakeWhile1
+        }))
     );
 }
 

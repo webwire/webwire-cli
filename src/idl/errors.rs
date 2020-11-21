@@ -4,7 +4,7 @@ use crate::idl::common::Span;
 
 #[derive(Debug, PartialEq)]
 pub enum ParseError<'a> {
-    Nom(nom::Err<(Span<'a>, nom::error::ErrorKind)>),
+    Nom(nom::Err<nom::error::Error<Span<'a>>>),
     TrailingGarbage(Span<'a>),
 }
 

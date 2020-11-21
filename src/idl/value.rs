@@ -152,17 +152,17 @@ fn test_parse_value_integer_out_of_range() {
     use nom::error::ErrorKind;
     assert_eq!(
         parse_value(Span::new("9223372036854775808")),
-        Err(nom::Err::Error((
-            Span::new("9223372036854775808"),
-            ErrorKind::TakeWhile1
-        )))
+        Err(nom::Err::Error(nom::error::Error {
+            input: Span::new("9223372036854775808"),
+            code: ErrorKind::TakeWhile1
+        }))
     );
     assert_eq!(
         parse_value(Span::new("-9223372036854775809")),
-        Err(nom::Err::Error((
-            Span::new("-9223372036854775809"),
-            ErrorKind::TakeWhile1
-        )))
+        Err(nom::Err::Error(nom::error::Error {
+            input: Span::new("-9223372036854775809"),
+            code: ErrorKind::TakeWhile1
+        }))
     );
 }
 

@@ -3,7 +3,7 @@ use nom::{
     character::complete::char,
     combinator::{cut, map},
     error::context,
-    multi::separated_list,
+    multi::separated_list0,
     sequence::{pair, preceded, terminated},
     IResult,
 };
@@ -28,7 +28,7 @@ fn parse_methods(input: Span) -> IResult<Span, Vec<Method>> {
         preceded(
             preceded(ws, char('{')),
             cut(terminated(
-                separated_list(parse_field_separator, preceded(ws, parse_method)),
+                separated_list0(parse_field_separator, preceded(ws, parse_method)),
                 preceded(trailing_comma, preceded(ws, char('}'))),
             )),
         ),
