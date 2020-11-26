@@ -1,10 +1,13 @@
 [package]
-authors = ["Michael P. Jung <michael.jung@terreon.de>"]
-edition = "2018"
 name = "webwire-cli"
-description = "Contract-First API System - Command Line Interface"
-homepage = "https://webwire.dev/"
 version = "0.1.0"
+authors = ["Michael P. Jung <michael.jung@terreon.de>"]
+description = "Contract-First API System = Command Line Interface"
+keywords = ["webwire", "contract-first", "api"]
+license = "MIT/Apache-2.0"
+repository = "https://github.com/webwire/webwire-cli"
+readme = "README.md"
+edition = "2018"
 
 [dependencies]
 clap = "2.33"

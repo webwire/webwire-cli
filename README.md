@@ -1,4 +1,5 @@
-# Webwire Command-line Interface
+# Webwire command-line Interface
+
 [![Crates.io](https://img.shields.io/crates/v/webwire-cli)](https://crates.io/crates/webwire-cli)
 [![GitHub](https://img.shields.io/github/license/webwire/webwire-cli)](https://github.com/webwire/webwire-cli/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/webwire/webwire-cli/Rust)](https://github.com/webwire/webwire-cli/actions)
@@ -16,13 +17,6 @@ to validate Webwire IDL files and generate code and documentation.
 
 To learn more about webwire in general please visit the documentation
 repository [webwire/webwire-docs](https://github.com/webwire/webwire-docs).
-
-# WORK IN PROGRESS
-
-> **Webwire is not ready to use! All the documentation and code in this
-repository is either incomplete or non functional. Don't expect anything
-to work, yet. Right now this repository is just a collection of ideas and
-preliminary implementations.**
 
 # Example
 
@@ -93,3 +87,12 @@ client = new Client('http://localhost:8000/')
 const response = await client.hello({ name: 'World' })
 assert(response.message === 'Hello World!')
 ```
+
+## License
+
+Licensed under either of
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0)>
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT)>
+
+at your option.
