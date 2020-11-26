@@ -1,7 +1,6 @@
 # Webwire command-line Interface
 
 [![Crates.io](https://img.shields.io/crates/v/webwire-cli)](https://crates.io/crates/webwire-cli)
-[![GitHub](https://img.shields.io/github/license/webwire/webwire-cli)](https://github.com/webwire/webwire-cli/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/webwire/webwire-cli/Rust)](https://github.com/webwire/webwire-cli/actions)
 
 [![Discord Chat](https://img.shields.io/discord/726922033039933472?label=Discord+Chat&color=%23677bc4&logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/jjD6aWG)
