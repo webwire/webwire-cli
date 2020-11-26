@@ -2,7 +2,7 @@
 name = "webwire-cli"
 version = "0.1.0"
 authors = ["Michael P. Jung <michael.jung@terreon.de>"]
-description = "Contract-First API System = Command Line Interface"
+description = "Contract-First API System - Command Line Interface"
 keywords = ["webwire", "contract-first", "api", "cli", "codegen"]
 license = "MIT/Apache-2.0"
 repository = "https://github.com/webwire/webwire-cli"
