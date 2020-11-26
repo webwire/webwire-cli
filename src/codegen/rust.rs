@@ -315,7 +315,7 @@ fn gen_consumer_methods(service: &schema::Service) -> TokenStream {
             #signature {
                 let data = serde_json::to_vec(input)
                     .map_err(|e| ::webwire::ConsumerError::SerializerError(e))?;
-                let output = self.0.call(#service_name_str, #method_name_str, data.into()).await?;
+                let output = self.0.request(#service_name_str, #method_name_str, data.into()).await?;
                 let response = serde_json::from_slice(&output)
                     .map_err(|e| ::webwire::ConsumerError::DeserializerError(e))?;
                 Ok(response)
