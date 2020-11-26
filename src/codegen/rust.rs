@@ -285,20 +285,10 @@ fn gen_provider_matches(service: &schema::Service) -> TokenStream {
 }
 
 fn gen_consumer(service: &schema::Service) -> TokenStream {
-    let service_name = quote::format_ident!("{}", service.name);
-    let service_name_str = &service.name;
     let consumer_name = quote::format_ident!("{}Consumer", service.name);
     let consumer_methods = gen_consumer_methods(&service);
     quote! {
         pub struct #consumer_name<'a>(pub &'a (dyn ::webwire::Consumer + ::std::marker::Sync + ::std::marker::Send));
-        /*
-        #[::async_trait::async_trait]
-        impl<'a> ::webwire::Consumer for #consumer_name<'a> {
-            fn name(&self) -> &'static str {
-                #service_name_str
-            }
-        }
-        */
         impl<'a> #consumer_name<'a> {
             #consumer_methods
         }
