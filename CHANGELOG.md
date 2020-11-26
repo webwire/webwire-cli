@@ -1,6 +1,6 @@
 # Change Log
 
-## v0.1.1 (unreleased)
+## v0.1.1
 
 * Change binary name to `webwire`
 * Fix code examples in README
