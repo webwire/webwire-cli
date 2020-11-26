@@ -51,7 +51,7 @@ $ webwire gen ts client api/hello.ww client/src/api.ts
 
 A Rust server implementation for the given code would look like this:
 
-```rust
+```rust,ignore
 use std::net::SocketAddr;
 use webwire::{Context, Request, Response}
 use webwire::hyper::Server;
