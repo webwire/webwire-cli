@@ -27,8 +27,6 @@
 //! Given the following IDL file:
 //!
 //! ```webwire
-//! webwire 1.0;
-//!
 //! struct HelloRequest {
 //!     name: String,
 //! }
@@ -45,47 +43,113 @@
 //! The server and client files can be generated using the code generator:
 //!
 //! ```bash
-//! $ webwire gen rust server api/hello.ww server/src/api.rs
-//! $ webwire gen ts client api/hello.ww client/src/api.ts
+//! $ webwire gen rust < api/chat.ww > server/src/api.rs
+//! $ webwire gen ts < api/chat.ww > client/src/api.ts
 //! ```
 //!
 //! A Rust server implementation for the given code would look like this:
 //!
 //! ```rust,ignore
 //! use std::net::SocketAddr;
-//! use webwire::{Context, Request, Response}
-//! use webwire::hyper::Server;
+//! use std::sync::{Arc};
 //!
-//! mod api;
-//! use api::v1::{Hello, HelloRequest, HelloResponse}; // this is the generated code
+//! use async_trait::async_trait;
 //!
-//! struct HelloService {}
+//! use ::api::chat;
 //!
-//! impl Hello for HelloService {
-//!     fn hello(&self, ctx: &Context, request: &HelloRequest) -> HelloResponse {
-//!         HelloResponse {
-//!             message: format!("Hello {}!", request.name)
-//!         }
+//! use ::webwire::server::hyper::MakeHyperService;
+//! use ::webwire::server::session::{Auth, AuthError};
+//! use ::webwire::{Response, Router, Server, ConsumerError};
+//!
+//! struct ChatService {
+//!     #[allow(dead_code)]
+//!     session: Arc<Session>,
+//!     server: Arc<Server<Session>>,
+//! }
+//!
+//! #[async_trait]
+//! impl chat::Server<Session> for ChatService {
+//!     async fn send(&self, message: &chat::Message) -> Response<Result<(), chat::SendError>> {
+//!         let client = chat::ClientConsumer(&*self.server);
+//!         assert!(matches!(client.on_message(message).await, Err(ConsumerError::Broadcast)));
+//!         Ok(Ok(()))
 //!     }
 //! }
 //!
+//! #[derive(Default)]
+//! struct Session {}
+//!
+//! struct Sessions {}
+//!
+//! impl Sessions {
+//!     pub fn new() -> Self {
+//!         Self {}
+//!     }
+//! }
+//!
+//! #[async_trait]
+//! impl webwire::SessionHandler<Session> for Sessions {
+//!     async fn auth(&self, _auth: Option<Auth>) -> Result<Session, AuthError> {
+//!         Ok(Session::default())
+//!     }
+//!     async fn connect(&self, _session: &Session) {}
+//!     async fn disconnect(&self, _session: &Session) {}
+//! }
+//!
 //! #[tokio::main]
-//! async fn main() -> Result<(), Box<dyn std::error::Error> {
-//!     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
-//!     let service = HelloService {};
-//!     let server = webwire::Server::bind(addr).serve(service);
-//!     server.await
+//! async fn main() {
+//!     // Create session handler
+//!     let session_handler = Sessions::new();
+//!
+//!     // Create service router
+//!     let router = Arc::new(Router::<Session>::new());
+//!
+//!     // Create webwire server
+//!     let server = Arc::new(webwire::server::Server::new(
+//!         session_handler,
+//!         router.clone(),
+//!     ));
+//!
+//!     // Register services
+//!     router.service(chat::ServerProvider({
+//!         let server = server.clone();
+//!         move |session| ChatService {
+//!             session,
+//!             server: server.clone(),
+//!         }
+//!     }));
+//!
+//!     // Start hyper service
+//!     let addr = SocketAddr::from(([0, 0, 0, 0], 2323));
+//!     let make_service = MakeHyperService { server };
+//!     let server = hyper::Server::bind(&addr).serve(make_service);
+//!
+//!     if let Err(e) = server.await {
+//!         eprintln!("server error: {}", e);
+//!     }
 //! }
 //! ```
 //!
 //! A TypeScript client using the generated code would look like that:
 //!
 //! ```typescript
-//! import { Client } from 'api/v1' // this is the generated code
+//! import { Client } from 'webwire'
+//! import api from 'api' // this is the generated code
 //!
-//! client = new Client('http://localhost:8000/')
-//! const response = await client.hello({ name: 'World' })
-//! assert(response.message === 'Hello World!')
+//! let client = new Client('http://localhost:8000/', [
+//!     api.chat.ClientProvider({
+//!         async on_message(message) {
+//!             console.log("Message received:", message)
+//!         }
+//!     })
+//! ])
+//!
+//! assert(await client.connect())
+//!
+//! let chat = api.chat.ServerConsumer(client)
+//! let response = await chat.message({ text: "Hello world!" })
+//!
+//! assert(response.Ok === null)
 //! ```
 //!
 //! ## License
