@@ -374,7 +374,10 @@ fn test_parse_struct_invalid() {
     assert_eq!(
         parse_struct(input),
         // FIXME the error position is probably incorrect
-        Err(nom::Err::Error(nom::error::Error { input: input.slice(7..), code: ErrorKind::TakeWhile1 }))
+        Err(nom::Err::Error(nom::error::Error {
+            input: input.slice(7..),
+            code: ErrorKind::TakeWhile1
+        }))
     )
 }
 
