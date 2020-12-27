@@ -10,6 +10,7 @@ fn test_schema_loader() {
     assert_eq!(
         result,
         Document {
+            includes: vec![],
             ns: Namespace {
                 name: "".to_string(),
                 position: FilePosition { line: 1, column: 1 },

@@ -1,27 +1,73 @@
+use nom::{
+    branch::alt,
+    combinator::map,
+    multi::separated_list0,
+    sequence::{preceded, terminated},
+    IResult,
+};
+
 use crate::common::FilePosition;
 use crate::idl::common::Span;
 use crate::idl::errors::ParseError;
-use crate::idl::namespace::{parse_namespace_content, Namespace};
+use crate::idl::namespace::Namespace;
+
+use super::{
+    common::{ws, ws1},
+    include::{parse_include, Include},
+    namespace::parse_namespace_part,
+    NamespacePart,
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Document {
+    pub includes: Vec<Include>,
     pub ns: Namespace,
+}
+
+pub enum DocumentPart {
+    Include(Include),
+    NamespacePart(NamespacePart),
 }
 
 pub fn parse_document(input: &str) -> Result<Document, ParseError> {
     let span = Span::new(input);
-    let result = parse_namespace_content(span);
+    let result = parse_document_content(span);
     match result {
-        Ok((span, parts)) if span.fragment() == &"" => Ok(Document {
-            ns: Namespace {
-                name: String::default(),
-                position: FilePosition { line: 1, column: 1 },
-                parts,
-            },
-        }),
+        Ok((span, parts)) if span.fragment() == &"" => {
+            let mut includes: Vec<Include> = Vec::new();
+            let mut ns_parts: Vec<NamespacePart> = Vec::new();
+            for part in parts {
+                match part {
+                    DocumentPart::Include(part) => includes.push(part),
+                    DocumentPart::NamespacePart(part) => ns_parts.push(part),
+                }
+            }
+            Ok(Document {
+                includes,
+                ns: Namespace {
+                    name: String::default(),
+                    position: FilePosition { line: 1, column: 1 },
+                    parts: ns_parts,
+                }
+            })
+        },
         Ok((garbage, _)) => Err(ParseError::TrailingGarbage(garbage)),
         Err(error) => Err(ParseError::Nom(error)),
     }
+}
+
+fn parse_document_part(input: Span) -> IResult<Span, DocumentPart> {
+    alt((
+        map(parse_include, DocumentPart::Include),
+        map(parse_namespace_part, DocumentPart::NamespacePart),
+    ))(input)
+}
+
+pub fn parse_document_content(input: Span) -> IResult<Span, Vec<DocumentPart>> {
+    preceded(
+        ws,
+        terminated(separated_list0(ws1, parse_document_part), ws),
+    )(input)
 }
 
 #[test]
@@ -34,6 +80,7 @@ fn test_parse_document() {
     use crate::idl::service::Service;
     use crate::idl::value::Value;
     let content = "
+        include common.ww;
         struct Person {
             name: String (length=1..50),
             age: Integer,
@@ -49,19 +96,23 @@ fn test_parse_document() {
     assert_eq!(
         parse_document(content),
         Ok(Document {
+            includes: vec![Include {
+                filename: "common.ww".to_string(),
+                position: FilePosition { line: 2, column: 17 },
+            }],
             ns: Namespace {
                 name: "".to_string(),
                 position: FilePosition { line: 1, column: 1 },
                 parts: vec![
                     NamespacePart::Struct(Struct {
                         name: "Person".to_string(),
-                        position: FilePosition { line: 2, column: 9 },
+                        position: FilePosition { line: 3, column: 9 },
                         generics: vec![],
                         fields: vec![
                             Field {
                                 name: "name".to_string(),
                                 position: FilePosition {
-                                    line: 3,
+                                    line: 4,
                                     column: 13
                                 },
                                 type_: Type::Ref(TypeRef {
@@ -79,7 +130,7 @@ fn test_parse_document() {
                             Field {
                                 name: "age".to_string(),
                                 position: FilePosition {
-                                    line: 4,
+                                    line: 5,
                                     column: 13
                                 },
                                 type_: Type::Ref(TypeRef {
@@ -95,12 +146,12 @@ fn test_parse_document() {
                     }),
                     NamespacePart::Struct(Struct {
                         name: "Group".to_string(),
-                        position: FilePosition { line: 6, column: 9 },
+                        position: FilePosition { line: 7, column: 9 },
                         generics: vec![],
                         fields: vec![Field {
                             name: "name".to_string(),
                             position: FilePosition {
-                                line: 7,
+                                line: 8,
                                 column: 13
                             },
                             type_: Type::Ref(TypeRef {
@@ -115,7 +166,7 @@ fn test_parse_document() {
                     }),
                     NamespacePart::Service(Service {
                         name: "Pinger".to_string(),
-                        position: FilePosition { line: 9, column: 9 },
+                        position: FilePosition { line: 10, column: 9 },
                         methods: vec![
                             Method {
                                 name: "ping".to_string(),

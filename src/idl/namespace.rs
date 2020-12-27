@@ -29,14 +29,13 @@ pub enum NamespacePart {
 
 impl NamespacePart {
     pub fn name(&self) -> &str {
-        let name = match self {
+        match self {
             Self::Enum(part) => &part.name,
             Self::Struct(part) => &part.name,
             Self::Fieldset(part) => &part.name,
             Self::Service(part) => &part.name,
             Self::Namespace(part) => &part.name,
-        };
-        name.as_str()
+        }
     }
     pub fn position(&self) -> &FilePosition {
         match self {
@@ -56,7 +55,7 @@ pub struct Namespace {
     pub position: FilePosition,
 }
 
-fn parse_namespace_part(input: Span) -> IResult<Span, NamespacePart> {
+pub fn parse_namespace_part(input: Span) -> IResult<Span, NamespacePart> {
     alt((
         map(parse_enum, NamespacePart::Enum),
         map(parse_fieldset, NamespacePart::Fieldset),
