@@ -1,5 +1,5 @@
-use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
+use std::{collections::HashSet, fs::File};
 
 use clap::{App, Arg, ArgMatches, SubCommand};
 
@@ -65,24 +65,69 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
+enum Source {
+    Stdin,
+    File(String),
+}
+
+impl Source {
+    fn read(&self) -> Result<String, Box<dyn std::error::Error>> {
+        let mut read: Box<dyn Read> = match self {
+            Self::Stdin => Box::new(stdin()),
+            Self::File(filename) => Box::new(File::open(filename)?)
+        };
+        let mut content = String::new();
+        read.read_to_string(&mut content)?;
+        Ok(content)
+    }
+}
+
+#[derive(Debug)]
+struct GenError {
+    message: String
+}
+
+impl std::fmt::Display for GenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for GenError {}
+
 fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let gen_fn = get_gen_fn(args.value_of("language").unwrap()).unwrap();
 
-    // Read source file
-    let mut source: Box<dyn Read> = match args.value_of("source") {
-        None | Some("--") => Box::new(stdin()),
-        Some(filename) => Box::new(File::open(filename)?),
+    let source = match args.value_of("source") {
+        None | Some("--") => Source::Stdin,
+        Some(filename) => Source::File(filename.to_owned()),
     };
-    let mut source_code = String::new();
-    {
-        source.read_to_string(&mut source_code)?;
+
+    // Parse IDL file
+    let mut idocs: Vec<idl::Document> = Vec::new();
+    let idoc = idl::parse_document(&source.read()?).map_err(|e| format!("{}", e))?;
+    idocs.push(idoc);
+
+    // Parse all included files (recursively)
+    if matches!(source, Source::Stdin) && !idocs[0].includes.is_empty() {
+        return Err(Box::new(GenError { message: "Source must not contain any includes if reading from stdin".to_owned() }));
+    }
+    let mut included_files: HashSet<String> = HashSet::new();
+    let mut includes = idocs[0].includes.clone();
+    while !includes.is_empty() {
+        let include = includes.remove(0);
+        if included_files.contains(&include.filename) {
+            continue;
+        }
+        included_files.insert(include.filename.clone());
+        let source = Source::File(include.filename);
+        let idoc = idl::parse_document(&source.read()?).map_err(|e| format!("{}", e))?;
+        includes.extend(idoc.includes.iter().cloned());
+        idocs.push(idoc);
     }
 
-    // Parse IDL
-    let idl = idl::parse_document(&source_code).map_err(|e| format!("{}", e))?;
-
     // Convert IDL to Schema
-    let doc = schema::Document::from_idl(&idl)?;
+    let doc = schema::Document::from_idl(idocs.iter())?;
 
     // Call code generator function
     let target_code = gen_fn(&doc);
