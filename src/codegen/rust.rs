@@ -143,7 +143,7 @@ fn gen_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
     let name = quote::format_ident!("{}", &fieldset.fqtn.name);
     let fields = gen_fieldset_fields(fieldset);
     quote! {
-        #[derive(Clone, Debug, Eq, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+        #[derive(Clone, Debug, Eq, PartialEq, ::serde::Serialize, ::serde::Deserialize, ::validator::Validate)]
         pub struct #name {
             #fields
         }
