@@ -337,9 +337,9 @@ fn gen_typeref(type_: &schema::Type) -> TokenStream {
         schema::Type::Float => quote! { f64 },
         schema::Type::String => quote! { String },
         schema::Type::UUID => quote! { ::uuid::Uuid },
-        schema::Type::Date => quote! { Date },
-        schema::Type::Time => quote! { Time },
-        schema::Type::DateTime => quote! { DateTime },
+        schema::Type::Date => quote! { ::chrono::Date },
+        schema::Type::Time => quote! { ::chrono::Time },
+        schema::Type::DateTime => quote! { ::chrono::DateTime<::chrono::Utc> },
         // complex types
         schema::Type::Array(array) => {
             let item_type = gen_typeref(&array.item_type);
