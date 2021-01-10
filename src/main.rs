@@ -1,5 +1,7 @@
+use std::collections::HashSet;
+use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
-use std::{collections::HashSet, fs::File};
+use std::path::{Path, PathBuf};
 
 use clap::{App, Arg, ArgMatches, SubCommand};
 
@@ -67,24 +69,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 enum Source {
     Stdin,
-    File(String),
+    File(PathBuf),
 }
 
 impl Source {
-    fn read(&self) -> Result<String, Box<dyn std::error::Error>> {
+    fn read(&self) -> Result<String, String> {
         let mut read: Box<dyn Read> = match self {
             Self::Stdin => Box::new(stdin()),
-            Self::File(filename) => Box::new(File::open(filename)?)
+            Self::File(filename) => Box::new(
+                File::open(filename)
+                    .map_err(|e| format!("Could not open file {:?}: {}", filename, e))?,
+            ),
         };
         let mut content = String::new();
-        read.read_to_string(&mut content)?;
+        read.read_to_string(&mut content).map_err(|e| {
+            format!(
+                "An error occured while reading source file {:?}: {}",
+                self.filename(),
+                e
+            )
+        })?;
         Ok(content)
+    }
+    fn filename(&self) -> String {
+        match self {
+            Self::Stdin => String::from("--"),
+            Self::File(path) => format!("{:?}", path),
+        }
     }
 }
 
 #[derive(Debug)]
 struct GenError {
-    message: String
+    message: String,
 }
 
 impl std::fmt::Display for GenError {
@@ -98,10 +115,11 @@ impl std::error::Error for GenError {}
 fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let gen_fn = get_gen_fn(args.value_of("language").unwrap()).unwrap();
 
-    let source = match args.value_of("source") {
-        None | Some("--") => Source::Stdin,
-        Some(filename) => Source::File(filename.to_owned()),
+    let path = match args.value_of("source") {
+        None | Some("--") => None,
+        Some(path) => Some(Path::new(path)),
     };
+    let source = path.map_or(Source::Stdin, |p| Source::File(p.to_owned()));
 
     // Parse IDL file
     let mut idocs: Vec<idl::Document> = Vec::new();
@@ -109,21 +127,29 @@ fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     idocs.push(idoc);
 
     // Parse all included files (recursively)
-    if matches!(source, Source::Stdin) && !idocs[0].includes.is_empty() {
-        return Err(Box::new(GenError { message: "Source must not contain any includes if reading from stdin".to_owned() }));
-    }
-    let mut included_files: HashSet<String> = HashSet::new();
-    let mut includes = idocs[0].includes.clone();
-    while !includes.is_empty() {
-        let include = includes.remove(0);
-        if included_files.contains(&include.filename) {
-            continue;
+    if !idocs[0].includes.is_empty() {
+        if matches!(source, Source::Stdin) {
+            return Err(Box::new(GenError {
+                message: "Source must not contain any includes if reading from stdin".to_owned(),
+            }));
         }
-        included_files.insert(include.filename.clone());
-        let source = Source::File(include.filename);
-        let idoc = idl::parse_document(&source.read()?).map_err(|e| format!("{}", e))?;
-        includes.extend(idoc.includes.iter().cloned());
-        idocs.push(idoc);
+        let base_dir = path
+            .map(|p| p.parent())
+            .flatten()
+            .ok_or_else(|| "base_dir could not be determined from source")?;
+        let mut included_files: HashSet<String> = HashSet::new();
+        let mut includes = idocs[0].includes.clone();
+        while !includes.is_empty() {
+            let include = includes.remove(0);
+            if included_files.contains(&include.filename) {
+                continue;
+            }
+            included_files.insert(include.filename.clone());
+            let source = Source::File(base_dir.join(include.filename));
+            let idoc = idl::parse_document(&source.read()?).map_err(|e| format!("{}", e))?;
+            includes.extend(idoc.includes.iter().cloned());
+            idocs.push(idoc);
+        }
     }
 
     // Convert IDL to Schema
