@@ -16,6 +16,7 @@ use super::typemap::TypeMap;
 #[derive(Clone)]
 pub enum Type {
     // builtin types
+    None,
     Boolean,
     Integer,
     Float,
@@ -25,6 +26,8 @@ pub enum Type {
     Time,
     DateTime,
     // complex types
+    Option(Box<Type>),
+    Result(Box<Type>, Box<Type>),
     Array(Box<Array>),
     Map(Box<Map>),
     // named
@@ -61,6 +64,7 @@ impl Type {
     pub(crate) fn from_idl_ref(ityperef: &idl::TypeRef, ns: &Namespace) -> Self {
         // FIXME this should fail with an error when fqtn.ns is not empty
         match ityperef.name.as_str() {
+            "None" => Self::None,
             "Boolean" => Self::Boolean,
             "Integer" => Self::Integer,
             "Float" => Self::Float,
@@ -69,6 +73,11 @@ impl Type {
             "Date" => Self::Date,
             "Time" => Self::Time,
             "DateTime" => Self::DateTime,
+            "Option" => Self::Option(Box::new(Type::from_idl(&ityperef.generics[0], ns))),
+            "Result" => Self::Result(
+                Box::new(Type::from_idl(&ityperef.generics[0], ns)),
+                Box::new(Type::from_idl(&ityperef.generics[1], ns)),
+            ),
             _ => Self::Ref(TypeRef::from_idl(ityperef, ns)),
         }
     }
@@ -94,8 +103,26 @@ impl Type {
     }
     pub(crate) fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
         match self {
-            Type::Ref(typeref) => typeref.resolve(type_map),
-            _ => Ok(()),
+            Self::None
+            | Self::Boolean
+            | Self::Integer
+            | Self::Float
+            | Self::String
+            | Self::UUID
+            | Self::Date
+            | Self::Time
+            | Self::DateTime => Ok(()),
+            // complex types
+            Self::Option(some) => some.resolve(type_map),
+            Self::Result(ok, err) => {
+                ok.resolve(type_map)?;
+                err.resolve(type_map)?;
+                Ok(())
+            }
+            Self::Array(array) => array.resolve(type_map),
+            Self::Map(map) => map.resolve(type_map),
+            // named
+            Self::Ref(typeref) => typeref.resolve(type_map),
         }
     }
 }
@@ -133,6 +160,20 @@ impl TypeRef {
                 })
             }
         };
+        Ok(())
+    }
+}
+
+impl Array {
+    pub(crate) fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
+        self.item_type.resolve(type_map)
+    }
+}
+
+impl Map {
+    pub(crate) fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
+        self.key_type.resolve(type_map)?;
+        self.value_type.resolve(type_map)?;
         Ok(())
     }
 }

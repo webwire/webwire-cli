@@ -3,6 +3,8 @@ use quote::quote;
 
 use crate::schema;
 
+type NS = Vec<String>;
+
 pub fn gen(doc: &schema::Document) -> String {
     let stream = generate(doc);
     let code = format!("{}", stream);
@@ -26,15 +28,15 @@ pub fn generate(doc: &schema::Document) -> TokenStream {
 fn gen_namespace(ns: &schema::Namespace) -> TokenStream {
     let mut stream = TokenStream::new();
     for type_ in ns.types.values() {
-        let type_stream = gen_type(&*type_.borrow());
+        let type_stream = gen_type(&*type_.borrow(), &ns.path);
         stream.extend(type_stream);
     }
     for service in ns.services.values() {
-        let service_stream = gen_service(service);
+        let service_stream = gen_service(service, &ns.path);
         stream.extend(service_stream);
-        let provider_stream = gen_provider(service);
+        let provider_stream = gen_provider(service, &ns.path);
         stream.extend(provider_stream);
-        let consumer_stream = gen_consumer(service);
+        let consumer_stream = gen_consumer(service, &ns.path);
         stream.extend(consumer_stream);
     }
     for child_ns in ns.namespaces.values() {
@@ -49,17 +51,17 @@ fn gen_namespace(ns: &schema::Namespace) -> TokenStream {
     stream
 }
 
-fn gen_type(type_: &schema::UserDefinedType) -> TokenStream {
+fn gen_type(type_: &schema::UserDefinedType, ns: &NS) -> TokenStream {
     match type_ {
-        schema::UserDefinedType::Enum(enum_) => gen_enum(enum_),
-        schema::UserDefinedType::Struct(struct_) => gen_struct(struct_),
-        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(fieldset),
+        schema::UserDefinedType::Enum(enum_) => gen_enum(enum_, ns),
+        schema::UserDefinedType::Struct(struct_) => gen_struct(struct_, ns),
+        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(fieldset, ns),
     }
 }
 
-fn gen_enum(enum_: &schema::Enum) -> TokenStream {
+fn gen_enum(enum_: &schema::Enum, ns: &NS) -> TokenStream {
     let name = quote::format_ident!("{}", &enum_.fqtn.name);
-    let variants = gen_enum_variants(enum_);
+    let variants = gen_enum_variants(enum_, ns);
     quote! {
         #[derive(Clone, Debug, Eq, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
         pub enum #name {
@@ -68,18 +70,18 @@ fn gen_enum(enum_: &schema::Enum) -> TokenStream {
     }
 }
 
-fn gen_enum_variants(enum_: &schema::Enum) -> TokenStream {
+fn gen_enum_variants(enum_: &schema::Enum, ns: &NS) -> TokenStream {
     let mut stream = TokenStream::new();
     for variant in enum_.variants.iter() {
-        stream.extend(gen_enum_variant(variant));
+        stream.extend(gen_enum_variant(variant, ns));
     }
     stream
 }
 
-fn gen_enum_variant(variant: &schema::EnumVariant) -> TokenStream {
+fn gen_enum_variant(variant: &schema::EnumVariant, ns: &NS) -> TokenStream {
     let name = quote::format_ident!("{}", variant.name);
     if let Some(value_type) = &variant.value_type {
-        let value_type = gen_typeref(value_type);
+        let value_type = gen_typeref(value_type, ns);
         quote! {
             #name(#value_type),
         }
@@ -90,9 +92,9 @@ fn gen_enum_variant(variant: &schema::EnumVariant) -> TokenStream {
     }
 }
 
-fn gen_struct(struct_: &schema::Struct) -> TokenStream {
+fn gen_struct(struct_: &schema::Struct, ns: &NS) -> TokenStream {
     let name = quote::format_ident!("{}", &struct_.fqtn.name);
-    let fields = gen_struct_fields(struct_);
+    let fields = gen_struct_fields(struct_, ns);
     quote! {
         #[derive(Clone, Debug, Eq, PartialEq, ::serde::Serialize, ::serde::Deserialize, ::validator::Validate)]
         pub struct #name {
@@ -101,17 +103,17 @@ fn gen_struct(struct_: &schema::Struct) -> TokenStream {
     }
 }
 
-fn gen_struct_fields(struct_: &schema::Struct) -> TokenStream {
+fn gen_struct_fields(struct_: &schema::Struct, ns: &NS) -> TokenStream {
     let mut stream = TokenStream::new();
     for field in struct_.fields.iter() {
-        stream.extend(gen_struct_field(field))
+        stream.extend(gen_struct_field(field, ns))
     }
     stream
 }
 
-fn gen_struct_field(field: &schema::Field) -> TokenStream {
+fn gen_struct_field(field: &schema::Field, ns: &NS) -> TokenStream {
     let name = quote::format_ident!("{}", field.name);
-    let mut type_ = gen_typeref(&field.type_);
+    let mut type_ = gen_typeref(&field.type_, ns);
     if field.optional {
         type_ = optional(type_);
     }
@@ -139,9 +141,9 @@ fn gen_validation_macros(field: &schema::Field) -> TokenStream {
     }
 }
 
-fn gen_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
+fn gen_fieldset(fieldset: &schema::Fieldset, ns: &NS) -> TokenStream {
     let name = quote::format_ident!("{}", &fieldset.fqtn.name);
-    let fields = gen_fieldset_fields(fieldset);
+    let fields = gen_fieldset_fields(fieldset, ns);
     quote! {
         #[derive(Clone, Debug, Eq, PartialEq, ::serde::Serialize, ::serde::Deserialize, ::validator::Validate)]
         pub struct #name {
@@ -150,17 +152,17 @@ fn gen_fieldset(fieldset: &schema::Fieldset) -> TokenStream {
     }
 }
 
-fn gen_fieldset_fields(struct_: &schema::Fieldset) -> TokenStream {
+fn gen_fieldset_fields(struct_: &schema::Fieldset, ns: &NS) -> TokenStream {
     let mut stream = TokenStream::new();
     for field in struct_.fields.iter() {
-        stream.extend(gen_fieldset_field(field))
+        stream.extend(gen_fieldset_field(field, ns))
     }
     stream
 }
 
-fn gen_fieldset_field(field: &schema::FieldsetField) -> TokenStream {
+fn gen_fieldset_field(field: &schema::FieldsetField, ns: &NS) -> TokenStream {
     let name = quote::format_ident!("{}", field.name);
-    let mut type_ = gen_typeref(&field.field.as_ref().unwrap().type_);
+    let mut type_ = gen_typeref(&field.field.as_ref().unwrap().type_, ns);
     if field.optional {
         type_ = optional(type_);
     }
@@ -169,9 +171,9 @@ fn gen_fieldset_field(field: &schema::FieldsetField) -> TokenStream {
     }
 }
 
-fn gen_service(service: &schema::Service) -> TokenStream {
+fn gen_service(service: &schema::Service, ns: &NS) -> TokenStream {
     let service_name = quote::format_ident!("{}", &service.name);
-    let methods = gen_service_methods(&service);
+    let methods = gen_service_methods(&service, ns);
     quote! {
         #[::async_trait::async_trait]
         pub trait #service_name<S: ::std::marker::Sync + ::std::marker::Send> {
@@ -180,10 +182,10 @@ fn gen_service(service: &schema::Service) -> TokenStream {
     }
 }
 
-fn gen_service_methods(service: &schema::Service) -> TokenStream {
+fn gen_service_methods(service: &schema::Service, ns: &NS) -> TokenStream {
     let mut stream = TokenStream::new();
     for method in service.methods.iter() {
-        let signature = gen_service_method_signature(method);
+        let signature = gen_service_method_signature(method, ns);
         stream.extend(quote! {
             #signature;
         })
@@ -191,26 +193,29 @@ fn gen_service_methods(service: &schema::Service) -> TokenStream {
     stream
 }
 
-fn gen_service_method_signature(method: &schema::Method) -> TokenStream {
+fn gen_service_method_signature(method: &schema::Method, ns: &NS) -> TokenStream {
     let name = quote::format_ident!("{}", method.name);
-    let input = match &method.input {
-        Some(type_) => gen_typeref(type_),
-        None => quote! { () },
+    let input_arg = match &method.input {
+        Some(type_) => {
+            let input_type = gen_typeref(type_, ns);
+            quote! { input: & #input_type }
+        }
+        None => quote! {},
     };
     let output = match &method.output {
-        Some(type_) => gen_typeref(type_),
+        Some(type_) => gen_typeref(type_, ns),
         None => quote! { () },
     };
     quote! {
-        async fn #name(&self, input: &#input) -> Result<#output, ::webwire::ProviderError>
+        async fn #name(&self, #input_arg) -> Result<#output, ::webwire::ProviderError>
     }
 }
 
-fn gen_provider(service: &schema::Service) -> TokenStream {
+fn gen_provider(service: &schema::Service, ns: &NS) -> TokenStream {
     let service_name = quote::format_ident!("{}", service.name);
     let service_name_str = &service.name;
     let provider_name = quote::format_ident!("{}Provider", service.name);
-    let matches = gen_provider_matches(&service);
+    let matches = gen_provider_matches(&service, ns);
     quote! {
         pub struct #provider_name<F>(pub F);
         // NamedProvider impl
@@ -244,13 +249,13 @@ fn gen_provider(service: &schema::Service) -> TokenStream {
     }
 }
 
-fn gen_provider_matches(service: &schema::Service) -> TokenStream {
+fn gen_provider_matches(service: &schema::Service, ns: &NS) -> TokenStream {
     let mut stream = TokenStream::new();
     for method in service.methods.iter() {
         let name = quote::format_ident!("{}", method.name);
         let name_str = &method.name;
         let input = match &method.input {
-            Some(type_) => gen_typeref(type_),
+            Some(type_) => gen_typeref(type_, ns),
             None => quote! { () },
         };
         /*
@@ -284,9 +289,9 @@ fn gen_provider_matches(service: &schema::Service) -> TokenStream {
     stream
 }
 
-fn gen_consumer(service: &schema::Service) -> TokenStream {
+fn gen_consumer(service: &schema::Service, ns: &NS) -> TokenStream {
     let consumer_name = quote::format_ident!("{}Consumer", service.name);
-    let consumer_methods = gen_consumer_methods(&service);
+    let consumer_methods = gen_consumer_methods(&service, ns);
     quote! {
         pub struct #consumer_name<'a>(pub &'a (dyn ::webwire::Consumer + ::std::marker::Sync + ::std::marker::Send));
         impl<'a> #consumer_name<'a> {
@@ -295,18 +300,27 @@ fn gen_consumer(service: &schema::Service) -> TokenStream {
     }
 }
 
-fn gen_consumer_methods(service: &schema::Service) -> TokenStream {
+fn gen_consumer_methods(service: &schema::Service, ns: &NS) -> TokenStream {
     let mut stream = TokenStream::new();
     let service_name_str = &service.name;
     for method in service.methods.iter() {
-        let signature = gen_consumer_method_signature(method);
+        let signature = gen_consumer_method_signature(method, ns);
         let method_name_str = &method.name;
+        let serialization = match method.input {
+            Some(_) => quote! {
+                let data: ::bytes::Bytes = serde_json::to_vec(input)
+                    .map_err(|e| ::webwire::ConsumerError::SerializerError(e))?
+                    .into();
+            },
+            None => quote! {
+                let data = ::bytes::Bytes::new();
+            }
+        };
         stream.extend(quote! {
             #signature {
-                let data = serde_json::to_vec(input)
-                    .map_err(|e| ::webwire::ConsumerError::SerializerError(e))?;
-                let output = self.0.request(#service_name_str, #method_name_str, data.into()).await?;
-                let response = serde_json::from_slice(&output)
+                #serialization
+                let output = self.0.request(#service_name_str, #method_name_str, data).await?;
+                let response = ::serde_json::from_slice(&output)
                     .map_err(|e| ::webwire::ConsumerError::DeserializerError(e))?;
                 Ok(response)
             }
@@ -315,23 +329,27 @@ fn gen_consumer_methods(service: &schema::Service) -> TokenStream {
     stream
 }
 
-fn gen_consumer_method_signature(method: &schema::Method) -> TokenStream {
+fn gen_consumer_method_signature(method: &schema::Method, ns: &NS) -> TokenStream {
     let name = quote::format_ident!("{}", method.name);
-    let input = match &method.input {
-        Some(type_) => gen_typeref(type_),
-        None => quote! { () },
+    let input_arg = match &method.input {
+        Some(type_) => {
+            let input_type = gen_typeref(type_, ns);
+            quote! { input: & #input_type }
+        }
+        None => quote! {},
     };
     let output = match &method.output {
-        Some(type_) => gen_typeref(type_),
+        Some(type_) => gen_typeref(type_, ns),
         None => quote! { () },
     };
     quote! {
-        pub async fn #name(&self, input: &#input) -> Result<#output, ::webwire::ConsumerError>
+        pub async fn #name(&self, #input_arg) -> Result<#output, ::webwire::ConsumerError>
     }
 }
 
-fn gen_typeref(type_: &schema::Type) -> TokenStream {
+fn gen_typeref(type_: &schema::Type, ns: &NS) -> TokenStream {
     match type_ {
+        schema::Type::None => quote! { () },
         schema::Type::Boolean => quote! { bool },
         schema::Type::Integer => quote! { i64 },
         schema::Type::Float => quote! { f64 },
@@ -340,16 +358,25 @@ fn gen_typeref(type_: &schema::Type) -> TokenStream {
         schema::Type::Date => quote! { ::chrono::Date },
         schema::Type::Time => quote! { ::chrono::Time },
         schema::Type::DateTime => quote! { ::chrono::DateTime<::chrono::Utc> },
+        schema::Type::Option(some) => {
+            let some_type = gen_typeref(some, ns);
+            quote! { std::option::Option<#some_type> }
+        }
+        schema::Type::Result(ok, err) => {
+            let ok_type = gen_typeref(ok, ns);
+            let err_type = gen_typeref(err, ns);
+            quote! { std::result::Result<#ok_type, #err_type> }
+        }
         // complex types
         schema::Type::Array(array) => {
-            let item_type = gen_typeref(&array.item_type);
+            let item_type = gen_typeref(&array.item_type, ns);
             quote! {
                 std::vec::Vec<#item_type>
             }
         }
         schema::Type::Map(map) => {
-            let key_type = gen_typeref(&map.key_type);
-            let value_type = gen_typeref(&map.value_type);
+            let key_type = gen_typeref(&map.key_type, ns);
+            let value_type = gen_typeref(&map.value_type, ns);
             quote! {
                 std::collections::HashMap<#key_type, #value_type>
             }
@@ -359,7 +386,7 @@ fn gen_typeref(type_: &schema::Type) -> TokenStream {
             let mut generics_stream = TokenStream::new();
             if !typeref.generics.is_empty() {
                 for generic in typeref.generics.iter() {
-                    let type_ = gen_typeref(generic);
+                    let type_ = gen_typeref(generic, ns);
                     generics_stream.extend(quote! {
                         #type_,
                     })
@@ -368,6 +395,20 @@ fn gen_typeref(type_: &schema::Type) -> TokenStream {
                     < #generics_stream >
                 }
             }
+            let common_ns = typeref
+                .fqtn
+                .ns
+                .iter()
+                .zip(ns.iter())
+                .take_while(|(a, b)| a == b)
+                .count();
+            let relative_ns = ns[common_ns..].iter().map(|_| quote::format_ident!("super")).chain(
+                typeref.fqtn.ns[common_ns..].iter().map(|x| quote::format_ident!("{}", x))
+            ).fold(TokenStream::new(), |mut stream, name| {
+                let name = quote::format_ident!("{}", name);
+                stream.extend(quote! { #name :: });
+                stream
+            });
             // FIXME fqtn
             match &*typeref.fqtn.name {
                 // FIXME `None` should be made into a buitlin type
@@ -375,7 +416,7 @@ fn gen_typeref(type_: &schema::Type) -> TokenStream {
                 name => {
                     let name = quote::format_ident!("{}", name);
                     quote! {
-                        #name #generics_stream
+                        #relative_ns #name #generics_stream
                     }
                 }
             }

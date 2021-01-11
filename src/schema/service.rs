@@ -44,7 +44,7 @@ impl Service {
             if let Some(input) = &mut method.input {
                 input.resolve(type_map)?;
             }
-            if let Some(output) = &mut method.input {
+            if let Some(output) = &mut method.output {
                 output.resolve(type_map)?;
             }
         }

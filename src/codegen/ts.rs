@@ -171,6 +171,7 @@ fn gen_service(service: &schema::Service, gen: &mut Generator) {
 
 pub fn gen_typeref(type_: &schema::Type) -> String {
     match type_ {
+        schema::Type::None => "null".to_string(),
         schema::Type::Boolean => "boolean".to_string(),
         schema::Type::Integer => "number".to_string(),
         schema::Type::Float => "number".to_string(),
@@ -179,6 +180,10 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
         schema::Type::Date => "Date".to_string(),
         schema::Type::Time => "Time".to_string(),
         schema::Type::DateTime => "DateTime".to_string(),
+        schema::Type::Option(some) => format!("Option<{}>", gen_typeref(some)),
+        schema::Type::Result(ok, err) => {
+            format!("Result<{}, {}>", gen_typeref(ok), gen_typeref(err))
+        }
         // complex types
         schema::Type::Array(array) => format!("Array<{}>", gen_typeref(&array.item_type)),
         schema::Type::Map(map) => format!(
