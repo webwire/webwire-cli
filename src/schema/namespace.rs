@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::{hash_map::Entry as HashMapEntry, HashMap};
+use std::collections::{btree_map::Entry as BTreeMapEntry, BTreeMap};
 use std::rc::Rc;
 
 use crate::common::FilePosition;
@@ -16,9 +16,9 @@ use super::typemap::TypeMap;
 #[derive(Default)]
 pub struct Namespace {
     pub path: Vec<String>,
-    pub types: HashMap<String, Rc<RefCell<UserDefinedType>>>,
-    pub services: HashMap<String, Service>,
-    pub namespaces: HashMap<String, Namespace>,
+    pub types: BTreeMap<String, Rc<RefCell<UserDefinedType>>>,
+    pub services: BTreeMap<String, Service>,
+    pub namespaces: BTreeMap<String, Namespace>,
 }
 
 impl Namespace {
@@ -44,16 +44,16 @@ impl Namespace {
         ins: &crate::idl::Namespace,
         type_map: &mut TypeMap,
     ) -> Result<(), ValidationError> {
-        let mut names: HashMap<String, FilePosition> = HashMap::new();
+        let mut names: BTreeMap<String, FilePosition> = BTreeMap::new();
         for ipart in ins.parts.iter() {
             match names.entry(ipart.name().to_owned()) {
-                HashMapEntry::Occupied(entry) => {
+                BTreeMapEntry::Occupied(entry) => {
                     return Err(ValidationError::DuplicateIdentifier {
                         position: entry.get().clone(),
                         identifier: ipart.name().to_owned(),
                     });
                 }
-                HashMapEntry::Vacant(entry) => {
+                BTreeMapEntry::Vacant(entry) => {
                     entry.insert(ipart.position().clone());
                 }
             }
