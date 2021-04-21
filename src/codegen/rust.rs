@@ -176,7 +176,8 @@ fn gen_service(service: &schema::Service, ns: &NS) -> TokenStream {
     let methods = gen_service_methods(&service, ns);
     quote! {
         #[::async_trait::async_trait]
-        pub trait #service_name<S: ::std::marker::Sync + ::std::marker::Send> {
+        pub trait #service_name {
+            type Error: Into<::webwire::ProviderError>;
             #methods
         }
     }
@@ -207,13 +208,17 @@ fn gen_service_method_signature(method: &schema::Method, ns: &NS) -> TokenStream
         None => quote! { () },
     };
     quote! {
-        async fn #name(&self, #input_arg) -> Result<#output, ::webwire::ProviderError>
+        async fn #name(&self, #input_arg) -> Result<#output, Self::Error>
     }
 }
 
 fn gen_provider(service: &schema::Service, ns: &NS) -> TokenStream {
     let service_name = quote::format_ident!("{}", service.name);
-    let service_name_str = &service.name;
+    let service_name_str = if ns.is_empty() {
+        service.name.to_owned()
+    } else {
+        format!("{}.{}", ns.join("."), &service.name)
+    };
     let provider_name = quote::format_ident!("{}Provider", service.name);
     let matches = gen_provider_matches(&service, ns);
     quote! {
@@ -222,7 +227,7 @@ fn gen_provider(service: &schema::Service, ns: &NS) -> TokenStream {
         impl<F: Sync + Send, S: Sync + Send, T: Sync + Send> ::webwire::NamedProvider<S> for #provider_name<F>
         where
             F: Fn(::std::sync::Arc<S>) -> T,
-            T: #service_name<S> + 'static,
+            T: #service_name + 'static,
         {
             const NAME: &'static str = #service_name_str;
         }
@@ -230,7 +235,7 @@ fn gen_provider(service: &schema::Service, ns: &NS) -> TokenStream {
         impl<F: Sync + Send, S: Sync + Send, T: Sync + Send> ::webwire::Provider<S> for #provider_name<F>
         where
             F: Fn(::std::sync::Arc<S>) -> T,
-            T: #service_name<S> + 'static,
+            T: #service_name + 'static,
         {
             fn call(
                 &self,
@@ -264,16 +269,24 @@ fn gen_provider_matches(service: &schema::Service, ns: &NS) -> TokenStream {
             None => quote! { () },
         };
         */
-        let method_call = if method.input.is_none() {
-            quote! {
-                let output = service.#name().await?;
-            }
-        } else {
-            quote! {
-                let input = serde_json::from_slice::<#input>(&input)
-                        .map_err(::webwire::ProviderError::DeserializerError)?;
-                ::validator::Validate::validate(&input).map_err(::webwire::ProviderError::ValidationError)?;
-                let output = service.#name(&input).await?;
+        let method_call = match &method.input {
+            None => quote! {
+                let output = service.#name().await.map_err(|e| e.into())?;
+            },
+            Some(type_) => {
+                let validation = if type_.is_scalar() {
+                    quote! {}
+                } else {
+                    quote! {
+                        ::validator::Validate::validate(&input).map_err(::webwire::ProviderError::ValidationError)?;
+                    }
+                };
+                quote! {
+                    let input = serde_json::from_slice::<#input>(&input)
+                            .map_err(::webwire::ProviderError::DeserializerError)?;
+                    #validation
+                    let output = service.#name(&input).await.map_err(|e| e.into())?;
+                }
             }
         };
         stream.extend(quote! {
@@ -302,7 +315,11 @@ fn gen_consumer(service: &schema::Service, ns: &NS) -> TokenStream {
 
 fn gen_consumer_methods(service: &schema::Service, ns: &NS) -> TokenStream {
     let mut stream = TokenStream::new();
-    let service_name_str = &service.name;
+    let service_name_str = if ns.is_empty() {
+        service.name.to_owned()
+    } else {
+        format!("{}.{}", ns.join("."), &service.name)
+    };
     for method in service.methods.iter() {
         let signature = gen_consumer_method_signature(method, ns);
         let method_name_str = &method.name;
@@ -314,7 +331,7 @@ fn gen_consumer_methods(service: &schema::Service, ns: &NS) -> TokenStream {
             },
             None => quote! {
                 let data = ::bytes::Bytes::new();
-            }
+            },
         };
         stream.extend(quote! {
             #signature {
@@ -402,13 +419,19 @@ fn gen_typeref(type_: &schema::Type, ns: &NS) -> TokenStream {
                 .zip(ns.iter())
                 .take_while(|(a, b)| a == b)
                 .count();
-            let relative_ns = ns[common_ns..].iter().map(|_| quote::format_ident!("super")).chain(
-                typeref.fqtn.ns[common_ns..].iter().map(|x| quote::format_ident!("{}", x))
-            ).fold(TokenStream::new(), |mut stream, name| {
-                let name = quote::format_ident!("{}", name);
-                stream.extend(quote! { #name :: });
-                stream
-            });
+            let relative_ns = ns[common_ns..]
+                .iter()
+                .map(|_| quote::format_ident!("super"))
+                .chain(
+                    typeref.fqtn.ns[common_ns..]
+                        .iter()
+                        .map(|x| quote::format_ident!("{}", x)),
+                )
+                .fold(TokenStream::new(), |mut stream, name| {
+                    let name = quote::format_ident!("{}", name);
+                    stream.extend(quote! { #name :: });
+                    stream
+                });
             // FIXME fqtn
             match &*typeref.fqtn.name {
                 // FIXME `None` should be made into a buitlin type

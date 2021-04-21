@@ -125,6 +125,25 @@ impl Type {
             Self::Ref(typeref) => typeref.resolve(type_map),
         }
     }
+    /// Returns wether this type is scalar type or not.
+    pub(crate) fn is_scalar(&self) -> bool {
+        match self {
+            Self::None
+            | Self::Boolean
+            | Self::Integer
+            | Self::Float
+            | Self::String
+            | Self::UUID
+            | Self::Date
+            | Self::Time
+            | Self::DateTime => true,
+            Self::Option(type_) => type_.is_scalar(),
+            Self::Result(_, _) => false,
+            Self::Array(_) => false,
+            Self::Map(_) => false,
+            Self::Ref(_) => false,
+        }
+    }
 }
 
 impl TypeRef {
