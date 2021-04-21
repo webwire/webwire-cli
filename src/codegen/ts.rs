@@ -43,12 +43,10 @@ pub fn gen(doc: &schema::Document) -> String {
     let mut gen = Generator::new();
     gen.line("// GENERATED CODE - DO NOT EDIT!");
     gen.line("");
-    // XXX those types should be moved into a webwire npm package
-    gen.line("export type UUID = string;");
+    // XXX This should actually be an absolute import from the webwire
+    // npm package (which doesn't exist, yet.)
+    gen.line("import * as webwire from './webwire'");
     gen.line("");
-    gen.line("export type Result<T, E> =");
-    gen.line("    | { Ok: T, Error?: never }");
-    gen.line("    | { Ok?: never, Error: E }");
     gen_namespace(&doc.ns, &mut gen);
     gen.into()
 }
@@ -61,10 +59,12 @@ fn gen_namespace(ns: &schema::Namespace, gen: &mut Generator) {
     for service in ns.services.values() {
         gen.line("");
         gen_service(service, gen);
+        gen.line("");
+        gen_consumer(ns, service, gen);
     }
     for child_ns in ns.namespaces.values() {
         gen.line("");
-        gen.begin(&format!("namespace {} {{", child_ns.name()));
+        gen.begin(&format!("export namespace {} {{", child_ns.name()));
         gen_namespace(child_ns, gen);
         gen.end("}");
     }
@@ -90,7 +90,7 @@ fn gen_enum(enum_: &schema::Enum, gen: &mut Generator) {
             .collect::<Vec<_>>()
             .join(" | ")
     ));
-    gen.begin(&format!("type {} =", enum_.fqtn.name));
+    gen.begin(&format!("export type {} =", enum_.fqtn.name));
     for variant in &enum_.variants {
         gen.line(&match &variant.value_type {
             Some(value_type) => format!(
@@ -153,18 +153,47 @@ fn gen_fieldset(fieldset: &schema::Fieldset, gen: &mut Generator) {
     gen.end("}");
 }
 
+fn method_signature(method: &schema::Method) -> String {
+    let input = match &method.input {
+        Some(t) => format!("input: {}", gen_typeref(&t)),
+        None => String::new(),
+    };
+    let output = match &method.output {
+        Some(t) => gen_typeref(t),
+        None => "void".to_string(),
+    };
+    format!("{}({}): Promise<{}>", method.name, input, output)
+}
+
 fn gen_service(service: &schema::Service, gen: &mut Generator) {
     gen.begin(&format!("export interface {} {{", service.name));
     for method in service.methods.iter() {
-        let input = match &method.input {
-            Some(t) => format!("input: {}", gen_typeref(&t)),
-            None => String::new(),
+        gen.line(&format!("{},", method_signature(&method)));
+    }
+    gen.end("}");
+}
+
+fn gen_consumer(ns: &schema::Namespace, service: &schema::Service, gen: &mut Generator) {
+    gen.begin(&format!(
+        "export class {}Consumer implements {} {{",
+        service.name, service.name
+    ));
+    gen.line("_client: webwire.Client");
+    gen.begin("constructor(client: webwire.Client) {");
+    gen.line("this._client = client");
+    gen.end("}");
+    for method in service.methods.iter() {
+        gen.begin(&format!("async {} {{", method_signature(&method)));
+        let fqsn = if ns.path.is_empty() {
+            service.name.to_owned()
+        } else {
+            format!("{}.{}", ns.path.join("."), service.name)
         };
-        let output = match &method.output {
-            Some(t) => gen_typeref(t),
-            None => "void".to_string(),
-        };
-        gen.line(&format!("{}({}): Promise<{}>,", method.name, input, output));
+        gen.line(&format!(
+            "return await this._client.request('{}', '{}', input)",
+            fqsn, method.name
+        ));
+        gen.end("}");
     }
     gen.end("}");
 }
@@ -176,13 +205,13 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
         schema::Type::Integer => "number".to_string(),
         schema::Type::Float => "number".to_string(),
         schema::Type::String => "string".to_string(),
-        schema::Type::UUID => "UUID".to_string(),
+        schema::Type::UUID => "webwire.UUID".to_string(),
         schema::Type::Date => "Date".to_string(),
         schema::Type::Time => "Time".to_string(),
         schema::Type::DateTime => "DateTime".to_string(),
         schema::Type::Option(some) => format!("Option<{}>", gen_typeref(some)),
         schema::Type::Result(ok, err) => {
-            format!("Result<{}, {}>", gen_typeref(ok), gen_typeref(err))
+            format!("webwire.Result<{}, {}>", gen_typeref(ok), gen_typeref(err))
         }
         // complex types
         schema::Type::Array(array) => format!("Array<{}>", gen_typeref(&array.item_type)),
@@ -193,6 +222,8 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
         ),
         // named
         schema::Type::Ref(typeref) => {
+            let ns = typeref.fqtn.ns.join(".");
+            let fqtn = format!("{}.{}", ns, typeref.fqtn.name);
             if !typeref.generics.is_empty() {
                 let generics = typeref
                     .generics
@@ -200,9 +231,9 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
                     .map(gen_typeref)
                     .collect::<Vec<_>>()
                     .join(", ");
-                format!("{}<{}>", typeref.fqtn.name, generics)
+                format!("{}<{}>", fqtn, generics)
             } else {
-                typeref.fqtn.name.to_string()
+                fqtn
             }
         }
     }
