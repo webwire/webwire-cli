@@ -137,17 +137,22 @@ fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
             .map(|p| p.parent())
             .flatten()
             .ok_or_else(|| "base_dir could not be determined from source")?;
-        let mut included_files: HashSet<String> = HashSet::new();
-        let mut includes = idocs[0].includes.clone();
+        let mut included_files: HashSet<PathBuf> = HashSet::new();
+        let mut includes = idocs[0]
+            .includes
+            .iter()
+            .map(|p| (base_dir.join(&p.filename)))
+            .collect::<Vec<_>>();
         while !includes.is_empty() {
             let include = includes.remove(0);
-            if included_files.contains(&include.filename) {
+            if included_files.contains(&include) {
                 continue;
             }
-            included_files.insert(include.filename.clone());
-            let source = Source::File(base_dir.join(include.filename));
+            included_files.insert(include.clone());
+            let source = Source::File(include.clone());
             let idoc = idl::parse_document(&source.read()?).map_err(|e| format!("{}", e))?;
-            includes.extend(idoc.includes.iter().cloned());
+            let dir = include.parent().unwrap();
+            includes.extend(idoc.includes.iter().map(|inc| dir.join(&inc.filename)));
             idocs.push(idoc);
         }
     }
