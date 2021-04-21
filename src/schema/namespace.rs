@@ -22,7 +22,9 @@ pub struct Namespace {
 }
 
 impl Namespace {
-    pub(crate) fn from_idl<'a>(inss: impl Iterator<Item = &'a crate::idl::Namespace>) -> Result<Self, ValidationError> {
+    pub(crate) fn from_idl<'a>(
+        inss: impl Iterator<Item = &'a crate::idl::Namespace>,
+    ) -> Result<Self, ValidationError> {
         let mut ns = Self::default();
         let mut type_map = TypeMap::new();
         for ins in inss {

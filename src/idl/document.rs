@@ -48,9 +48,9 @@ pub fn parse_document(input: &str) -> Result<Document, ParseError> {
                     name: String::default(),
                     position: FilePosition { line: 1, column: 1 },
                     parts: ns_parts,
-                }
+                },
             })
-        },
+        }
         Ok((garbage, _)) => Err(ParseError::TrailingGarbage(garbage)),
         Err(error) => Err(ParseError::Nom(error)),
     }
@@ -98,7 +98,10 @@ fn test_parse_document() {
         Ok(Document {
             includes: vec![Include {
                 filename: "common.ww".to_string(),
-                position: FilePosition { line: 2, column: 17 },
+                position: FilePosition {
+                    line: 2,
+                    column: 17
+                },
             }],
             ns: Namespace {
                 name: "".to_string(),
@@ -166,7 +169,10 @@ fn test_parse_document() {
                     }),
                     NamespacePart::Service(Service {
                         name: "Pinger".to_string(),
-                        position: FilePosition { line: 10, column: 9 },
+                        position: FilePosition {
+                            line: 10,
+                            column: 9
+                        },
                         methods: vec![
                             Method {
                                 name: "ping".to_string(),
