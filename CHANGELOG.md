@@ -1,8 +1,10 @@
 # Change Log
 
-## v0.1.2 (unreleased)
+## v0.1.2
 
 * Add support for include directive
+* Improve type validation
+* Improve code generators for Rust and TypeScript
 
 ## v0.1.1
 
