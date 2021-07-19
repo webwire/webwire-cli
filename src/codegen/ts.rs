@@ -80,6 +80,11 @@ fn gen_type(type_: &schema::UserDefinedType, gen: &mut Generator) {
 
 fn gen_enum(enum_: &schema::Enum, gen: &mut Generator) {
     let enum_name = &enum_.fqtn.name;
+    if enum_.variants.is_empty() {
+        gen.line(&format!("export type _{}Variants = never", enum_name));
+        gen.line(&format!("export type {} = never", enum_.fqtn.name));
+        return;
+    }
     gen.line(&format!(
         "export type _{}Variants = {}",
         enum_name,
@@ -189,9 +194,14 @@ fn gen_consumer(ns: &schema::Namespace, service: &schema::Service, gen: &mut Gen
         } else {
             format!("{}.{}", ns.path.join("."), service.name)
         };
+        let input_param = if method.input.is_some() {
+            ", input"
+        } else {
+            ""
+        };
         gen.line(&format!(
-            "return await this._client.request('{}', '{}', input)",
-            fqsn, method.name
+            "return await this._client.request('{}', '{}'{})",
+            fqsn, method.name, input_param,
         ));
         gen.end("}");
     }
