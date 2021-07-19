@@ -216,9 +216,9 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
         schema::Type::Float => "number".to_string(),
         schema::Type::String => "string".to_string(),
         schema::Type::UUID => "webwire.UUID".to_string(),
-        schema::Type::Date => "Date".to_string(),
-        schema::Type::Time => "Time".to_string(),
-        schema::Type::DateTime => "DateTime".to_string(),
+        schema::Type::Date => "webwire.Date".to_string(),
+        schema::Type::Time => "webwire.Time".to_string(),
+        schema::Type::DateTime => "webwire.DateTime".to_string(),
         schema::Type::Option(some) => format!("Option<{}>", gen_typeref(some)),
         schema::Type::Result(ok, err) => {
             format!("webwire.Result<{}, {}>", gen_typeref(ok), gen_typeref(err))
