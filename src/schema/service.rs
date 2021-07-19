@@ -19,7 +19,11 @@ pub struct Method {
 }
 
 impl Service {
-    pub(crate) fn from_idl(iservice: &idl::Service, ns: &Namespace, builtin_types: &HashMap<String, String>) -> Self {
+    pub(crate) fn from_idl(
+        iservice: &idl::Service,
+        ns: &Namespace,
+        builtin_types: &HashMap<String, String>,
+    ) -> Self {
         Self {
             name: iservice.name.clone(),
             methods: iservice

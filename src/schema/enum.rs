@@ -20,7 +20,11 @@ pub struct EnumVariant {
 }
 
 impl Enum {
-    pub(crate) fn from_idl(ienum: &idl::Enum, ns: &Namespace, builtin_types: &HashMap<String, String>) -> Self {
+    pub(crate) fn from_idl(
+        ienum: &idl::Enum,
+        ns: &Namespace,
+        builtin_types: &HashMap<String, String>,
+    ) -> Self {
         let variants = ienum
             .variants
             .iter()

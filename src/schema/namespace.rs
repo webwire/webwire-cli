@@ -10,7 +10,7 @@ use super::errors::ValidationError;
 use super::fieldset::Fieldset;
 use super::r#enum::Enum;
 use super::r#struct::Struct;
-use super::r#type::{UserDefinedType};
+use super::r#type::UserDefinedType;
 use super::service::Service;
 use super::typemap::TypeMap;
 
@@ -75,13 +75,19 @@ impl Namespace {
                 }
                 idl::NamespacePart::Fieldset(ifieldset) => {
                     self.add_type(
-                        UserDefinedType::Fieldset(Fieldset::from_idl(&ifieldset, self, &builtin_types)),
+                        UserDefinedType::Fieldset(Fieldset::from_idl(
+                            &ifieldset,
+                            self,
+                            &builtin_types,
+                        )),
                         type_map,
                     );
                 }
                 idl::NamespacePart::Service(iservice) => {
-                    self.services
-                        .insert(iservice.name.clone(), Service::from_idl(iservice, self, &builtin_types));
+                    self.services.insert(
+                        iservice.name.clone(),
+                        Service::from_idl(iservice, self, &builtin_types),
+                    );
                     // This is done in the next step. Since services do not
                     // define any types we can ignore the merging and just
                     // delay processing of the service to the resolve step.

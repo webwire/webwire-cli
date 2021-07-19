@@ -249,9 +249,7 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
             } else {
                 fqtn
             }
-        },
-        schema::Type::Builtin(name) => {
-            name.to_string()
-        },
+        }
+        schema::Type::Builtin(name) => name.to_string(),
     }
 }

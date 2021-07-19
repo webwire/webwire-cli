@@ -28,7 +28,11 @@ pub struct Field {
 }
 
 impl Struct {
-    pub(crate) fn from_idl(istruct: &idl::Struct, ns: &Namespace, builtin_types: &HashMap<String, String>) -> Self {
+    pub(crate) fn from_idl(
+        istruct: &idl::Struct,
+        ns: &Namespace,
+        builtin_types: &HashMap<String, String>,
+    ) -> Self {
         let fields = istruct
             .fields
             .iter()
@@ -50,7 +54,11 @@ impl Struct {
 }
 
 impl Field {
-    pub fn from_idl(ifield: &idl::Field, ns: &Namespace, builtin_types: &HashMap<String, String>) -> Self {
+    pub fn from_idl(
+        ifield: &idl::Field,
+        ns: &Namespace,
+        builtin_types: &HashMap<String, String>,
+    ) -> Self {
         let mut length: (Option<i64>, Option<i64>) = (None, None);
         let mut format: Option<String> = None;
         for option in &ifield.options {
