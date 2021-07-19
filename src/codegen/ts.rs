@@ -232,8 +232,12 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
         ),
         // named
         schema::Type::Ref(typeref) => {
-            let ns = typeref.fqtn.ns.join(".");
-            let fqtn = format!("{}.{}", ns, typeref.fqtn.name);
+            let fqtn = if typeref.fqtn.ns.is_empty() {
+                typeref.fqtn.name.clone()
+            } else {
+                let ns = typeref.fqtn.ns.join(".");
+                format!("{}.{}", ns, typeref.fqtn.name)
+            };
             if !typeref.generics.is_empty() {
                 let generics = typeref
                     .generics
