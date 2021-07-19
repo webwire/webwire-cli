@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::idl;
 
 use super::errors::ValidationError;
@@ -17,7 +19,7 @@ pub struct Method {
 }
 
 impl Service {
-    pub(crate) fn from_idl(iservice: &idl::Service, ns: &Namespace) -> Self {
+    pub(crate) fn from_idl(iservice: &idl::Service, ns: &Namespace, builtin_types: &HashMap<String, String>) -> Self {
         Self {
             name: iservice.name.clone(),
             methods: iservice
@@ -26,12 +28,12 @@ impl Service {
                 .map(|imethod| Method {
                     name: imethod.name.clone(),
                     input: if let Some(x) = &imethod.input {
-                        Some(Type::from_idl(x, ns))
+                        Some(Type::from_idl(x, ns, &builtin_types))
                     } else {
                         None
                     },
                     output: if let Some(x) = &imethod.output {
-                        Some(Type::from_idl(x, ns))
+                        Some(Type::from_idl(x, ns, &builtin_types))
                     } else {
                         None
                     },

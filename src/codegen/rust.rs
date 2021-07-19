@@ -444,5 +444,12 @@ fn gen_typeref(type_: &schema::Type, ns: &NS) -> TokenStream {
                 }
             }
         }
+        schema::Type::Builtin(name) => {
+            // FIXME unwrap... igh!
+            let identifier: TokenStream = ::syn::parse_str(name).unwrap();
+            quote! {
+                #identifier
+            }
+        }
     }
 }

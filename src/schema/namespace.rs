@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::collections::{btree_map::Entry as BTreeMapEntry, BTreeMap};
 use std::rc::Rc;
 
@@ -9,7 +10,7 @@ use super::errors::ValidationError;
 use super::fieldset::Fieldset;
 use super::r#enum::Enum;
 use super::r#struct::Struct;
-use super::r#type::UserDefinedType;
+use super::r#type::{UserDefinedType};
 use super::service::Service;
 use super::typemap::TypeMap;
 
@@ -24,11 +25,12 @@ pub struct Namespace {
 impl Namespace {
     pub(crate) fn from_idl<'a>(
         inss: impl Iterator<Item = &'a crate::idl::Namespace>,
+        builtin_types: &HashMap<String, String>,
     ) -> Result<Self, ValidationError> {
         let mut ns = Self::default();
         let mut type_map = TypeMap::new();
         for ins in inss {
-            ns.idl_convert(ins, &mut type_map)?;
+            ns.idl_convert(ins, &mut type_map, &builtin_types)?;
         }
         ns.resolve(&type_map)?;
         Ok(ns)
@@ -43,6 +45,7 @@ impl Namespace {
         &mut self,
         ins: &crate::idl::Namespace,
         type_map: &mut TypeMap,
+        builtin_types: &HashMap<String, String>,
     ) -> Result<(), ValidationError> {
         let mut names: BTreeMap<String, FilePosition> = BTreeMap::new();
         for ipart in ins.parts.iter() {
@@ -60,25 +63,25 @@ impl Namespace {
             match ipart {
                 idl::NamespacePart::Enum(ienum) => {
                     self.add_type(
-                        UserDefinedType::Enum(Enum::from_idl(&ienum, self)),
+                        UserDefinedType::Enum(Enum::from_idl(&ienum, self, &builtin_types)),
                         type_map,
                     );
                 }
                 idl::NamespacePart::Struct(istruct) => {
                     self.add_type(
-                        UserDefinedType::Struct(Struct::from_idl(&istruct, self)),
+                        UserDefinedType::Struct(Struct::from_idl(&istruct, self, &builtin_types)),
                         type_map,
                     );
                 }
                 idl::NamespacePart::Fieldset(ifieldset) => {
                     self.add_type(
-                        UserDefinedType::Fieldset(Fieldset::from_idl(&ifieldset, self)),
+                        UserDefinedType::Fieldset(Fieldset::from_idl(&ifieldset, self, &builtin_types)),
                         type_map,
                     );
                 }
                 idl::NamespacePart::Service(iservice) => {
                     self.services
-                        .insert(iservice.name.clone(), Service::from_idl(iservice, self));
+                        .insert(iservice.name.clone(), Service::from_idl(iservice, self, &builtin_types));
                     // This is done in the next step. Since services do not
                     // define any types we can ignore the merging and just
                     // delay processing of the service to the resolve step.
@@ -87,7 +90,7 @@ impl Namespace {
                     let mut child_ns = Self::default();
                     child_ns.path = self.path.clone();
                     child_ns.path.push(ipart.name().to_owned());
-                    child_ns.idl_convert(&inamespace, type_map)?;
+                    child_ns.idl_convert(&inamespace, type_map, &builtin_types)?;
                     self.namespaces.insert(inamespace.name.to_owned(), child_ns);
                 }
             };

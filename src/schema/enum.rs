@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::idl;
 
 use super::errors::ValidationError;
@@ -18,14 +20,14 @@ pub struct EnumVariant {
 }
 
 impl Enum {
-    pub(crate) fn from_idl(ienum: &idl::Enum, ns: &Namespace) -> Self {
+    pub(crate) fn from_idl(ienum: &idl::Enum, ns: &Namespace, builtin_types: &HashMap<String, String>) -> Self {
         let variants = ienum
             .variants
             .iter()
             .map(|ivariant| EnumVariant {
                 name: ivariant.name.clone(),
                 value_type: match &ivariant.value_type {
-                    Some(itype) => Some(Type::from_idl(itype, &ns)),
+                    Some(itype) => Some(Type::from_idl(itype, &ns, &builtin_types)),
                     None => None,
                 },
             })

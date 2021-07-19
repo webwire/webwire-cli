@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Weak;
 
 use crate::common::FilePosition;
@@ -32,6 +33,8 @@ pub enum Type {
     Map(Box<Map>),
     // named
     Ref(TypeRef),
+    // bultin (user provided)
+    Builtin(String),
 }
 
 #[derive(Clone)]
@@ -61,7 +64,11 @@ pub enum UserDefinedType {
 }
 
 impl Type {
-    pub(crate) fn from_idl_ref(ityperef: &idl::TypeRef, ns: &Namespace) -> Self {
+    pub(crate) fn from_idl_ref(
+        ityperef: &idl::TypeRef,
+        ns: &Namespace,
+        builtin_types: &HashMap<String, String>,
+    ) -> Self {
         // FIXME this should fail with an error when fqtn.ns is not empty
         match ityperef.name.as_str() {
             "None" => Self::None,
@@ -73,27 +80,38 @@ impl Type {
             "Date" => Self::Date,
             "Time" => Self::Time,
             "DateTime" => Self::DateTime,
-            "Option" => Self::Option(Box::new(Type::from_idl(&ityperef.generics[0], ns))),
+            "Option" => Self::Option(Box::new(Type::from_idl(
+                &ityperef.generics[0],
+                ns,
+                &builtin_types,
+            ))),
             "Result" => Self::Result(
-                Box::new(Type::from_idl(&ityperef.generics[0], ns)),
-                Box::new(Type::from_idl(&ityperef.generics[1], ns)),
+                Box::new(Type::from_idl(&ityperef.generics[0], ns, &builtin_types)),
+                Box::new(Type::from_idl(&ityperef.generics[1], ns, &builtin_types)),
             ),
-            _ => Self::Ref(TypeRef::from_idl(ityperef, ns)),
+            name => match builtin_types.get(name) {
+                Some(value) => Self::Builtin(value.to_owned()),
+                None => Self::Ref(TypeRef::from_idl(ityperef, ns, &builtin_types)),
+            },
         }
     }
-    pub(crate) fn from_idl(itype: &idl::Type, ns: &Namespace) -> Self {
+    pub(crate) fn from_idl(
+        itype: &idl::Type,
+        ns: &Namespace,
+        builtin_types: &HashMap<String, String>,
+    ) -> Self {
         match itype {
-            idl::Type::Ref(ityperef) => Self::from_idl_ref(&ityperef, &ns),
+            idl::Type::Ref(ityperef) => Self::from_idl_ref(&ityperef, &ns, &builtin_types),
             idl::Type::Array(item_type) => Self::Array(Box::new(Array {
-                item_type: Self::from_idl(item_type, ns),
+                item_type: Self::from_idl(item_type, ns, &builtin_types),
                 length: Range {
                     start: None,
                     end: None,
                 }, // FIXME
             })),
             idl::Type::Map(key_type, value_type) => Self::Map(Box::new(Map {
-                key_type: Self::from_idl(key_type, ns),
-                value_type: Self::from_idl(value_type, ns),
+                key_type: Self::from_idl(key_type, ns, &builtin_types),
+                value_type: Self::from_idl(value_type, ns, &builtin_types),
                 length: Range {
                     start: None,
                     end: None,
@@ -123,6 +141,8 @@ impl Type {
             Self::Map(map) => map.resolve(type_map),
             // named
             Self::Ref(typeref) => typeref.resolve(type_map),
+            // builtin (user defined)
+            Self::Builtin(_) => Ok(()),
         }
     }
     /// Returns wether this type is scalar type or not.
@@ -142,19 +162,24 @@ impl Type {
             Self::Array(_) => false,
             Self::Map(_) => false,
             Self::Ref(_) => false,
+            Self::Builtin(_) => true,
         }
     }
 }
 
 impl TypeRef {
-    pub(crate) fn from_idl(ityperef: &idl::TypeRef, ns: &Namespace) -> Self {
+    pub(crate) fn from_idl(
+        ityperef: &idl::TypeRef,
+        ns: &Namespace,
+        builtin_types: &HashMap<String, String>,
+    ) -> Self {
         Self {
             fqtn: FQTN::from_idl(ityperef, ns),
             type_: Weak::new(),
             generics: ityperef
                 .generics
                 .iter()
-                .map(|itype| Type::from_idl(itype, ns))
+                .map(|itype| Type::from_idl(itype, ns, &builtin_types))
                 .collect(),
         }
     }

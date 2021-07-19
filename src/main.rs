@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
 use std::path::{Path, PathBuf};
@@ -55,7 +55,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )),
                 )
                 .arg(Arg::with_name("source"))
-                .arg(Arg::with_name("target")),
+                .arg(Arg::with_name("target"))
+                .arg(
+                    Arg::with_name("type")
+                        .short("t")
+                        .long("type")
+                        .help("Type name that should be treated as a built-in type")
+                        .takes_value(true),
+                ),
         )
         .get_matches();
 
@@ -157,8 +164,23 @@ fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    let types = args
+        .values_of("type")
+        .unwrap_or_default()
+        .map(|v| {
+            let parts = v.splitn(2, "=").collect::<Vec<_>>();
+            if parts.len() == 1 {
+                (parts[0].to_owned(), parts[0].to_owned())
+            } else if parts.len() == 2 {
+                (parts[0].to_owned(), parts[1].to_owned())
+            } else {
+                unreachable!();
+            }
+        })
+        .collect::<HashMap<_, _>>();
+
     // Convert IDL to Schema
-    let doc = schema::Document::from_idl(idocs.iter())?;
+    let doc = schema::Document::from_idl(idocs.iter(), &types)?;
 
     // Call code generator function
     let target_code = gen_fn(&doc);

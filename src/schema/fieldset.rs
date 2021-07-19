@@ -24,11 +24,15 @@ pub struct FieldsetField {
 }
 
 impl Fieldset {
-    pub(crate) fn from_idl(ifieldset: &idl::Fieldset, ns: &Namespace) -> Self {
+    pub(crate) fn from_idl(
+        ifieldset: &idl::Fieldset,
+        ns: &Namespace,
+        builtin_types: &HashMap<String, String>,
+    ) -> Self {
         Self {
             fqtn: FQTN::new(&ifieldset.name, ns),
             generics: ifieldset.generics.clone(),
-            r#struct: TypeRef::from_idl(&ifieldset.r#struct, ns),
+            r#struct: TypeRef::from_idl(&ifieldset.r#struct, ns, &builtin_types),
             fields: ifieldset
                 .fields
                 .iter()

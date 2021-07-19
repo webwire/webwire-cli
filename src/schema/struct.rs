@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::common::FilePosition;
 use crate::idl;
 
@@ -26,11 +28,11 @@ pub struct Field {
 }
 
 impl Struct {
-    pub(crate) fn from_idl(istruct: &idl::Struct, ns: &Namespace) -> Self {
+    pub(crate) fn from_idl(istruct: &idl::Struct, ns: &Namespace, builtin_types: &HashMap<String, String>) -> Self {
         let fields = istruct
             .fields
             .iter()
-            .map(|ifield| Field::from_idl(ifield, ns))
+            .map(|ifield| Field::from_idl(ifield, ns, &builtin_types))
             .collect();
         Self {
             fqtn: FQTN::new(&istruct.name, ns),
@@ -48,7 +50,7 @@ impl Struct {
 }
 
 impl Field {
-    pub fn from_idl(ifield: &idl::Field, ns: &Namespace) -> Self {
+    pub fn from_idl(ifield: &idl::Field, ns: &Namespace, builtin_types: &HashMap<String, String>) -> Self {
         let mut length: (Option<i64>, Option<i64>) = (None, None);
         let mut format: Option<String> = None;
         for option in &ifield.options {
@@ -61,7 +63,7 @@ impl Field {
         }
         Field {
             name: ifield.name.clone(),
-            type_: Type::from_idl(&ifield.type_, ns),
+            type_: Type::from_idl(&ifield.type_, ns, &builtin_types),
             optional: ifield.optional,
             // FIXME add options
             //options: ifield.options
