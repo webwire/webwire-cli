@@ -143,7 +143,7 @@ fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
         let base_dir = path
             .map(|p| p.parent())
             .flatten()
-            .ok_or_else(|| "base_dir could not be determined from source")?;
+            .ok_or("base_dir could not be determined from source")?;
         let mut included_files: HashSet<PathBuf> = HashSet::new();
         let mut includes = idocs[0]
             .includes
@@ -168,7 +168,7 @@ fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
         .values_of("type")
         .unwrap_or_default()
         .map(|v| {
-            let parts = v.splitn(2, "=").collect::<Vec<_>>();
+            let parts = v.splitn(2, '=').collect::<Vec<_>>();
             if parts.len() == 1 {
                 (parts[0].to_owned(), parts[0].to_owned())
             } else if parts.len() == 2 {

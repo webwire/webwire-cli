@@ -31,16 +31,14 @@ impl Service {
                 .iter()
                 .map(|imethod| Method {
                     name: imethod.name.clone(),
-                    input: if let Some(x) = &imethod.input {
-                        Some(Type::from_idl(x, ns, &builtin_types))
-                    } else {
-                        None
-                    },
-                    output: if let Some(x) = &imethod.output {
-                        Some(Type::from_idl(x, ns, &builtin_types))
-                    } else {
-                        None
-                    },
+                    input: imethod
+                        .input
+                        .as_ref()
+                        .map(|x| Type::from_idl(x, ns, &builtin_types)),
+                    output: imethod
+                        .output
+                        .as_ref()
+                        .map(|x| Type::from_idl(x, ns, &builtin_types)),
                 })
                 .collect(),
         }

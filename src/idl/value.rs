@@ -77,7 +77,7 @@ fn test_parse_value_string() {
 
 pub fn parse_integer_dec(input: Span) -> IResult<Span, i64> {
     map_res(pair(opt(one_of("+-")), digit1), |(sign, number)| {
-        i64::from_str_radix(format!("{}{}", sign.unwrap_or('+'), number).as_str(), 10)
+        format!("{}{}", sign.unwrap_or('+'), number).parse::<i64>()
     })(input)
 }
 

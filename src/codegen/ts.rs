@@ -33,9 +33,9 @@ impl Generator {
     }
 }
 
-impl Into<String> for Generator {
-    fn into(self) -> String {
-        self.output
+impl From<Generator> for String {
+    fn from(gen: Generator) -> Self {
+        gen.output
     }
 }
 

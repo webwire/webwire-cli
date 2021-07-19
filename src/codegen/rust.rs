@@ -3,8 +3,6 @@ use quote::quote;
 
 use crate::schema;
 
-type NS = Vec<String>;
-
 pub fn gen(doc: &schema::Document) -> String {
     let stream = generate(doc);
     let code = format!("{}", stream);
@@ -51,7 +49,7 @@ fn gen_namespace(ns: &schema::Namespace) -> TokenStream {
     stream
 }
 
-fn gen_type(type_: &schema::UserDefinedType, ns: &NS) -> TokenStream {
+fn gen_type(type_: &schema::UserDefinedType, ns: &[String]) -> TokenStream {
     match type_ {
         schema::UserDefinedType::Enum(enum_) => gen_enum(enum_, ns),
         schema::UserDefinedType::Struct(struct_) => gen_struct(struct_, ns),
@@ -59,7 +57,7 @@ fn gen_type(type_: &schema::UserDefinedType, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_enum(enum_: &schema::Enum, ns: &NS) -> TokenStream {
+fn gen_enum(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", &enum_.fqtn.name);
     let variants = gen_enum_variants(enum_, ns);
     quote! {
@@ -70,7 +68,7 @@ fn gen_enum(enum_: &schema::Enum, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_enum_variants(enum_: &schema::Enum, ns: &NS) -> TokenStream {
+fn gen_enum_variants(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
     let mut stream = TokenStream::new();
     for variant in enum_.variants.iter() {
         stream.extend(gen_enum_variant(variant, ns));
@@ -78,7 +76,7 @@ fn gen_enum_variants(enum_: &schema::Enum, ns: &NS) -> TokenStream {
     stream
 }
 
-fn gen_enum_variant(variant: &schema::EnumVariant, ns: &NS) -> TokenStream {
+fn gen_enum_variant(variant: &schema::EnumVariant, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", variant.name);
     if let Some(value_type) = &variant.value_type {
         let value_type = gen_typeref(value_type, ns);
@@ -92,7 +90,7 @@ fn gen_enum_variant(variant: &schema::EnumVariant, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_struct(struct_: &schema::Struct, ns: &NS) -> TokenStream {
+fn gen_struct(struct_: &schema::Struct, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", &struct_.fqtn.name);
     let fields = gen_struct_fields(struct_, ns);
     quote! {
@@ -103,7 +101,7 @@ fn gen_struct(struct_: &schema::Struct, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_struct_fields(struct_: &schema::Struct, ns: &NS) -> TokenStream {
+fn gen_struct_fields(struct_: &schema::Struct, ns: &[String]) -> TokenStream {
     let mut stream = TokenStream::new();
     for field in struct_.fields.iter() {
         stream.extend(gen_struct_field(field, ns))
@@ -111,7 +109,7 @@ fn gen_struct_fields(struct_: &schema::Struct, ns: &NS) -> TokenStream {
     stream
 }
 
-fn gen_struct_field(field: &schema::Field, ns: &NS) -> TokenStream {
+fn gen_struct_field(field: &schema::Field, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", field.name);
     let mut type_ = gen_typeref(&field.type_, ns);
     if field.optional {
@@ -141,7 +139,7 @@ fn gen_validation_macros(field: &schema::Field) -> TokenStream {
     }
 }
 
-fn gen_fieldset(fieldset: &schema::Fieldset, ns: &NS) -> TokenStream {
+fn gen_fieldset(fieldset: &schema::Fieldset, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", &fieldset.fqtn.name);
     let fields = gen_fieldset_fields(fieldset, ns);
     quote! {
@@ -152,7 +150,7 @@ fn gen_fieldset(fieldset: &schema::Fieldset, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_fieldset_fields(struct_: &schema::Fieldset, ns: &NS) -> TokenStream {
+fn gen_fieldset_fields(struct_: &schema::Fieldset, ns: &[String]) -> TokenStream {
     let mut stream = TokenStream::new();
     for field in struct_.fields.iter() {
         stream.extend(gen_fieldset_field(field, ns))
@@ -160,7 +158,7 @@ fn gen_fieldset_fields(struct_: &schema::Fieldset, ns: &NS) -> TokenStream {
     stream
 }
 
-fn gen_fieldset_field(field: &schema::FieldsetField, ns: &NS) -> TokenStream {
+fn gen_fieldset_field(field: &schema::FieldsetField, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", field.name);
     let mut type_ = gen_typeref(&field.field.as_ref().unwrap().type_, ns);
     if field.optional {
@@ -171,7 +169,7 @@ fn gen_fieldset_field(field: &schema::FieldsetField, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_service(service: &schema::Service, ns: &NS) -> TokenStream {
+fn gen_service(service: &schema::Service, ns: &[String]) -> TokenStream {
     let service_name = quote::format_ident!("{}", &service.name);
     let methods = gen_service_methods(&service, ns);
     quote! {
@@ -183,7 +181,7 @@ fn gen_service(service: &schema::Service, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_service_methods(service: &schema::Service, ns: &NS) -> TokenStream {
+fn gen_service_methods(service: &schema::Service, ns: &[String]) -> TokenStream {
     let mut stream = TokenStream::new();
     for method in service.methods.iter() {
         let signature = gen_service_method_signature(method, ns);
@@ -194,7 +192,7 @@ fn gen_service_methods(service: &schema::Service, ns: &NS) -> TokenStream {
     stream
 }
 
-fn gen_service_method_signature(method: &schema::Method, ns: &NS) -> TokenStream {
+fn gen_service_method_signature(method: &schema::Method, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", method.name);
     let input_arg = match &method.input {
         Some(type_) => {
@@ -212,7 +210,7 @@ fn gen_service_method_signature(method: &schema::Method, ns: &NS) -> TokenStream
     }
 }
 
-fn gen_provider(service: &schema::Service, ns: &NS) -> TokenStream {
+fn gen_provider(service: &schema::Service, ns: &[String]) -> TokenStream {
     let service_name = quote::format_ident!("{}", service.name);
     let service_name_str = if ns.is_empty() {
         service.name.to_owned()
@@ -254,7 +252,7 @@ fn gen_provider(service: &schema::Service, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_provider_matches(service: &schema::Service, ns: &NS) -> TokenStream {
+fn gen_provider_matches(service: &schema::Service, ns: &[String]) -> TokenStream {
     let mut stream = TokenStream::new();
     for method in service.methods.iter() {
         let name = quote::format_ident!("{}", method.name);
@@ -302,7 +300,7 @@ fn gen_provider_matches(service: &schema::Service, ns: &NS) -> TokenStream {
     stream
 }
 
-fn gen_consumer(service: &schema::Service, ns: &NS) -> TokenStream {
+fn gen_consumer(service: &schema::Service, ns: &[String]) -> TokenStream {
     let consumer_name = quote::format_ident!("{}Consumer", service.name);
     let consumer_methods = gen_consumer_methods(&service, ns);
     quote! {
@@ -313,7 +311,7 @@ fn gen_consumer(service: &schema::Service, ns: &NS) -> TokenStream {
     }
 }
 
-fn gen_consumer_methods(service: &schema::Service, ns: &NS) -> TokenStream {
+fn gen_consumer_methods(service: &schema::Service, ns: &[String]) -> TokenStream {
     let mut stream = TokenStream::new();
     let service_name_str = if ns.is_empty() {
         service.name.to_owned()
@@ -346,7 +344,7 @@ fn gen_consumer_methods(service: &schema::Service, ns: &NS) -> TokenStream {
     stream
 }
 
-fn gen_consumer_method_signature(method: &schema::Method, ns: &NS) -> TokenStream {
+fn gen_consumer_method_signature(method: &schema::Method, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", method.name);
     let input_arg = match &method.input {
         Some(type_) => {
@@ -364,7 +362,7 @@ fn gen_consumer_method_signature(method: &schema::Method, ns: &NS) -> TokenStrea
     }
 }
 
-fn gen_typeref(type_: &schema::Type, ns: &NS) -> TokenStream {
+fn gen_typeref(type_: &schema::Type, ns: &[String]) -> TokenStream {
     match type_ {
         schema::Type::None => quote! { () },
         schema::Type::Boolean => quote! { bool },

@@ -30,10 +30,10 @@ impl Enum {
             .iter()
             .map(|ivariant| EnumVariant {
                 name: ivariant.name.clone(),
-                value_type: match &ivariant.value_type {
-                    Some(itype) => Some(Type::from_idl(itype, &ns, &builtin_types)),
-                    None => None,
-                },
+                value_type: ivariant
+                    .value_type
+                    .as_ref()
+                    .map(|itype| Type::from_idl(itype, &ns, &builtin_types)),
             })
             .collect();
         Self {

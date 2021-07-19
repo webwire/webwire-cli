@@ -93,8 +93,10 @@ impl Namespace {
                     // delay processing of the service to the resolve step.
                 }
                 idl::NamespacePart::Namespace(inamespace) => {
-                    let mut child_ns = Self::default();
-                    child_ns.path = self.path.clone();
+                    let mut child_ns = Self {
+                        path: self.path.clone(),
+                        ..Default::default()
+                    };
                     child_ns.path.push(ipart.name().to_owned());
                     child_ns.idl_convert(&inamespace, type_map, &builtin_types)?;
                     self.namespaces.insert(inamespace.name.to_owned(), child_ns);

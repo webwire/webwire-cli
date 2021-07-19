@@ -21,9 +21,6 @@ impl TypeMap {
             .insert(type_rc.borrow().fqtn().clone(), Rc::downgrade(type_rc));
     }
     pub fn get(&self, fqtn: &FQTN) -> Option<Weak<RefCell<UserDefinedType>>> {
-        match self.map.get(fqtn) {
-            Some(type_rc) => Some(type_rc.clone()),
-            None => None,
-        }
+        self.map.get(fqtn).cloned()
     }
 }
