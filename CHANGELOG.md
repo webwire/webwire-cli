@@ -1,5 +1,13 @@
 # Change Log
 
+## v0.1.3
+
+* Add support for user defined builtin types
+* Fix TS generation issues:
+  * references to root namespace
+  * empty enums
+  * date/time types
+
 ## v0.1.2
 
 * Add support for include directive
