@@ -1,6 +1,6 @@
 # Change Log
 
-## v0.1.4 (unreleased)
+## v0.1.4
 
 * Fix TS generation for Option type
 
