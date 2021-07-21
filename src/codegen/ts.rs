@@ -219,7 +219,7 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
         schema::Type::Date => "webwire.Date".to_string(),
         schema::Type::Time => "webwire.Time".to_string(),
         schema::Type::DateTime => "webwire.DateTime".to_string(),
-        schema::Type::Option(some) => format!("Option<{}>", gen_typeref(some)),
+        schema::Type::Option(some) => format!("webwire.Option<{}>", gen_typeref(some)),
         schema::Type::Result(ok, err) => {
             format!("webwire.Result<{}, {}>", gen_typeref(ok), gen_typeref(err))
         }

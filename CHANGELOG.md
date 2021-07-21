@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.1.4 (unreleased)
+
+* Fix TS generation for Option type
+
 ## v0.1.3
 
 * Add support for user defined builtin types
