@@ -60,18 +60,42 @@ fn gen_type(type_: &schema::UserDefinedType, ns: &[String]) -> TokenStream {
 fn gen_enum(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
     let name = quote::format_ident!("{}", &enum_.fqtn.name);
     let variants = gen_enum_variants(enum_, ns);
-    quote! {
+    let mut stream = TokenStream::new();
+    stream.extend(quote! {
         #[derive(Clone, Debug, Eq, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
         pub enum #name {
             #variants
         }
+    });
+    if let Some(extends) = enum_.extends() {
+        let extends_name = quote::format_ident!("{}", &extends.fqtn.name);
+        let mut matches = TokenStream::new();
+        for variant in extends.all_variants.iter() {
+            let variant_name = quote::format_ident!("{}", variant.name);
+            matches.extend(quote! {
+                #extends_name::#variant_name => #name::#variant_name,
+            });
+        }
+        stream.extend(quote! {
+            impl From<#extends_name> for #name {
+                fn from(other: #extends_name) -> Self {
+                    match other {
+                        #matches
+                    }
+                }
+            }
+        });
     }
+    stream
 }
 
 fn gen_enum_variants(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
     let mut stream = TokenStream::new();
     for variant in enum_.variants.iter() {
         stream.extend(gen_enum_variant(variant, ns));
+    }
+    if let Some(extends) = enum_.extends() {
+        stream.extend(gen_enum_variants(&extends, ns));
     }
     stream
 }

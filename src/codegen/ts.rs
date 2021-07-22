@@ -80,7 +80,7 @@ fn gen_type(type_: &schema::UserDefinedType, gen: &mut Generator) {
 
 fn gen_enum(enum_: &schema::Enum, gen: &mut Generator) {
     let enum_name = &enum_.fqtn.name;
-    if enum_.variants.is_empty() {
+    if enum_.all_variants.is_empty() {
         gen.line(&format!("export type _{}Variants = never", enum_name));
         gen.line(&format!("export type {} = never", enum_.fqtn.name));
         return;
@@ -89,14 +89,14 @@ fn gen_enum(enum_: &schema::Enum, gen: &mut Generator) {
         "export type _{}Variants = {}",
         enum_name,
         enum_
-            .variants
+            .all_variants
             .iter()
             .map(|v| format!("\"{}\"", v.name))
             .collect::<Vec<_>>()
             .join(" | ")
     ));
     gen.begin(&format!("export type {} =", enum_.fqtn.name));
-    for variant in &enum_.variants {
+    for variant in enum_.all_variants.iter() {
         gen.line(&match &variant.value_type {
             Some(value_type) => format!(
                 "| {{ [P in Exclude<_{}Variants, \"{}\">]?: never }} & {{ {}: {} }}",

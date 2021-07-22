@@ -18,11 +18,13 @@ use crate::idl::r#type::{parse_type, Type};
 #[cfg(test)]
 use crate::idl::common::assert_parse;
 
+use super::{r#type::parse_type_ref, TypeRef};
+
 #[derive(Debug, PartialEq)]
 pub struct Enum {
     pub name: String,
     pub generics: Vec<String>,
-    pub extends: Option<Type>,
+    pub extends: Option<TypeRef>,
     pub variants: Vec<EnumVariant>,
     pub position: FilePosition,
 }
@@ -50,12 +52,12 @@ pub fn parse_enum(input: Span) -> IResult<Span, Enum> {
     )(input)
 }
 
-fn parse_enum_extends(input: Span) -> IResult<Span, Option<Type>> {
+fn parse_enum_extends(input: Span) -> IResult<Span, Option<TypeRef>> {
     context(
         "enum_extends",
         opt(preceded(
             terminated(preceded(ws1, tag("extends")), ws1),
-            parse_type,
+            parse_type_ref,
         )),
     )(input)
 }
@@ -253,12 +255,12 @@ fn test_parse_enum_extends() {
                 name: "GetError".to_string(),
                 generics: vec![],
                 position: FilePosition { line: 1, column: 1 },
-                extends: Some(Type::Ref(TypeRef {
+                extends: Some(TypeRef {
                     abs: false,
                     ns: vec![],
                     name: "GenericError".to_string(),
                     generics: vec![],
-                })),
+                }),
                 variants: vec![],
             },
         )

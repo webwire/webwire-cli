@@ -30,6 +30,11 @@ pub enum ValidationError {
         r#struct: FQTN,
         field: String,
     },
+    EnumExtendsNonEnum {
+        position: FilePosition,
+        r#enum: FQTN,
+        extends: FQTN,
+    },
 }
 
 impl fmt::Display for ValidationError {
