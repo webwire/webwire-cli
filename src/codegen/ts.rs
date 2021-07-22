@@ -54,7 +54,7 @@ pub fn gen(doc: &schema::Document) -> String {
 fn gen_namespace(ns: &schema::Namespace, gen: &mut Generator) {
     for type_ in ns.types.values() {
         gen.line("");
-        gen_type(&*type_.borrow(), gen);
+        gen_type(&*type_, gen);
     }
     for service in ns.services.values() {
         gen.line("");
@@ -72,9 +72,9 @@ fn gen_namespace(ns: &schema::Namespace, gen: &mut Generator) {
 
 fn gen_type(type_: &schema::UserDefinedType, gen: &mut Generator) {
     match type_ {
-        schema::UserDefinedType::Enum(enum_) => gen_enum(enum_, gen),
-        schema::UserDefinedType::Struct(struct_) => gen_struct(struct_, gen),
-        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(fieldset, gen),
+        schema::UserDefinedType::Enum(enum_) => gen_enum(&*enum_.borrow(), gen),
+        schema::UserDefinedType::Struct(struct_) => gen_struct(&*struct_.borrow(), gen),
+        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(&*fieldset.borrow(), gen),
     }
 }
 
@@ -232,15 +232,16 @@ pub fn gen_typeref(type_: &schema::Type) -> String {
         ),
         // named
         schema::Type::Ref(typeref) => {
-            let fqtn = if typeref.fqtn.ns.is_empty() {
-                typeref.fqtn.name.clone()
+            let typeref_fqtn = typeref.fqtn();
+            let fqtn = if typeref_fqtn.ns.is_empty() {
+                typeref_fqtn.name.clone()
             } else {
-                let ns = typeref.fqtn.ns.join(".");
-                format!("{}.{}", ns, typeref.fqtn.name)
+                let ns = typeref_fqtn.ns.join(".");
+                format!("{}.{}", ns, typeref_fqtn.name)
             };
-            if !typeref.generics.is_empty() {
-                let generics = typeref
-                    .generics
+            let generics = typeref.generics();
+            if !generics.is_empty() {
+                let generics = generics
                     .iter()
                     .map(gen_typeref)
                     .collect::<Vec<_>>()

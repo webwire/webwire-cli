@@ -1,8 +1,9 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::common::FilePosition;
 use crate::idl;
-use crate::schema::UserDefinedType;
 
 use super::errors::ValidationError;
 use super::fqtn::FQTN;
@@ -70,26 +71,29 @@ impl Enum {
     fn resolve_extends(&self) -> Result<Vec<EnumVariant>, ValidationError> {
         let mut variants = self.variants.clone();
         if let Some(extends) = &self.extends {
-            let extends_rc = extends.type_.upgrade().unwrap();
-            let extends_type = extends_rc.borrow();
-            if let UserDefinedType::Enum(extends_type) = &*extends_type {
-                variants.extend(extends_type.resolve_extends()?);
+            if let TypeRef::Enum(extends_enum) = extends {
+                variants.extend(
+                    extends_enum
+                        .enum_
+                        .upgrade()
+                        .unwrap()
+                        .borrow()
+                        .resolve_extends()?,
+                );
             } else {
                 return Err(ValidationError::EnumExtendsNonEnum {
                     position: FilePosition { line: 0, column: 0 },
                     r#enum: self.fqtn.clone(),
-                    extends: extends_type.fqtn().clone(),
+                    extends: extends.fqtn(),
                 });
             }
         }
         Ok(variants)
     }
-    pub fn extends(&self) -> Option<Enum> {
+    pub fn extends(&self) -> Option<Rc<RefCell<Enum>>> {
         if let Some(extends) = &self.extends {
-            let extends_rc = extends.type_.upgrade().unwrap();
-            let extends_type = extends_rc.borrow();
-            if let UserDefinedType::Enum(extends_type) = &*extends_type {
-                Some(extends_type.clone())
+            if let TypeRef::Enum(extends) = extends {
+                Some(extends.enum_.upgrade().unwrap())
             } else {
                 None
             }

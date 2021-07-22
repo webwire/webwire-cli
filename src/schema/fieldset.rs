@@ -7,7 +7,7 @@ use super::errors::ValidationError;
 use super::fqtn::FQTN;
 use super::namespace::Namespace;
 use super::r#struct::Field;
-use super::r#type::{TypeRef, UserDefinedType};
+use super::r#type::TypeRef;
 use super::typemap::TypeMap;
 
 pub struct Fieldset {
@@ -46,9 +46,10 @@ impl Fieldset {
     }
     pub(crate) fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
         self.r#struct.resolve(type_map)?;
-        let struct_ = self.r#struct.type_.upgrade().unwrap();
-        if let UserDefinedType::Struct(struct_) = &*struct_.borrow() {
-            let field_map = struct_
+        if let TypeRef::Struct(struct_) = &self.r#struct {
+            let struct_rc = struct_.struct_.upgrade().unwrap();
+            let struct_borrow = struct_rc.borrow();
+            let field_map = struct_borrow
                 .fields
                 .iter()
                 .map(|f| (f.name.clone(), f))
@@ -60,7 +61,7 @@ impl Fieldset {
                     return Err(ValidationError::NoSuchField {
                         position: FilePosition { line: 0, column: 0 },
                         fieldset: self.fqtn.clone(),
-                        r#struct: struct_.fqtn.clone(),
+                        r#struct: struct_borrow.fqtn.clone(),
                         field: field.name.clone(),
                     });
                 }
@@ -69,7 +70,7 @@ impl Fieldset {
             return Err(ValidationError::FieldsetExtendsNonStruct {
                 position: FilePosition { line: 0, column: 0 },
                 fieldset: self.fqtn.clone(),
-                r#struct: struct_.borrow().fqtn().clone(),
+                r#struct: self.r#struct.fqtn().clone(),
             });
         }
         // FIXME fields need to be resolved, too.

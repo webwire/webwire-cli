@@ -26,7 +26,7 @@ pub fn generate(doc: &schema::Document) -> TokenStream {
 fn gen_namespace(ns: &schema::Namespace) -> TokenStream {
     let mut stream = TokenStream::new();
     for type_ in ns.types.values() {
-        let type_stream = gen_type(&*type_.borrow(), &ns.path);
+        let type_stream = gen_type(type_, &ns.path);
         stream.extend(type_stream);
     }
     for service in ns.services.values() {
@@ -51,9 +51,9 @@ fn gen_namespace(ns: &schema::Namespace) -> TokenStream {
 
 fn gen_type(type_: &schema::UserDefinedType, ns: &[String]) -> TokenStream {
     match type_ {
-        schema::UserDefinedType::Enum(enum_) => gen_enum(enum_, ns),
-        schema::UserDefinedType::Struct(struct_) => gen_struct(struct_, ns),
-        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(fieldset, ns),
+        schema::UserDefinedType::Enum(enum_) => gen_enum(&enum_.borrow(), ns),
+        schema::UserDefinedType::Struct(struct_) => gen_struct(&struct_.borrow(), ns),
+        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(&fieldset.borrow(), ns),
     }
 }
 
@@ -68,6 +68,7 @@ fn gen_enum(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
         }
     });
     if let Some(extends) = enum_.extends() {
+        let extends = extends.borrow();
         let extends_name = quote::format_ident!("{}", &extends.fqtn.name);
         let mut matches = TokenStream::new();
         for variant in extends.all_variants.iter() {
@@ -95,7 +96,7 @@ fn gen_enum_variants(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
         stream.extend(gen_enum_variant(variant, ns));
     }
     if let Some(extends) = enum_.extends() {
-        stream.extend(gen_enum_variants(&extends, ns));
+        stream.extend(gen_enum_variants(&extends.borrow(), ns));
     }
     stream
 }
@@ -423,8 +424,8 @@ fn gen_typeref(type_: &schema::Type, ns: &[String]) -> TokenStream {
         // named
         schema::Type::Ref(typeref) => {
             let mut generics_stream = TokenStream::new();
-            if !typeref.generics.is_empty() {
-                for generic in typeref.generics.iter() {
+            if !typeref.generics().is_empty() {
+                for generic in typeref.generics().iter() {
                     let type_ = gen_typeref(generic, ns);
                     generics_stream.extend(quote! {
                         #type_,
@@ -434,8 +435,8 @@ fn gen_typeref(type_: &schema::Type, ns: &[String]) -> TokenStream {
                     < #generics_stream >
                 }
             }
-            let common_ns = typeref
-                .fqtn
+            let typeref_fqtn = typeref.fqtn();
+            let common_ns = typeref_fqtn
                 .ns
                 .iter()
                 .zip(ns.iter())
@@ -445,7 +446,7 @@ fn gen_typeref(type_: &schema::Type, ns: &[String]) -> TokenStream {
                 .iter()
                 .map(|_| quote::format_ident!("super"))
                 .chain(
-                    typeref.fqtn.ns[common_ns..]
+                    typeref_fqtn.ns[common_ns..]
                         .iter()
                         .map(|x| quote::format_ident!("{}", x)),
                 )
@@ -455,7 +456,7 @@ fn gen_typeref(type_: &schema::Type, ns: &[String]) -> TokenStream {
                     stream
                 });
             // FIXME fqtn
-            match &*typeref.fqtn.name {
+            match &*typeref_fqtn.name {
                 // FIXME `None` should be made into a buitlin type
                 "None" => quote! { () },
                 name => {

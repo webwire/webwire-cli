@@ -17,7 +17,7 @@ use super::typemap::TypeMap;
 #[derive(Default)]
 pub struct Namespace {
     pub path: Vec<String>,
-    pub types: BTreeMap<String, Rc<RefCell<UserDefinedType>>>,
+    pub types: BTreeMap<String, UserDefinedType>,
     pub services: BTreeMap<String, Service>,
     pub namespaces: BTreeMap<String, Namespace>,
 }
@@ -36,10 +36,8 @@ impl Namespace {
         Ok(ns)
     }
     fn add_type(&mut self, type_: UserDefinedType, type_map: &mut TypeMap) {
-        let type_rc = Rc::new(RefCell::new(type_));
-        type_map.insert(&type_rc);
-        let name = type_rc.borrow().name().to_owned();
-        self.types.insert(name, type_rc);
+        type_map.insert(&type_);
+        self.types.insert(type_.fqtn().name.to_owned(), type_);
     }
     fn idl_convert(
         &mut self,
@@ -63,23 +61,31 @@ impl Namespace {
             match ipart {
                 idl::NamespacePart::Enum(ienum) => {
                     self.add_type(
-                        UserDefinedType::Enum(Enum::from_idl(&ienum, self, &builtin_types)),
+                        UserDefinedType::Enum(Rc::new(RefCell::new(Enum::from_idl(
+                            &ienum,
+                            self,
+                            &builtin_types,
+                        )))),
                         type_map,
                     );
                 }
                 idl::NamespacePart::Struct(istruct) => {
                     self.add_type(
-                        UserDefinedType::Struct(Struct::from_idl(&istruct, self, &builtin_types)),
+                        UserDefinedType::Struct(Rc::new(RefCell::new(Struct::from_idl(
+                            &istruct,
+                            self,
+                            &builtin_types,
+                        )))),
                         type_map,
                     );
                 }
                 idl::NamespacePart::Fieldset(ifieldset) => {
                     self.add_type(
-                        UserDefinedType::Fieldset(Fieldset::from_idl(
+                        UserDefinedType::Fieldset(Rc::new(RefCell::new(Fieldset::from_idl(
                             &ifieldset,
                             self,
                             &builtin_types,
-                        )),
+                        )))),
                         type_map,
                     );
                 }
@@ -106,8 +112,8 @@ impl Namespace {
         Ok(())
     }
     fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
-        for type_rc in self.types.values() {
-            type_rc.borrow_mut().resolve(type_map)?;
+        for ud_type in self.types.values_mut() {
+            ud_type.resolve(type_map)?;
         }
         for service in self.services.values_mut() {
             service.resolve(type_map)?;

@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Weak;
+use std::rc::{Rc, Weak};
 
 use crate::common::FilePosition;
 use crate::idl;
@@ -38,9 +38,28 @@ pub enum Type {
 }
 
 #[derive(Clone)]
-pub struct TypeRef {
-    pub fqtn: FQTN,
-    pub type_: Weak<RefCell<UserDefinedType>>,
+pub enum TypeRef {
+    Enum(EnumRef),
+    Struct(StructRef),
+    Fieldset(FieldsetRef),
+    Unresolved { fqtn: FQTN, generics: Vec<Type> },
+}
+
+#[derive(Clone)]
+pub struct EnumRef {
+    pub enum_: Weak<RefCell<Enum>>,
+    pub generics: Vec<Type>,
+}
+#[derive(Clone)]
+
+pub struct StructRef {
+    pub struct_: Weak<RefCell<Struct>>,
+    pub generics: Vec<Type>,
+}
+
+#[derive(Clone)]
+pub struct FieldsetRef {
+    pub fieldset: Weak<RefCell<Fieldset>>,
     pub generics: Vec<Type>,
 }
 
@@ -57,10 +76,11 @@ pub struct Map {
     pub value_type: Type,
 }
 
+#[derive(Clone)]
 pub enum UserDefinedType {
-    Enum(Enum),
-    Struct(Struct),
-    Fieldset(Fieldset),
+    Enum(Rc<RefCell<Enum>>),
+    Struct(Rc<RefCell<Struct>>),
+    Fieldset(Rc<RefCell<Fieldset>>),
 }
 
 impl Type {
@@ -173,9 +193,8 @@ impl TypeRef {
         ns: &Namespace,
         builtin_types: &HashMap<String, String>,
     ) -> Self {
-        Self {
+        Self::Unresolved {
             fqtn: FQTN::from_idl(ityperef, ns),
-            type_: Weak::new(),
             generics: ityperef
                 .generics
                 .iter()
@@ -184,27 +203,59 @@ impl TypeRef {
         }
     }
     pub(crate) fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
-        let type_ = type_map.get(&self.fqtn);
-        let position = FilePosition { line: 0, column: 0 }; // FIXME
-        self.type_ = match type_ {
-            Some(type_) => {
-                let ud_type = &*type_.upgrade().unwrap();
-                if self.generics.len() != ud_type.borrow().generics().len() {
-                    return Err(ValidationError::GenericsMissmatch {
-                        fqtn: self.fqtn.clone(),
-                        position,
-                    });
+        if let Self::Unresolved { fqtn, generics } = self {
+            let ud_type = type_map.get(fqtn);
+            let position = FilePosition { line: 0, column: 0 }; // FIXME
+            *self = match ud_type {
+                Some(ud_type) => {
+                    if generics.len() != ud_type.generics().len() {
+                        return Err(ValidationError::GenericsMissmatch {
+                            fqtn: fqtn.clone(),
+                            position,
+                        });
+                    }
+                    match ud_type {
+                        UserDefinedType::Enum(enum_) => TypeRef::Enum(EnumRef {
+                            enum_: Rc::downgrade(&enum_),
+                            generics: generics.clone(),
+                        }),
+                        UserDefinedType::Struct(struct_) => TypeRef::Struct(StructRef {
+                            struct_: Rc::downgrade(&struct_),
+                            generics: generics.clone(),
+                        }),
+                        UserDefinedType::Fieldset(fieldset) => TypeRef::Fieldset(FieldsetRef {
+                            fieldset: Rc::downgrade(&fieldset),
+                            generics: generics.clone(),
+                        }),
+                    }
                 }
-                type_
+                None => {
+                    return Err(ValidationError::NoSuchType {
+                        fqtn: fqtn.clone(),
+                        position,
+                    })
+                }
             }
-            None => {
-                return Err(ValidationError::NoSuchType {
-                    fqtn: self.fqtn.clone(),
-                    position,
-                })
-            }
-        };
+        }
         Ok(())
+    }
+    pub fn fqtn(&self) -> FQTN {
+        match self {
+            TypeRef::Enum(enum_) => enum_.enum_.upgrade().unwrap().borrow().fqtn.clone(),
+            TypeRef::Struct(struct_) => struct_.struct_.upgrade().unwrap().borrow().fqtn.clone(),
+            TypeRef::Fieldset(fieldset) => {
+                fieldset.fieldset.upgrade().unwrap().borrow().fqtn.clone()
+            }
+            TypeRef::Unresolved { fqtn, generics: _ } => fqtn.clone(),
+        }
+    }
+    pub fn generics(&self) -> &Vec<Type> {
+        match self {
+            TypeRef::Enum(enum_) => &enum_.generics,
+            TypeRef::Struct(struct_) => &struct_.generics,
+            TypeRef::Fieldset(fieldset) => &fieldset.generics,
+            TypeRef::Unresolved { fqtn: _, generics } => generics,
+        }
     }
 }
 
@@ -223,28 +274,25 @@ impl Map {
 }
 
 impl UserDefinedType {
-    pub fn fqtn(&self) -> &FQTN {
+    pub fn fqtn(&self) -> FQTN {
         match self {
-            Self::Enum(t) => &t.fqtn,
-            Self::Fieldset(t) => &t.fqtn,
-            Self::Struct(t) => &t.fqtn,
+            Self::Enum(t) => t.borrow().fqtn.clone(),
+            Self::Fieldset(t) => t.borrow().fqtn.clone(),
+            Self::Struct(t) => t.borrow().fqtn.clone(),
         }
-    }
-    pub fn name(&self) -> &str {
-        self.fqtn().name.as_str()
     }
     pub(crate) fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
         match self {
-            Self::Enum(t) => t.resolve(type_map),
-            Self::Fieldset(t) => t.resolve(type_map),
-            Self::Struct(t) => t.resolve(type_map),
+            Self::Enum(t) => t.borrow_mut().resolve(type_map),
+            Self::Fieldset(t) => t.borrow_mut().resolve(type_map),
+            Self::Struct(t) => t.borrow_mut().resolve(type_map),
         }
     }
-    pub(crate) fn generics(&self) -> &Vec<String> {
+    pub(crate) fn generics(&self) -> Vec<String> {
         match self {
-            Self::Enum(t) => &t.generics,
-            Self::Fieldset(t) => &t.generics,
-            Self::Struct(t) => &t.generics,
+            Self::Enum(t) => t.borrow().generics.clone(),
+            Self::Fieldset(t) => t.borrow().generics.clone(),
+            Self::Struct(t) => t.borrow().generics.clone(),
         }
     }
 }
@@ -260,10 +308,9 @@ fn test_schema_enum_extends() {
     let builtin_types = HashMap::default();
     let doc = crate::schema::Document::from_idl(idocs.iter(), &builtin_types).unwrap();
     let foo = doc.ns.types.get("Bar").unwrap();
-    let foo_ref = foo.borrow();
-    match &*foo_ref {
+    match foo {
         crate::schema::UserDefinedType::Enum(enum_) => {
-            assert!(enum_.extends.is_some());
+            assert!(enum_.borrow().extends.is_some());
         }
         _ => unreachable!(),
     }
