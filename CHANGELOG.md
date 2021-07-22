@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.1.5 (unreleased)
+
+* Fix code generation for enum extensions
+
 ## v0.1.4
 
 * Fix TS generation for Option type
