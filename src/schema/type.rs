@@ -33,7 +33,7 @@ pub enum Type {
     Map(Box<Map>),
     // named
     Ref(TypeRef),
-    // bultin (user provided)
+    // builtin (user provided)
     Builtin(String),
 }
 
