@@ -1,6 +1,6 @@
 # Change Log
 
-## v0.1.5 (unreleased)
+## v0.1.5
 
 * Fix code generation for enum extensions
 
