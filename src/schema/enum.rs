@@ -102,3 +102,55 @@ impl Enum {
         }
     }
 }
+
+#[test]
+fn test_schema_enum_extends() {
+    let idl = r"
+        enum Foo { Foo }
+        enum Bar extends Foo { Bar }
+    ";
+    let idoc = crate::idl::parse_document(idl).unwrap();
+    let idocs = vec![idoc];
+    let builtin_types = HashMap::default();
+    let doc = crate::schema::Document::from_idl(idocs.iter(), &builtin_types).unwrap();
+    let foo = doc.ns.types.get("Bar").unwrap();
+    match foo {
+        crate::schema::UserDefinedType::Enum(enum_) => {
+            assert!(enum_.borrow().extends.is_some());
+        }
+        _ => unreachable!(),
+    }
+}
+
+#[test]
+fn test_schema_enum_extends_different_namespace() {
+    let idl = r"
+        enum Foo { Foo }
+        namespace bar {
+            enum Bar extends ::Foo { Bar }
+        }
+        namespace baz {
+            enum Baz extends ::bar::Bar { Baz }
+        }
+    ";
+    let idoc = crate::idl::parse_document(idl).unwrap();
+    let idocs = vec![idoc];
+    let builtin_types = HashMap::default();
+    let doc = crate::schema::Document::from_idl(idocs.iter(), &builtin_types).unwrap();
+    let bar_ns = doc.ns.namespaces.get("bar").unwrap();
+    let bar_type = bar_ns.types.get("Bar").unwrap();
+    match bar_type {
+        crate::schema::UserDefinedType::Enum(enum_) => {
+            assert!(enum_.borrow().extends.is_some());
+        }
+        _ => unreachable!(),
+    }
+    let baz_ns = doc.ns.namespaces.get("baz").unwrap();
+    let baz_type = baz_ns.types.get("Baz").unwrap();
+    match baz_type {
+        crate::schema::UserDefinedType::Enum(enum_) => {
+            assert!(enum_.borrow().extends.is_some());
+        }
+        _ => unreachable!(),
+    }
+}

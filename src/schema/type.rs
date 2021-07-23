@@ -296,22 +296,3 @@ impl UserDefinedType {
         }
     }
 }
-
-#[test]
-fn test_schema_enum_extends() {
-    let idl = r"
-        enum Foo { Foo }
-        enum Bar extends Foo { Bar }
-    ";
-    let idoc = crate::idl::parse_document(idl).unwrap();
-    let idocs = vec![idoc];
-    let builtin_types = HashMap::default();
-    let doc = crate::schema::Document::from_idl(idocs.iter(), &builtin_types).unwrap();
-    let foo = doc.ns.types.get("Bar").unwrap();
-    match foo {
-        crate::schema::UserDefinedType::Enum(enum_) => {
-            assert!(enum_.borrow().extends.is_some());
-        }
-        _ => unreachable!(),
-    }
-}
