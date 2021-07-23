@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.1.6 (unreleased)
+
+* Fix rust code generation for enums extending type of
+  a different namespace
+
 ## v0.1.5
 
 * Fix code generation for enum extensions

@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::schema;
+use crate::schema::{self, TypeRef};
 
 pub fn gen(doc: &schema::Document) -> String {
     let stream = generate(doc);
@@ -67,19 +67,19 @@ fn gen_enum(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
             #variants
         }
     });
-    if let Some(extends) = enum_.extends() {
-        let extends = extends.borrow();
-        let extends_name = quote::format_ident!("{}", &extends.fqtn.name);
+    if let Some(extends) = &enum_.extends {
+        let extends_typeref = gen_typeref_ref(&extends, ns);
         let mut matches = TokenStream::new();
-        for variant in extends.all_variants.iter() {
+        let extends_enum = enum_.extends_enum().unwrap();
+        for variant in extends_enum.borrow().all_variants.iter() {
             let variant_name = quote::format_ident!("{}", variant.name);
             matches.extend(quote! {
-                #extends_name::#variant_name => #name::#variant_name,
+                #extends_typeref::#variant_name => #name::#variant_name,
             });
         }
         stream.extend(quote! {
-            impl From<#extends_name> for #name {
-                fn from(other: #extends_name) -> Self {
+            impl From<#extends_typeref> for #name {
+                fn from(other: #extends_typeref) -> Self {
                     match other {
                         #matches
                     }
@@ -95,7 +95,7 @@ fn gen_enum_variants(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
     for variant in enum_.variants.iter() {
         stream.extend(gen_enum_variant(variant, ns));
     }
-    if let Some(extends) = enum_.extends() {
+    if let Some(extends) = enum_.extends_enum() {
         stream.extend(gen_enum_variants(&extends.borrow(), ns));
     }
     stream
@@ -423,55 +423,59 @@ fn gen_typeref(type_: &schema::Type, ns: &[String]) -> TokenStream {
         }
         // named
         schema::Type::Ref(typeref) => {
-            let mut generics_stream = TokenStream::new();
-            if !typeref.generics().is_empty() {
-                for generic in typeref.generics().iter() {
-                    let type_ = gen_typeref(generic, ns);
-                    generics_stream.extend(quote! {
-                        #type_,
-                    })
-                }
-                generics_stream = quote! {
-                    < #generics_stream >
-                }
-            }
-            let typeref_fqtn = typeref.fqtn();
-            let common_ns = typeref_fqtn
-                .ns
-                .iter()
-                .zip(ns.iter())
-                .take_while(|(a, b)| a == b)
-                .count();
-            let relative_ns = ns[common_ns..]
-                .iter()
-                .map(|_| quote::format_ident!("super"))
-                .chain(
-                    typeref_fqtn.ns[common_ns..]
-                        .iter()
-                        .map(|x| quote::format_ident!("{}", x)),
-                )
-                .fold(TokenStream::new(), |mut stream, name| {
-                    let name = quote::format_ident!("{}", name);
-                    stream.extend(quote! { #name :: });
-                    stream
-                });
-            // FIXME fqtn
-            match &*typeref_fqtn.name {
-                // FIXME `None` should be made into a buitlin type
-                "None" => quote! { () },
-                name => {
-                    let name = quote::format_ident!("{}", name);
-                    quote! {
-                        #relative_ns #name #generics_stream
-                    }
-                }
-            }
+            gen_typeref_ref(typeref, ns)
         }
         schema::Type::Builtin(name) => {
             // FIXME unwrap... igh!
             let identifier: TokenStream = ::syn::parse_str(name).unwrap();
             quote! {
                 #identifier
+            }
+        }
+    }
+}
+
+fn gen_typeref_ref(typeref: &TypeRef, ns: &[String]) -> TokenStream {
+    let mut generics_stream = TokenStream::new();
+    if !typeref.generics().is_empty() {
+        for generic in typeref.generics().iter() {
+            let type_ = gen_typeref(generic, ns);
+            generics_stream.extend(quote! {
+                #type_,
+            })
+        }
+        generics_stream = quote! {
+            < #generics_stream >
+        }
+    }
+    let typeref_fqtn = typeref.fqtn();
+    let common_ns = typeref_fqtn
+        .ns
+        .iter()
+        .zip(ns.iter())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let relative_ns = ns[common_ns..]
+        .iter()
+        .map(|_| quote::format_ident!("super"))
+        .chain(
+            typeref_fqtn.ns[common_ns..]
+                .iter()
+                .map(|x| quote::format_ident!("{}", x)),
+        )
+        .fold(TokenStream::new(), |mut stream, name| {
+            let name = quote::format_ident!("{}", name);
+            stream.extend(quote! { #name :: });
+            stream
+        });
+    // FIXME fqtn
+    match &*typeref_fqtn.name {
+        // FIXME `None` should be made into a buitlin type
+        "None" => quote! { () },
+        name => {
+            let name = quote::format_ident!("{}", name);
+            quote! {
+                #relative_ns #name #generics_stream
             }
         }
     }

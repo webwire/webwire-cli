@@ -90,7 +90,7 @@ impl Enum {
         }
         Ok(variants)
     }
-    pub fn extends(&self) -> Option<Rc<RefCell<Enum>>> {
+    pub fn extends_enum(&self) -> Option<Rc<RefCell<Enum>>> {
         if let Some(extends) = &self.extends {
             if let TypeRef::Enum(extends) = extends {
                 Some(extends.enum_.upgrade().unwrap())
