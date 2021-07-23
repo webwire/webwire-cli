@@ -1,6 +1,6 @@
 [package]
 name = "webwire-cli"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Michael P. Jung <michael.jung@terreon.de>"]
 description = "Contract-First API System - Command Line Interface"
 keywords = ["webwire", "contract-first", "api", "cli", "codegen"]
