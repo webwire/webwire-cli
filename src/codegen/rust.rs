@@ -149,10 +149,15 @@ fn gen_struct_field(field: &schema::Field, ns: &[String]) -> TokenStream {
 
 fn gen_validation_macros(field: &schema::Field) -> TokenStream {
     let mut rules = TokenStream::new();
+    match field.format.as_deref() {
+        Some("email") => rules.extend(quote! { email, }),
+        Some("url") => rules.extend(quote! { url, }),
+        _ => {},
+    }
     match field.length {
-        (Some(min), Some(max)) => rules.extend(quote! { length(min=#min, max=#max) }),
-        (Some(min), None) => rules.extend(quote! { length(min=#min) }),
-        (None, Some(max)) => rules.extend(quote! { length(max=#max) }),
+        (Some(min), Some(max)) => rules.extend(quote! { length(min=#min, max=#max), }),
+        (Some(min), None) => rules.extend(quote! { length(min=#min), }),
+        (None, Some(max)) => rules.extend(quote! { length(max=#max), }),
         (None, None) => {}
     }
     if rules.is_empty() {
