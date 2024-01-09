@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::common::FilePosition;
 use crate::idl;
 
-use super::errors::ValidationError;
+use super::errors::{ValidationError, ValidationErrorCause};
 use super::fqtn::FQTN;
 use super::namespace::Namespace;
 use super::r#struct::Field;
@@ -58,19 +58,23 @@ impl Fieldset {
                 if let Some(&struct_field) = field_map.get(&field.name) {
                     field.field.replace(struct_field.clone());
                 } else {
-                    return Err(ValidationError::NoSuchField {
+                    return Err(ValidationError {
                         position: FilePosition { line: 0, column: 0 },
-                        fieldset: self.fqtn.clone(),
-                        r#struct: struct_borrow.fqtn.clone(),
-                        field: field.name.clone(),
+                        cause: Box::new(ValidationErrorCause::NoSuchField {
+                            fieldset: self.fqtn.clone(),
+                            r#struct: struct_borrow.fqtn.clone(),
+                            field: field.name.clone(),
+                        })
                     });
                 }
             }
         } else {
-            return Err(ValidationError::FieldsetExtendsNonStruct {
+            return Err(ValidationError {
                 position: FilePosition { line: 0, column: 0 },
-                fieldset: self.fqtn.clone(),
-                r#struct: self.r#struct.fqtn().clone(),
+                cause: Box::new(ValidationErrorCause::FieldsetExtendsNonStruct {
+                    fieldset: self.fqtn.clone(),
+                    r#struct: self.r#struct.fqtn().clone(),
+                })
             });
         }
         // FIXME fields need to be resolved, too.

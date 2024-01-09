@@ -5,7 +5,7 @@ use std::rc::{Rc, Weak};
 use crate::common::FilePosition;
 use crate::idl;
 
-use super::errors::ValidationError;
+use super::errors::{ValidationError, ValidationErrorCause};
 use super::fieldset::Fieldset;
 use super::fqtn::FQTN;
 use super::namespace::Namespace;
@@ -209,9 +209,11 @@ impl TypeRef {
             *self = match ud_type {
                 Some(ud_type) => {
                     if generics.len() != ud_type.generics().len() {
-                        return Err(ValidationError::GenericsMissmatch {
-                            fqtn: fqtn.clone(),
+                        return Err(ValidationError {
                             position,
+                            cause: Box::new(ValidationErrorCause::GenericsMissmatch {
+                                fqtn: fqtn.clone(),
+                            })
                         });
                     }
                     match ud_type {
@@ -230,9 +232,11 @@ impl TypeRef {
                     }
                 }
                 None => {
-                    return Err(ValidationError::NoSuchType {
-                        fqtn: fqtn.clone(),
+                    return Err(ValidationError {
                         position,
+                        cause: Box::new(ValidationErrorCause::NoSuchType {
+                            fqtn: fqtn.clone(),
+                        })
                     })
                 }
             }

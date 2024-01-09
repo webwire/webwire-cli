@@ -5,7 +5,7 @@ use std::rc::Rc;
 use crate::common::FilePosition;
 use crate::idl;
 
-use super::errors::ValidationError;
+use super::errors::{ValidationError, ValidationErrorCause};
 use super::fqtn::FQTN;
 use super::namespace::Namespace;
 use super::r#type::Type;
@@ -81,10 +81,12 @@ impl Enum {
                         .resolve_extends()?,
                 );
             } else {
-                return Err(ValidationError::EnumExtendsNonEnum {
+                return Err(ValidationError {
                     position: FilePosition { line: 0, column: 0 },
-                    r#enum: self.fqtn.clone(),
-                    extends: extends.fqtn(),
+                    cause: Box::new(ValidationErrorCause::EnumExtendsNonEnum {
+                        r#enum: self.fqtn.clone(),
+                        extends: extends.fqtn(),
+                    })
                 });
             }
         }

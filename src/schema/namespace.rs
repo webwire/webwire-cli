@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::common::FilePosition;
 use crate::idl;
 
-use super::errors::ValidationError;
+use super::errors::{ValidationError, ValidationErrorCause};
 use super::fieldset::Fieldset;
 use super::r#enum::Enum;
 use super::r#struct::Struct;
@@ -49,9 +49,11 @@ impl Namespace {
         for ipart in ins.parts.iter() {
             match names.entry(ipart.name().to_owned()) {
                 BTreeMapEntry::Occupied(entry) => {
-                    return Err(ValidationError::DuplicateIdentifier {
+                    return Err(ValidationError {
                         position: entry.get().clone(),
-                        identifier: ipart.name().to_owned(),
+                        cause: Box::new(ValidationErrorCause::DuplicateIdentifier {
+                            identifier: ipart.name().to_owned(),
+                        })
                     });
                 }
                 BTreeMapEntry::Vacant(entry) => {

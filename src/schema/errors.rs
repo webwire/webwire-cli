@@ -6,32 +6,32 @@ use crate::common::FilePosition;
 use super::fqtn::FQTN;
 
 #[derive(Debug)]
-pub enum ValidationError {
+pub struct ValidationError {
+    pub position: FilePosition,
+    pub cause: Box<ValidationErrorCause>,
+}
+
+#[derive(Debug)]
+pub enum ValidationErrorCause {
     DuplicateIdentifier {
-        position: FilePosition,
         identifier: String,
     },
     NoSuchType {
-        position: FilePosition,
         fqtn: FQTN,
     },
     GenericsMissmatch {
-        position: FilePosition,
         fqtn: FQTN,
     },
     FieldsetExtendsNonStruct {
-        position: FilePosition,
         fieldset: FQTN,
         r#struct: FQTN,
     },
     NoSuchField {
-        position: FilePosition,
         fieldset: FQTN,
         r#struct: FQTN,
         field: String,
     },
     EnumExtendsNonEnum {
-        position: FilePosition,
         r#enum: FQTN,
         extends: FQTN,
     },
