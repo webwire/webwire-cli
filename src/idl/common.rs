@@ -56,8 +56,8 @@ pub fn parse_identifier_with_generics(input: Span) -> IResult<Span, (String, Vec
 }
 
 #[cfg(test)]
-pub(crate) fn assert_parse<'a, T: std::fmt::Debug + PartialEq>(
-    output: IResult<LocatedSpan<&'a str>, T>,
+pub(crate) fn assert_parse<T: std::fmt::Debug + PartialEq>(
+    output: IResult<LocatedSpan<&str>, T>,
     expected_value: T,
 ) {
     assert!(output.is_ok(), "{:?}", output);

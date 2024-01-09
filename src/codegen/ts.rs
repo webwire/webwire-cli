@@ -54,7 +54,7 @@ pub fn gen(doc: &schema::Document) -> String {
 fn gen_namespace(ns: &schema::Namespace, gen: &mut Generator) {
     for type_ in ns.types.values() {
         gen.line("");
-        gen_type(&*type_, gen);
+        gen_type(type_, gen);
     }
     for service in ns.services.values() {
         gen.line("");
@@ -72,9 +72,9 @@ fn gen_namespace(ns: &schema::Namespace, gen: &mut Generator) {
 
 fn gen_type(type_: &schema::UserDefinedType, gen: &mut Generator) {
     match type_ {
-        schema::UserDefinedType::Enum(enum_) => gen_enum(&*enum_.borrow(), gen),
-        schema::UserDefinedType::Struct(struct_) => gen_struct(&*struct_.borrow(), gen),
-        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(&*fieldset.borrow(), gen),
+        schema::UserDefinedType::Enum(enum_) => gen_enum(&enum_.borrow(), gen),
+        schema::UserDefinedType::Struct(struct_) => gen_struct(&struct_.borrow(), gen),
+        schema::UserDefinedType::Fieldset(fieldset) => gen_fieldset(&fieldset.borrow(), gen),
     }
 }
 
@@ -160,20 +160,20 @@ fn gen_fieldset(fieldset: &schema::Fieldset, gen: &mut Generator) {
 
 fn method_signature(method: &schema::Method) -> String {
     let input = match &method.input {
-        Some(t) => format!("input: {}", gen_typeref(&t)),
+        Some(t) => format!("input: {}", gen_typeref(t)),
         None => String::new(),
     };
     let output = match &method.output {
         Some(t) => gen_typeref(t),
         None => "void".to_string(),
     };
-    format!("{}({}): Promise<{}>", method.name, input, output)
+    format!("{}({}): webwire.Response<{}>", method.name, input, output)
 }
 
 fn gen_service(service: &schema::Service, gen: &mut Generator) {
     gen.begin(&format!("export interface {} {{", service.name));
     for method in service.methods.iter() {
-        gen.line(&format!("{},", method_signature(&method)));
+        gen.line(&format!("{},", method_signature(method)));
     }
     gen.end("}");
 }
@@ -188,7 +188,7 @@ fn gen_consumer(ns: &schema::Namespace, service: &schema::Service, gen: &mut Gen
     gen.line("this._client = client");
     gen.end("}");
     for method in service.methods.iter() {
-        gen.begin(&format!("async {} {{", method_signature(&method)));
+        gen.begin(&format!("async {} {{", method_signature(method)));
         let fqsn = if ns.path.is_empty() {
             service.name.to_owned()
         } else {

@@ -41,13 +41,13 @@ impl Enum {
                 value_type: ivariant
                     .value_type
                     .as_ref()
-                    .map(|itype| Type::from_idl(itype, &ns, &builtin_types)),
+                    .map(|itype| Type::from_idl(itype, ns, builtin_types)),
             })
             .collect();
         let extends = ienum
             .extends
             .as_ref()
-            .map(|itype| TypeRef::from_idl(itype, &ns, &builtin_types));
+            .map(|itype| TypeRef::from_idl(itype, ns, builtin_types));
         Self {
             fqtn: FQTN::new(&ienum.name, ns),
             generics: ienum.generics.clone(),
@@ -91,12 +91,8 @@ impl Enum {
         Ok(variants)
     }
     pub fn extends_enum(&self) -> Option<Rc<RefCell<Enum>>> {
-        if let Some(extends) = &self.extends {
-            if let TypeRef::Enum(extends) = extends {
-                Some(extends.enum_.upgrade().unwrap())
-            } else {
-                None
-            }
+        if let Some(TypeRef::Enum(extends)) = &self.extends {
+            Some(extends.enum_.upgrade().unwrap())
         } else {
             None
         }
@@ -104,6 +100,7 @@ impl Enum {
 }
 
 #[test]
+#[allow(clippy::disallowed_names)]
 fn test_schema_enum_extends() {
     let idl = r"
         enum Foo { Foo }

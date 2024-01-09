@@ -36,7 +36,7 @@ impl Struct {
         let fields = istruct
             .fields
             .iter()
-            .map(|ifield| Field::from_idl(ifield, ns, &builtin_types))
+            .map(|ifield| Field::from_idl(ifield, ns, builtin_types))
             .collect();
         Self {
             fqtn: FQTN::new(&istruct.name, ns),
@@ -71,7 +71,7 @@ impl Field {
         }
         Field {
             name: ifield.name.clone(),
-            type_: Type::from_idl(&ifield.type_, ns, &builtin_types),
+            type_: Type::from_idl(&ifield.type_, ns, builtin_types),
             optional: ifield.optional,
             // FIXME add options
             //options: ifield.options

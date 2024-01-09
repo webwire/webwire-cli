@@ -30,7 +30,7 @@ impl Namespace {
         let mut ns = Self::default();
         let mut type_map = TypeMap::new();
         for ins in inss {
-            ns.idl_convert(ins, &mut type_map, &builtin_types)?;
+            ns.idl_convert(ins, &mut type_map, builtin_types)?;
         }
         ns.resolve(&type_map)?;
         Ok(ns)
@@ -62,9 +62,9 @@ impl Namespace {
                 idl::NamespacePart::Enum(ienum) => {
                     self.add_type(
                         UserDefinedType::Enum(Rc::new(RefCell::new(Enum::from_idl(
-                            &ienum,
+                            ienum,
                             self,
-                            &builtin_types,
+                            builtin_types,
                         )))),
                         type_map,
                     );
@@ -72,9 +72,9 @@ impl Namespace {
                 idl::NamespacePart::Struct(istruct) => {
                     self.add_type(
                         UserDefinedType::Struct(Rc::new(RefCell::new(Struct::from_idl(
-                            &istruct,
+                            istruct,
                             self,
-                            &builtin_types,
+                            builtin_types,
                         )))),
                         type_map,
                     );
@@ -82,9 +82,9 @@ impl Namespace {
                 idl::NamespacePart::Fieldset(ifieldset) => {
                     self.add_type(
                         UserDefinedType::Fieldset(Rc::new(RefCell::new(Fieldset::from_idl(
-                            &ifieldset,
+                            ifieldset,
                             self,
-                            &builtin_types,
+                            builtin_types,
                         )))),
                         type_map,
                     );
@@ -92,7 +92,7 @@ impl Namespace {
                 idl::NamespacePart::Service(iservice) => {
                     self.services.insert(
                         iservice.name.clone(),
-                        Service::from_idl(iservice, self, &builtin_types),
+                        Service::from_idl(iservice, self, builtin_types),
                     );
                     // This is done in the next step. Since services do not
                     // define any types we can ignore the merging and just
@@ -104,7 +104,7 @@ impl Namespace {
                         ..Default::default()
                     };
                     child_ns.path.push(ipart.name().to_owned());
-                    child_ns.idl_convert(&inamespace, type_map, &builtin_types)?;
+                    child_ns.idl_convert(inamespace, type_map, builtin_types)?;
                     self.namespaces.insert(inamespace.name.to_owned(), child_ns);
                 }
             };

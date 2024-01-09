@@ -37,7 +37,7 @@ fn parse_field(input: Span) -> IResult<Span, Field> {
         pair(preceded(ws, parse_identifier), preceded(ws, opt(char('?')))),
         |(name, optional)| Field {
             name,
-            optional: optional != None,
+            optional: optional.is_some(),
         },
     )(input)
 }

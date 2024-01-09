@@ -68,7 +68,7 @@ fn gen_enum(enum_: &schema::Enum, ns: &[String]) -> TokenStream {
         }
     });
     if let Some(extends) = &enum_.extends {
-        let extends_typeref = gen_typeref_ref(&extends, ns);
+        let extends_typeref = gen_typeref_ref(extends, ns);
         let mut matches = TokenStream::new();
         let extends_enum = enum_.extends_enum().unwrap();
         for variant in extends_enum.borrow().all_variants.iter() {
@@ -152,7 +152,7 @@ fn gen_validation_macros(field: &schema::Field) -> TokenStream {
     match field.format.as_deref() {
         Some("email") => rules.extend(quote! { email, }),
         Some("url") => rules.extend(quote! { url, }),
-        _ => {},
+        _ => {}
     }
     match field.length {
         (Some(min), Some(max)) => rules.extend(quote! { length(min=#min, max=#max), }),
@@ -201,7 +201,7 @@ fn gen_fieldset_field(field: &schema::FieldsetField, ns: &[String]) -> TokenStre
 
 fn gen_service(service: &schema::Service, ns: &[String]) -> TokenStream {
     let service_name = quote::format_ident!("{}", &service.name);
-    let methods = gen_service_methods(&service, ns);
+    let methods = gen_service_methods(service, ns);
     quote! {
         #[::async_trait::async_trait]
         pub trait #service_name {
@@ -248,7 +248,7 @@ fn gen_provider(service: &schema::Service, ns: &[String]) -> TokenStream {
         format!("{}.{}", ns.join("."), &service.name)
     };
     let provider_name = quote::format_ident!("{}Provider", service.name);
-    let matches = gen_provider_matches(&service, ns);
+    let matches = gen_provider_matches(service, ns);
     quote! {
         pub struct #provider_name<F>(pub F);
         // NamedProvider impl
@@ -332,7 +332,7 @@ fn gen_provider_matches(service: &schema::Service, ns: &[String]) -> TokenStream
 
 fn gen_consumer(service: &schema::Service, ns: &[String]) -> TokenStream {
     let consumer_name = quote::format_ident!("{}Consumer", service.name);
-    let consumer_methods = gen_consumer_methods(&service, ns);
+    let consumer_methods = gen_consumer_methods(service, ns);
     quote! {
         pub struct #consumer_name<'a>(pub &'a (dyn ::webwire::Consumer + ::std::marker::Sync + ::std::marker::Send));
         impl<'a> #consumer_name<'a> {
@@ -427,9 +427,7 @@ fn gen_typeref(type_: &schema::Type, ns: &[String]) -> TokenStream {
             }
         }
         // named
-        schema::Type::Ref(typeref) => {
-            gen_typeref_ref(typeref, ns)
-        }
+        schema::Type::Ref(typeref) => gen_typeref_ref(typeref, ns),
         schema::Type::Builtin(name) => {
             // FIXME unwrap... igh!
             let identifier: TokenStream = ::syn::parse_str(name).unwrap();

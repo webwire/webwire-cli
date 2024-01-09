@@ -32,7 +32,7 @@ impl Fieldset {
         Self {
             fqtn: FQTN::new(&ifieldset.name, ns),
             generics: ifieldset.generics.clone(),
-            r#struct: TypeRef::from_idl(&ifieldset.r#struct, ns, &builtin_types),
+            r#struct: TypeRef::from_idl(&ifieldset.r#struct, ns, builtin_types),
             fields: ifieldset
                 .fields
                 .iter()

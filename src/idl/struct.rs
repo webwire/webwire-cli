@@ -76,7 +76,7 @@ fn parse_field(input: Span) -> IResult<Span, Field> {
         |((name, optional), (type_, options))| Field {
             name,
             position: input.into(),
-            optional: optional != None,
+            optional: optional.is_some(),
             type_,
             options: if let Some(options) = options {
                 options
@@ -431,7 +431,7 @@ fn test_parse_struct_with_fields() {
 
 #[test]
 fn test_parse_struct_with_fields_ws_variants() {
-    let contents = vec![
+    let contents = [
         "struct Person{name:String,age:Integer}",
         "struct Person {name:String,age:Integer}",
         "struct Person{ name:String,age:Integer}",
@@ -481,7 +481,7 @@ fn test_parse_struct_with_generics() {
 
 #[test]
 fn test_parse_struct_with_generics_ws_variants() {
-    let contents = vec![
+    let contents = [
         "struct Wrapper<T>{value:T}",
         "struct Wrapper <T>{value:T}",
         "struct Wrapper< T>{value:T}",

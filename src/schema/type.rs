@@ -103,15 +103,15 @@ impl Type {
             "Option" => Self::Option(Box::new(Type::from_idl(
                 &ityperef.generics[0],
                 ns,
-                &builtin_types,
+                builtin_types,
             ))),
             "Result" => Self::Result(
-                Box::new(Type::from_idl(&ityperef.generics[0], ns, &builtin_types)),
-                Box::new(Type::from_idl(&ityperef.generics[1], ns, &builtin_types)),
+                Box::new(Type::from_idl(&ityperef.generics[0], ns, builtin_types)),
+                Box::new(Type::from_idl(&ityperef.generics[1], ns, builtin_types)),
             ),
             name => match builtin_types.get(name) {
                 Some(value) => Self::Builtin(value.to_owned()),
-                None => Self::Ref(TypeRef::from_idl(ityperef, ns, &builtin_types)),
+                None => Self::Ref(TypeRef::from_idl(ityperef, ns, builtin_types)),
             },
         }
     }
@@ -121,17 +121,17 @@ impl Type {
         builtin_types: &HashMap<String, String>,
     ) -> Self {
         match itype {
-            idl::Type::Ref(ityperef) => Self::from_idl_ref(&ityperef, &ns, &builtin_types),
+            idl::Type::Ref(ityperef) => Self::from_idl_ref(ityperef, ns, builtin_types),
             idl::Type::Array(item_type) => Self::Array(Box::new(Array {
-                item_type: Self::from_idl(item_type, ns, &builtin_types),
+                item_type: Self::from_idl(item_type, ns, builtin_types),
                 length: Range {
                     start: None,
                     end: None,
                 }, // FIXME
             })),
             idl::Type::Map(key_type, value_type) => Self::Map(Box::new(Map {
-                key_type: Self::from_idl(key_type, ns, &builtin_types),
-                value_type: Self::from_idl(value_type, ns, &builtin_types),
+                key_type: Self::from_idl(key_type, ns, builtin_types),
+                value_type: Self::from_idl(value_type, ns, builtin_types),
                 length: Range {
                     start: None,
                     end: None,
@@ -198,7 +198,7 @@ impl TypeRef {
             generics: ityperef
                 .generics
                 .iter()
-                .map(|itype| Type::from_idl(itype, ns, &builtin_types))
+                .map(|itype| Type::from_idl(itype, ns, builtin_types))
                 .collect(),
         }
     }
@@ -216,15 +216,15 @@ impl TypeRef {
                     }
                     match ud_type {
                         UserDefinedType::Enum(enum_) => TypeRef::Enum(EnumRef {
-                            enum_: Rc::downgrade(&enum_),
+                            enum_: Rc::downgrade(enum_),
                             generics: generics.clone(),
                         }),
                         UserDefinedType::Struct(struct_) => TypeRef::Struct(StructRef {
-                            struct_: Rc::downgrade(&struct_),
+                            struct_: Rc::downgrade(struct_),
                             generics: generics.clone(),
                         }),
                         UserDefinedType::Fieldset(fieldset) => TypeRef::Fieldset(FieldsetRef {
-                            fieldset: Rc::downgrade(&fieldset),
+                            fieldset: Rc::downgrade(fieldset),
                             generics: generics.clone(),
                         }),
                     }

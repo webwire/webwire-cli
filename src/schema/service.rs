@@ -34,11 +34,11 @@ impl Service {
                     input: imethod
                         .input
                         .as_ref()
-                        .map(|x| Type::from_idl(x, ns, &builtin_types)),
+                        .map(|x| Type::from_idl(x, ns, builtin_types)),
                     output: imethod
                         .output
                         .as_ref()
-                        .map(|x| Type::from_idl(x, ns, &builtin_types)),
+                        .map(|x| Type::from_idl(x, ns, builtin_types)),
                 })
                 .collect(),
         }
