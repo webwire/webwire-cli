@@ -3,74 +3,58 @@ use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
 use std::path::{Path, PathBuf};
 
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 use webwire_cli::codegen;
 use webwire_cli::idl;
 use webwire_cli::schema;
 
-type GenFn = fn(&schema::Document) -> String;
+#[derive(ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
+enum Language {
+    #[value(name = "rs", help = "Rust")]
+    Rust,
+    #[value(name = "ts", help = "TypeScript")]
+    TypeScript,
+}
 
-const LANGUAGES: &[(&str, &str, GenFn)] = &[
-    ("rust", "Rust", codegen::rust::gen),
-    ("ts", "TypeScript", codegen::ts::gen),
-];
+#[derive(Debug, Parser)]
+#[command(
+    name = env!("CARGO_PKG_NAME"),
+    version = env!("CARGO_PKG_VERSION"),
+    author = env!("CARGO_PKG_AUTHORS"),
+    about = format!("{}\n\nFor more information please visit {}",
+        env!("CARGO_PKG_DESCRIPTION"),
+        env!("CARGO_PKG_HOMEPAGE")
+    )
+)]
+struct Cli {
+    #[command(subcommand)]
+    command: Command,
+}
 
-fn get_gen_fn(lang: &str) -> Option<GenFn> {
-    LANGUAGES
-        .iter()
-        .find(|(name, _, _)| &lang == name)
-        .map(|(_, _, fn_)| *fn_)
+#[derive(Debug, Subcommand)]
+enum Command {
+    #[command(about = "Generate source")]
+    Gen(Gen),
+}
+
+#[derive(Debug, Parser)]
+struct Gen {
+    language: Language,
+    source: Option<String>,
+    target: Option<String>,
+    #[arg(
+        short,
+        long,
+        help = "Type name that should be treated as a built-in type"
+    )]
+    r#type: Option<Vec<String>>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let matches = App::new(env!("CARGO_PKG_NAME"))
-        .version(env!("CARGO_PKG_VERSION"))
-        .author(env!("CARGO_PKG_AUTHORS"))
-        .about(&*format!(
-            "{}\n\nFor more information please visit {}",
-            env!("CARGO_PKG_DESCRIPTION"),
-            env!("CARGO_PKG_HOMEPAGE")
-        ))
-        .subcommand(
-            SubCommand::with_name("gen")
-                .about("Generate source")
-                .arg(
-                    Arg::with_name("language")
-                        .required(true)
-                        .validator(|lang| match get_gen_fn(&lang) {
-                            Some(_) => Ok(()),
-                            None => Err(format!("Unsupported language: {}", lang)),
-                        })
-                        .long_help(&format!(
-                            "Available choices are:\n{}",
-                            LANGUAGES
-                                .iter()
-                                .map(|(name, description, _)| format!(
-                                    "        {}: {}",
-                                    name, description
-                                ))
-                                .collect::<Vec<_>>()
-                                .join("\n")
-                        )),
-                )
-                .arg(Arg::with_name("source"))
-                .arg(Arg::with_name("target"))
-                .arg(
-                    Arg::with_name("type")
-                        .short("t")
-                        .long("type")
-                        .help("Type name that should be treated as a built-in type")
-                        .takes_value(true),
-                ),
-        )
-        .get_matches();
-
-    if let Some(args) = matches.subcommand_matches("gen") {
-        cmd_gen(args)
-    } else {
-        println!("{}", matches.usage());
-        Ok(())
+    let args = Cli::parse();
+    match args.command {
+        Command::Gen(gen_args) => cmd_gen(&gen_args),
     }
 }
 
@@ -119,10 +103,8 @@ impl std::fmt::Display for GenError {
 
 impl std::error::Error for GenError {}
 
-fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
-    let gen_fn = get_gen_fn(args.value_of("language").unwrap()).unwrap();
-
-    let path = match args.value_of("source") {
+fn cmd_gen(args: &Gen) -> Result<(), Box<dyn std::error::Error>> {
+    let path = match args.source.as_deref() {
         None | Some("--") => None,
         Some(path) => Some(Path::new(path)),
     };
@@ -141,8 +123,7 @@ fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
             }));
         }
         let base_dir = path
-            .map(|p| p.parent())
-            .flatten()
+            .and_then(|p| p.parent())
             .ok_or("base_dir could not be determined from source")?;
         let mut included_files: HashSet<PathBuf> = HashSet::new();
         let mut includes = idocs[0]
@@ -165,8 +146,10 @@ fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let types = args
-        .values_of("type")
+        .r#type
+        .as_deref()
         .unwrap_or_default()
+        .iter()
         .map(|v| {
             let parts = v.splitn(2, '=').collect::<Vec<_>>();
             if parts.len() == 1 {
@@ -183,10 +166,13 @@ fn cmd_gen(args: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let doc = schema::Document::from_idl(idocs.iter(), &types)?;
 
     // Call code generator function
-    let target_code = gen_fn(&doc);
+    let target_code = match args.language {
+        Language::Rust => codegen::rust::gen(&doc),
+        Language::TypeScript => codegen::ts::gen(&doc),
+    };
 
     // Write target file
-    let mut target: Box<dyn Write> = match args.value_of("target") {
+    let mut target: Box<dyn Write> = match args.target.as_deref() {
         None | Some("--") => Box::new(stdout()),
         Some(filename) => Box::new(File::create(filename)?),
     };

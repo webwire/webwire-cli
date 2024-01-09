@@ -6,16 +6,17 @@ description = "Contract-First API System - Command Line Interface"
 keywords = ["webwire", "contract-first", "api", "cli", "codegen"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/webwire/webwire-cli"
+homepage = "https://webwire.dev/"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-clap = "2.33"
-nom = "6.0"
-nom_locate = "3.0"
+clap = { version = "4.4", features = ["derive"] }
+nom = "7.1"
+nom_locate = "4.2"
 proc-macro2 = "1.0"
 quote = "1.0"
-syn = { version = "1.0", features = ["parsing"] }
+syn = { version = "2.0", features = ["parsing"] }
 
 [[bin]]
 name = "webwire"
