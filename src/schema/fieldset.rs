@@ -64,7 +64,7 @@ impl Fieldset {
                             fieldset: self.fqtn.clone(),
                             r#struct: struct_borrow.fqtn.clone(),
                             field: field.name.clone(),
-                        })
+                        }),
                     });
                 }
             }
@@ -74,7 +74,7 @@ impl Fieldset {
                 cause: Box::new(ValidationErrorCause::FieldsetExtendsNonStruct {
                     fieldset: self.fqtn.clone(),
                     r#struct: self.r#struct.fqtn().clone(),
-                })
+                }),
             });
         }
         // FIXME fields need to be resolved, too.

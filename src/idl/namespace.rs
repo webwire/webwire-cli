@@ -37,13 +37,13 @@ impl NamespacePart {
             Self::Namespace(part) => &part.name,
         }
     }
-    pub fn position(&self) -> &FilePosition {
+    pub fn position(&self) -> FilePosition {
         match self {
-            Self::Enum(part) => &part.position,
-            Self::Struct(part) => &part.position,
-            Self::Fieldset(part) => &part.position,
-            Self::Service(part) => &part.position,
-            Self::Namespace(part) => &part.position,
+            Self::Enum(part) => part.position,
+            Self::Struct(part) => part.position,
+            Self::Fieldset(part) => part.position,
+            Self::Service(part) => part.position,
+            Self::Namespace(part) => part.position,
         }
     }
 }
@@ -144,6 +144,10 @@ fn test_parse_namespace() {
                             }),
                             optional: false,
                             options: vec![FieldOption {
+                                position: FilePosition {
+                                    line: 4,
+                                    column: 31,
+                                },
                                 name: "length".to_string(),
                                 value: Value::Range(Some(1), Some(50)),
                             }],

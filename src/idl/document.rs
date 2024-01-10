@@ -126,6 +126,10 @@ fn test_parse_document() {
                                 }),
                                 optional: false,
                                 options: vec![FieldOption {
+                                    position: FilePosition {
+                                        line: 4,
+                                        column: 27,
+                                    },
                                     name: "length".to_string(),
                                     value: Value::Range(Some(1), Some(50))
                                 }],

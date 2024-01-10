@@ -50,14 +50,14 @@ impl Namespace {
             match names.entry(ipart.name().to_owned()) {
                 BTreeMapEntry::Occupied(entry) => {
                     return Err(ValidationError {
-                        position: entry.get().clone(),
+                        position: *entry.get(),
                         cause: Box::new(ValidationErrorCause::DuplicateIdentifier {
                             identifier: ipart.name().to_owned(),
-                        })
+                        }),
                     });
                 }
                 BTreeMapEntry::Vacant(entry) => {
-                    entry.insert(ipart.position().clone());
+                    entry.insert(ipart.position());
                 }
             }
             match ipart {
@@ -77,7 +77,7 @@ impl Namespace {
                             istruct,
                             self,
                             builtin_types,
-                        )))),
+                        )?))),
                         type_map,
                     );
                 }

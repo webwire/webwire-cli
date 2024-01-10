@@ -86,7 +86,7 @@ impl Enum {
                     cause: Box::new(ValidationErrorCause::EnumExtendsNonEnum {
                         r#enum: self.fqtn.clone(),
                         extends: extends.fqtn(),
-                    })
+                    }),
                 });
             }
         }

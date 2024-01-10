@@ -80,6 +80,10 @@ fn test_schema_loader() {
                                     }),
                                     optional: false,
                                     options: vec![FieldOption {
+                                        position: FilePosition {
+                                            line: 14,
+                                            column: 25
+                                        },
                                         name: "length".to_string(),
                                         value: Value::Range(Some(0), Some(50))
                                     }]
@@ -98,6 +102,10 @@ fn test_schema_loader() {
                                     }),
                                     optional: false,
                                     options: vec![FieldOption {
+                                        position: FilePosition {
+                                            line: 15,
+                                            column: 29
+                                        },
                                         name: "length".to_string(),
                                         value: Value::Range(Some(0), Some(100))
                                     }]
@@ -116,6 +124,10 @@ fn test_schema_loader() {
                                     }),
                                     optional: false,
                                     options: vec![FieldOption {
+                                        position: FilePosition {
+                                            line: 16,
+                                            column: 30
+                                        },
                                         name: "length".to_string(),
                                         value: Value::Range(Some(0), Some(100))
                                     }]
@@ -135,10 +147,18 @@ fn test_schema_loader() {
                                     optional: false,
                                     options: vec![
                                         FieldOption {
+                                            position: FilePosition {
+                                                line: 17,
+                                                column: 28
+                                            },
                                             name: "length".to_string(),
                                             value: Value::Range(Some(0), Some(100))
                                         },
                                         FieldOption {
+                                            position: FilePosition {
+                                                line: 17,
+                                                column: 43
+                                            },
                                             name: "help".to_string(),
                                             value: Value::String("aka. family name".to_string())
                                         }
@@ -158,6 +178,10 @@ fn test_schema_loader() {
                                     }),
                                     optional: false,
                                     options: vec![FieldOption {
+                                        position: FilePosition {
+                                            line: 18,
+                                            column: 25
+                                        },
                                         name: "length".to_string(),
                                         value: Value::Range(Some(0), Some(50))
                                     }]
@@ -282,6 +306,10 @@ fn test_schema_loader() {
                                     }),
                                     optional: false,
                                     options: vec![FieldOption {
+                                        position: FilePosition {
+                                            line: 34,
+                                            column: 27
+                                        },
                                         name: "length".to_string(),
                                         value: Value::Range(Some(5), Some(64))
                                     }]
@@ -394,10 +422,18 @@ fn test_schema_loader() {
                                     optional: true,
                                     options: vec![
                                         FieldOption {
+                                            position: FilePosition {
+                                                line: 54,
+                                                column: 27
+                                            },
                                             name: "size".to_string(),
                                             value: Value::Integer(32)
                                         },
                                         FieldOption {
+                                            position: FilePosition {
+                                                line: 54,
+                                                column: 36
+                                            },
                                             name: "range".to_string(),
                                             value: Value::Range(Some(0), None)
                                         }
@@ -417,6 +453,10 @@ fn test_schema_loader() {
                                     }),
                                     optional: true,
                                     options: vec![FieldOption {
+                                        position: FilePosition {
+                                            line: 55,
+                                            column: 26
+                                        },
                                         name: "range".to_string(),
                                         value: Value::Range(Some(1), Some(200))
                                     }]
@@ -446,10 +486,18 @@ fn test_schema_loader() {
                                     optional: false,
                                     options: vec![
                                         FieldOption {
+                                            position: FilePosition {
+                                                line: 60,
+                                                column: 13
+                                            },
                                             name: "range".to_string(),
                                             value: Value::Range(Some(0), Some(65535))
                                         },
                                         FieldOption {
+                                            position: FilePosition {
+                                                line: 61,
+                                                column: 13
+                                            },
                                             name: "help".to_string(),
                                             value: Value::String(
                                                 "Count of objects returned".to_string()
@@ -471,6 +519,10 @@ fn test_schema_loader() {
                                     }))),
                                     optional: false,
                                     options: vec![FieldOption {
+                                        position: FilePosition {
+                                            line: 63,
+                                            column: 28
+                                        },
                                         name: "length".to_string(),
                                         value: Value::Range(Some(0), Some(128))
                                     }]

@@ -1,7 +1,7 @@
 use nom::AsBytes;
 use nom_locate::LocatedSpan;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct FilePosition {
     pub line: u32,
     pub column: usize,

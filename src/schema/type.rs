@@ -213,7 +213,7 @@ impl TypeRef {
                             position,
                             cause: Box::new(ValidationErrorCause::GenericsMissmatch {
                                 fqtn: fqtn.clone(),
-                            })
+                            }),
                         });
                     }
                     match ud_type {
@@ -234,9 +234,7 @@ impl TypeRef {
                 None => {
                     return Err(ValidationError {
                         position,
-                        cause: Box::new(ValidationErrorCause::NoSuchType {
-                            fqtn: fqtn.clone(),
-                        })
+                        cause: Box::new(ValidationErrorCause::NoSuchType { fqtn: fqtn.clone() }),
                     })
                 }
             }

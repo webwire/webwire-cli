@@ -1,6 +1,6 @@
 [package]
 name = "webwire-cli"
-version = "0.1.6"
+version = "0.2.0-dev"
 authors = ["Michael P. Jung <michael.jung@terreon.de>"]
 description = "Contract-First API System - Command Line Interface"
 keywords = ["webwire", "contract-first", "api", "cli", "codegen"]
@@ -12,6 +12,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
+itertools = "0.12.0"
 nom = "7.1"
 nom_locate = "4.2"
 proc-macro2 = "1.0"

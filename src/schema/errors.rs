@@ -35,6 +35,9 @@ pub enum ValidationErrorCause {
         r#enum: FQTN,
         extends: FQTN,
     },
+    UnknownOption {
+        name: String,
+    },
 }
 
 impl fmt::Display for ValidationError {

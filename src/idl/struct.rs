@@ -143,20 +143,20 @@ fn test_parse_field_with_options() {
     use crate::idl::r#type::TypeRef;
     use crate::idl::value::Value;
     let contents = [
-        "name:String(length=2..50)",
-        "name :String(length=2..50)",
-        "name: String(length=2..50)",
-        "name:String (length=2..50)",
-        "name:String( length=2..50)",
-        "name:String(length =2..50)",
-        "name:String(length= 2..50)",
+        ("name:String(length=2..50)", 13),
+        ("name :String(length=2..50)", 14),
+        ("name: String(length=2..50)", 14),
+        ("name:String (length=2..50)", 14),
+        ("name:String( length=2..50)", 14),
+        ("name:String(length =2..50)", 13),
+        ("name:String(length= 2..50)", 13),
         /*
-        "name:String(length=2 ..50)",
-        "name:String(length=2.. 50)",
+        "(name:String(length=2 ..50)", 13),
+        "(name:String(length=2.. 50)", 13),
         */
-        "name:String(length=2..50 )",
+        ("name:String(length=2..50 )", 13),
     ];
-    for content in contents.iter() {
+    for (content, length_column) in contents.iter() {
         assert_parse(
             parse_field(Span::new(content)),
             Field {
@@ -170,6 +170,10 @@ fn test_parse_field_with_options() {
                 }),
                 optional: false,
                 options: vec![FieldOption {
+                    position: FilePosition {
+                        line: 1,
+                        column: *length_column,
+                    },
                     name: "length".to_string(),
                     value: Value::Range(Some(2), Some(50)),
                 }],
@@ -183,16 +187,16 @@ fn test_parse_array_field_with_options() {
     use crate::idl::r#type::TypeRef;
     use crate::idl::value::Value;
     let contents = [
-        "items:[String](length=0..32)",
-        "items :[String](length=0..32)",
-        "items: [String](length=0..32)",
-        "items:[String] (length=0..32)",
-        "items:[String]( length=0..32)",
-        "items:[String](length =0..32)",
-        "items:[String](length= 0..32)",
-        "items:[String](length=0..32 )",
+        ("items:[String](length=0..32)", 16),
+        ("items :[String](length=0..32)", 17),
+        ("items: [String](length=0..32)", 17),
+        ("items:[String] (length=0..32)", 17),
+        ("items:[String]( length=0..32)", 17),
+        ("items:[String](length =0..32)", 16),
+        ("items:[String](length= 0..32)", 16),
+        ("items:[String](length=0..32 )", 16),
     ];
-    for content in contents.iter() {
+    for (content, length_column) in contents.iter() {
         assert_parse(
             parse_field(Span::new(content)),
             Field {
@@ -206,6 +210,10 @@ fn test_parse_array_field_with_options() {
                 }))),
                 optional: false,
                 options: vec![FieldOption {
+                    position: FilePosition {
+                        line: 1,
+                        column: *length_column,
+                    },
                     name: "length".to_string(),
                     value: Value::Range(Some(0), Some(32)),
                 }],
@@ -358,6 +366,10 @@ fn test_parse_struct_field_options() {
                     }))),
                     optional: false,
                     options: vec![FieldOption {
+                        position: FilePosition {
+                            line: 1,
+                            column: 33,
+                        },
                         name: "length".to_string(),
                         value: Value::Range(Some(1), Some(50)),
                     }],

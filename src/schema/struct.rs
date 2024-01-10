@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
+use itertools::Itertools;
+
 use crate::common::FilePosition;
 use crate::idl;
 
-use super::errors::ValidationError;
+use super::errors::{ValidationError, ValidationErrorCause};
 use super::fqtn::FQTN;
 use super::namespace::Namespace;
 use super::r#type::Type;
@@ -32,18 +34,18 @@ impl Struct {
         istruct: &idl::Struct,
         ns: &Namespace,
         builtin_types: &HashMap<String, String>,
-    ) -> Self {
+    ) -> Result<Self, ValidationError> {
         let fields = istruct
             .fields
             .iter()
             .map(|ifield| Field::from_idl(ifield, ns, builtin_types))
-            .collect();
-        Self {
+            .try_collect()?;
+        Ok(Self {
             fqtn: FQTN::new(&istruct.name, ns),
             generics: istruct.generics.clone(),
             fields,
-            position: istruct.position.clone(),
-        }
+            position: istruct.position,
+        })
     }
     pub(crate) fn resolve(&mut self, type_map: &TypeMap) -> Result<(), ValidationError> {
         for field in self.fields.iter_mut() {
@@ -58,7 +60,7 @@ impl Field {
         ifield: &idl::Field,
         ns: &Namespace,
         builtin_types: &HashMap<String, String>,
-    ) -> Self {
+    ) -> Result<Self, ValidationError> {
         let mut length: (Option<i64>, Option<i64>) = (None, None);
         let mut format: Option<String> = None;
         for option in &ifield.options {
@@ -66,10 +68,17 @@ impl Field {
                 ("length", idl::Value::Range(min, max)) => length = (*min, *max),
                 //("format", format) => format = Some(format),
                 ("format", idl::Value::String(f)) => format = Some(f.clone()),
-                (name, _) => panic!("Unsupported option: {}", name),
+                (name, _) => {
+                    return Err(ValidationError {
+                        position: option.position,
+                        cause: Box::new(ValidationErrorCause::UnknownOption {
+                            name: name.to_owned(),
+                        }),
+                    })
+                }
             }
         }
-        Field {
+        Ok(Field {
             name: ifield.name.clone(),
             type_: Type::from_idl(&ifield.type_, ns, builtin_types),
             optional: ifield.optional,
@@ -77,7 +86,7 @@ impl Field {
             //options: ifield.options
             length,
             format,
-            position: ifield.position.clone(),
-        }
+            position: ifield.position,
+        })
     }
 }
